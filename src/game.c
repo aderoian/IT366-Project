@@ -4,8 +4,13 @@
 #include "gf2d_graphics.h"
 #include "gf2d_sprite.h"
 
+#include "animation.h"
 #include "entity.h"
 #include "player_entity.h"
+
+uint8_t __DEBUG = 0;
+
+void parse_arguments(int argc,char *argv[]);
 
 int main(int argc, char * argv[])
 {
@@ -15,11 +20,12 @@ int main(int argc, char * argv[])
     Sprite *sprite;
     
     int mx,my;
-    float mf = 0;
+    float then, now, mf = 0;
     Sprite *mouse;
     GFC_Color mouseGFC_Color = gfc_color8(255,100,255,200);
     
     /*program initializtion*/
+    parse_arguments(argc,argv);
     init_logger("gf2d.log",0);
     slog("---==== BEGIN ====---");
     gf2d_graphics_initialize(
@@ -32,6 +38,7 @@ int main(int argc, char * argv[])
         0);
     gf2d_graphics_set_frame_delay(16);
     gf2d_sprite_init(1024);
+    animation_manager_init(256);
     entity_init(1024);
     SDL_ShowCursor(SDL_DISABLE);
     
@@ -43,6 +50,8 @@ int main(int argc, char * argv[])
     if (!ent) slog("failed to spawn player");
     slog("press [escape] to quit");
     /*main game loop*/
+
+    then = (float) SDL_GetTicks() * 0.001f;
     while(!done)
     {
         SDL_PumpEvents();   // update SDL's internal event structures
@@ -52,8 +61,10 @@ int main(int argc, char * argv[])
         mf+=0.1;
         if (mf >= 16.0)mf = 0;
 
+        now = (float) SDL_GetTicks() * 0.001f;
         entity_think_all();
-        entity_update_all();
+        entity_update_all(now - then);
+        then = now;
         
         gf2d_graphics_clear_screen();// clears drawing buffers
         // all drawing should happen betweem clear_screen and next_frame
@@ -80,5 +91,14 @@ int main(int argc, char * argv[])
     }
     slog("---==== END ====---");
     return 0;
+}
+
+void parse_arguments(int argc,char *argv[]) {
+    int a;
+    for (a = 1; a < argc;a++) {
+        if (strcmp(argv[a],"--debug") == 0) {
+            __DEBUG = 1;
+        }
+    }    
 }
 /*eol@eof*/
