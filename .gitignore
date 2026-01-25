@@ -58,3 +58,8 @@ gf2d
 *.log
 
 makefile.dep
+
+# IDE specific files
+.vscode/
+.idea/
+*.code-workspace
