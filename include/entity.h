@@ -5,13 +5,22 @@
 
 #include "gfc_vector.h"
 #include "gf2d_sprite.h"
+#include "physics.h"
 
 #define ENT_FLAG_ANIMATED    0x0001
 
 typedef struct Entity_S {
     uint8_t _inUse;
     GFC_Vector2D position;
+    GFC_Vector2D velocity;
+    GFC_Vector2D forces;
+    phys_AABBShape localBounds; // min and max
+    phys_AABBShape worldBounds;
+    phys_CollisionHandle sapIndex;
+    uint16_t layers;
     float rotation;
+    float mass;
+    float invMass;
     GFC_Vector2D scale;
     uint32_t flags;
 

@@ -31,6 +31,7 @@ Entity *entity_new() {
         ent->_inUse = 1;
         ent->draw = entity_draw;
         ent->scale = gfc_vector2d(1, 1);
+        ent->layers = 0xFFFF;
 
         return ent;
     }
@@ -79,7 +80,7 @@ void entity_think_all() {
         ent->think(ent);
     }
 }
-void entity_update_all(float deltaTime) {
+void entity_update_all(const float deltaTime) {
     uint32_t i;
     Entity *ent;
     for (i = 0; i < ent_manager.maxEnts; i++) {
