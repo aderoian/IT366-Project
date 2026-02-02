@@ -4,8 +4,7 @@
 #include <stdint.h>
 
 #include "gfc_vector.h"
-#include "gf2d_sprite.h"
-#include "physics.h"
+#include "common/physics.h"
 
 #define ENT_FLAG_ANIMATED    0x0001
 

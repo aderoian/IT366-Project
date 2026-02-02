@@ -2,8 +2,10 @@
 
 #include "gfc_input.h"
 
-#include "animation.h"
-#include "player_entity.h"
+#include "client/animation.h"
+#include "client/gf2d_sprite.h"
+
+#include "common/player_entity.h"
 
 Entity * player_spawn(GFC_Vector2D pos, const char * sprite) {
     Entity *ent;

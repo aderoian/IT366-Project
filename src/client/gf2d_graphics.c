@@ -2,7 +2,7 @@
 #include <SDL_image.h>
 #include <stdlib.h>
 
-#include "gf2d_graphics.h"
+#include "client/gf2d_graphics.h"
 #include "simple_logger.h"
 
 /*local types*/

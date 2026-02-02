@@ -1,8 +1,8 @@
 #include "simple_logger.h"
 
-#include "gf2d_sprite.h"
+#include "client/gf2d_sprite.h"
 
-#include "animation.h"
+#include "client/animation.h"
 
 typedef struct AnimationManager_S {
     Animation *anims;

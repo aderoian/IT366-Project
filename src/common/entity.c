@@ -1,6 +1,7 @@
-#include "entity.h"
+#include "common/entity.h"
 
-#include "animation.h"
+#include "client/animation.h"
+#include "client/gf2d_sprite.h"
 
 typedef struct EntityManager_S {
     Entity *ents;

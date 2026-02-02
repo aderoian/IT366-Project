@@ -17,6 +17,7 @@ add_compile_options(
 # GF2D Executable
 file(GLOB GF2D_SOURCES CONFIGURE_DEPENDS
         src/*.c
+        src/*/*.c
 )
 
 set(GF2D_INCLUDE_DIRS
@@ -46,14 +47,24 @@ set_target_properties(simple_logger PROPERTIES
         IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/gfc/simple_logger/libs/libsl.a
 )
 
+include(FetchContent)
+
+FetchContent_Declare(
+        enet
+        GIT_REPOSITORY https://github.com/lsalzman/enet.git
+        GIT_TAG v1.3.18
+)
+
+FetchContent_MakeAvailable(enet)
+
 # ------------------------------------------------------------------------------
 # Static library
 # ------------------------------------------------------------------------------
 add_executable(gf2d ${GF2D_SOURCES})
 
-target_include_directories(gf2d PUBLIC ${GF2D_INCLUDE_DIRS})
+target_include_directories(gf2d PRIVATE ${GF2D_INCLUDE_DIRS})
 
-target_link_libraries(gf2d PUBLIC
+target_link_libraries(gf2d PRIVATE
         gfc
         simple_json
         simple_logger
@@ -61,6 +72,7 @@ target_link_libraries(gf2d PUBLIC
         SDL2_image::SDL2_image
         SDL2_ttf::SDL2_ttf
         SDL2_mixer::SDL2_mixer
+        enet
         pthread
         m
 )

@@ -4,12 +4,12 @@
 #include "gfc_input.h"
 #include "gfc_config_def.h"
 
-#include "gf2d_graphics.h"
-#include "gf2d_sprite.h"
+#include "client/gf2d_graphics.h"
+#include "client/gf2d_sprite.h"
 
-#include "animation.h"
-#include "entity.h"
-#include "player_entity.h"
+#include "client/animation.h"
+#include "common/entity.h"
+#include "common/player_entity.h"
 
 uint8_t __DEBUG = 0;
 

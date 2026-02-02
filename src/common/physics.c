@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include "gfc_list.h"
 
-#include "physics.h"
+#include "common/physics.h"
 
-#include "entity.h"
+#include "common/entity.h"
 
 #define SOLVER_ITERATIONS 15
 

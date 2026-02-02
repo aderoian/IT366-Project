@@ -5,11 +5,10 @@
 
 #include "gfc_shape.h"
 #include "gfc_text.h"
-#include "gfc_pak.h"
 
-#include "gf2d_graphics.h"
+#include "client/gf2d_graphics.h"
 
-#include "gf2d_sprite.h"
+#include "client/gf2d_sprite.h"
 
 typedef struct
 {
