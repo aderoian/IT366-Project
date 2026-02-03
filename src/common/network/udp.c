@@ -1,6 +1,116 @@
 #include "common/time.h"
 #include "common/network/udp.h"
 
+#include <netdb.h>
+#include <string.h>
+
+int net_addr_resolve(net_addr_t *out, const char *host, const char *service, const int socktype) {
+    struct addrinfo hints, *res = NULL;
+    int rc;
+    if (!out || !service) {
+        return -1;
+    }
+
+    memset(&hints, 0, sizeof(hints));
+
+    hints.ai_family = AF_UNSPEC; // IPv4 or IPv6
+    hints.ai_socktype = socktype;
+    hints.ai_flags = AI_ADDRCONFIG; // avoid unusable families
+    if (host == NULL) {
+        hints.ai_flags |= AI_PASSIVE; // for wildcard IP address
+    }
+
+    rc = getaddrinfo(host, service, &hints, &res);
+    if (rc != 0 || !res) {
+        return -1;
+    }
+
+    memcpy(&out->storage, res->ai_addr, res->ai_addrlen);
+    out->len = (socklen_t) res->ai_addrlen;
+
+    freeaddrinfo(res);
+    return 0;
+}
+
+int net_addr_family(const net_addr_t *addr) {
+    if (!addr) {
+        return -1; // invalid input
+    }
+
+    switch (addr->storage.ss_family) {
+        case NET_AF_INET: return NET_AF_INET; // IPv4
+        case NET_AF_INET6: return NET_AF_INET6; // IPv6
+#ifdef _WIN32
+        case AF_UNSPEC: return AF_UNSPEC;
+#endif
+        default: return -1; // unknown/unsupported family
+    }
+}
+
+uint16_t net_addr_port(const net_addr_t *addr) {
+    struct sockaddr_in *in;
+    struct sockaddr_in6 *in6;
+    if (!addr) {
+        return 0;
+    }
+
+    switch (addr->storage.ss_family) {
+        case NET_AF_INET: {
+            in = (struct sockaddr_in *) &addr->storage;
+            return ntohs(in->sin_port);
+        }
+        case NET_AF_INET6: {
+            in6 = (struct sockaddr_in6 *) &addr->storage;
+            return ntohs(in6->sin6_port);
+        }
+        default:
+            return 0; // Unknown family
+    }
+}
+
+int net_addr_toString(const net_addr_t *addr, char *buffer, size_t buffer_size) {
+    struct sockaddr_in *in;
+    struct in_addr ipv4;
+    struct sockaddr_in6 *in6;
+    uint8_t *bytes;
+    char ipv4buf[INET_ADDRSTRLEN];
+    if (!addr || !buffer || buffer_size == 0) {
+        return -1;
+    }
+
+    if (addr->storage.ss_family == NET_AF_INET) {
+        in = (struct sockaddr_in *) &addr->storage;
+        if (!inet_ntop(AF_INET, &in->sin_addr, buffer, (socklen_t) buffer_size)) {
+            return -1;
+        }
+        return 0;
+    }
+
+    if (addr->storage.ss_family == NET_AF_INET6) {
+        in6 = (struct sockaddr_in6 *) &addr->storage;
+
+        // Check for IPv4-mapped IPv6 address ::ffff:a.b.c.d
+        bytes = in6->sin6_addr.s6_addr;
+        if (memcmp(bytes, "\0\0\0\0\0\0\0\0\0\0\xFF\xFF", 12) == 0) {
+            memcpy(&ipv4buf, &bytes[12], 4);
+            memcpy(&ipv4, &bytes[12], 4);
+            if (!inet_ntop(NET_AF_INET, &ipv4, buffer, (socklen_t) buffer_size)) {
+                return -1;
+            }
+            return 0;
+        }
+
+        // Otherwise, normal IPv6
+        if (!inet_ntop(NET_AF_INET6, &in6->sin6_addr, buffer, (socklen_t) buffer_size)) {
+            return -1;
+        }
+        return 0;
+    }
+
+    // Unknown family
+    return -1;
+}
+
 net_udp_packet_t *net_udp_packet_create(void *data, const size_t dataSize, const uint32_t flags) {
     net_udp_packet_t *packet;
     packet = malloc(sizeof(net_udp_packet_t));
@@ -175,7 +285,7 @@ void *net_udp_host_thread(void *arg) {
         if (host->state == NET_HOST_SHUTDOWN_REQUESTED) {
             host->state = NET_HOST_SHUTTING_DOWN;
             for (i = 0; i < host->enetHost->peerCount; i++) {
-                enet_peer_disconnect(&host->enetHost->peers[i], 0); //TODO: Disconnect reasons
+                enet_peer_disconnect_later(&host->enetHost->peers[i], 0); //TODO: Disconnect reasons
             }
             host->shutdownStartTime = time_now_ns();
         }

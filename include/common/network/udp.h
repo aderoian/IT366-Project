@@ -1,7 +1,7 @@
 #ifndef UDP_H
 #define UDP_H
 
-#include <bits/socket.h>
+#include <sys/socket.h>
 
 #include <enet/enet.h>
 
@@ -44,20 +44,41 @@ typedef struct net_addr_s {
 #define NET_HOST_SHUTDOWN_TIMEOUT_NS (NET_HOST_DEFAULT_SHUTDOWN_TIMEOUT * 1000000000ULL)
 
 /**
- * @brief Enumeration representing the state of a host.
+ * @brief Resolve a hostname and service to a network address.
+ *
+ * @param out Pointer to net_addr_t structure to store the resolved address.
+ * @param host Hostname or IP address as a string.
+ * @param service Service name or port number as a string.
+ * @param socktype Socket type (e.g., SOCK_STREAM, SOCK_DGRAM).
+ * @return 1 on success, 0 on failure.
  */
-typedef enum net_host_state_e {
-    /** Host is idle and not running. */
-    NET_HOST_IDLE = 0,
-    /** Host is running and operational. */
-    NET_HOST_RUNNING = 1,
-    /** Host shutdown has been requested. */
-    NET_HOST_SHUTDOWN_REQUESTED = 2,
-    /** Host is in the process of shutting down. */
-    NET_HOST_SHUTTING_DOWN = 3,
-    /** Host has been stopped. */
-    NET_HOST_STOPPED = 4,
-} net_host_state_t;
+int net_addr_resolve(net_addr_t *out, const char *host, const char *service, int socktype);
+
+/**
+ * @brief Get the address family of the network address.
+ *
+ * @param addr Pointer to the net_addr_t structure.
+ * @return Address family (NET_AF_INET or NET_AF_INET6).
+ */
+int net_addr_family(const net_addr_t *addr);
+
+/**
+ * @brief Get the port number from the network address.
+ *
+ * @param addr Pointer to the net_addr_t structure.
+ * @return Port number in host byte order.
+ */
+uint16_t net_addr_port(const net_addr_t *addr);
+
+/**
+ * @brief Convert the network address to a string representation.
+ *
+ * @param addr Pointer to the net_addr_t structure.
+ * @param buffer Buffer to store the string representation.
+ * @param buffer_size Size of the buffer.
+ * @return 1 on success, 0 on failure.
+ */
+int net_addr_toString(const net_addr_t *addr, char *buffer, size_t buffer_size);
 
 /**
  * @brief UDP Packet Flags
@@ -322,6 +343,22 @@ static inline void net_udp_peer_throttle_configure(net_udp_peer_t *peer, const u
                                                          const uint32_t acceleration, const uint32_t deceleration) {
     enet_peer_throttle_configure(peer, interval, acceleration, deceleration);
 }
+
+/**
+ * @brief Enumeration representing the state of a host.
+ */
+typedef enum net_host_state_e {
+    /** Host is idle and not running. */
+    NET_HOST_IDLE = 0,
+    /** Host is running and operational. */
+    NET_HOST_RUNNING = 1,
+    /** Host shutdown has been requested. */
+    NET_HOST_SHUTDOWN_REQUESTED = 2,
+    /** Host is in the process of shutting down. */
+    NET_HOST_SHUTTING_DOWN = 3,
+    /** Host has been stopped. */
+    NET_HOST_STOPPED = 4,
+} net_host_state_t;
 
 /**
  * @brief UDP Host structure.
