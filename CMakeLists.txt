@@ -15,9 +15,9 @@ add_compile_options(
 )
 
 # GF2D Executable
-file(GLOB GF2D_SOURCES CONFIGURE_DEPENDS
-        src/*.c
-        src/*/*.c
+file(GLOB_RECURSE GF2D_SOURCES
+        CONFIGURE_DEPENDS
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c
 )
 
 set(GF2D_INCLUDE_DIRS
