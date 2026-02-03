@@ -199,7 +199,7 @@ net_udp_host_t *net_udp_host_create(const net_udp_host_config_t *config) {
     host->isServer = config->isServer;
 
     if (config->isServer) {
-        if (!thread_create(&host->hostThread, net_udp_host_thread, host)) {
+        if (thread_create(&host->hostThread, net_udp_host_thread, host) < 0) {
             net_udp_host_destroy(host);
             free(host);
             return NULL;

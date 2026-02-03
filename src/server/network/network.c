@@ -44,11 +44,11 @@ void server_network_destroy(server_network_t *network) {
     free(network);
 }
 
-void server_network_start(server_network_t *network) {
+int server_network_start(server_network_t *network) {
     net_udp_host_config_t udpConfig;
     char portStr[6];
     if (!network || network->running) {
-        return;
+        return 0;
     }
 
     snprintf(portStr, 6, "%u", network->config.bindPort);
@@ -59,10 +59,11 @@ void server_network_start(server_network_t *network) {
     network->udpHost = net_udp_host_create(&udpConfig);
     if (!network->udpHost) {
         log_error("Failed to create UDP host for server network");
-        return;
+        return 0;
     }
 
     network->running = 1;
+    return 1;
 }
 
 void server_network_stop(server_network_t *network) {

@@ -9,6 +9,10 @@
 extern uint8_t __DEBUG;
 extern uint8_t _dedicatedServer;
 
+#define SERVER_TARGET_TICKRATE 30
+#define SERVER_TARGET_SECONDS_PER_TICK (1.0f / SERVER_TARGET_TICKRATE)
+#define SERVER_TARGET_TICK_TIME_MS (1000.0f / SERVER_TARGET_TICKRATE)
+
 typedef enum ServerState_E {
     SERVER_IDLE = 0,
     SERVER_RUNNING = 1,
@@ -21,6 +25,14 @@ typedef struct Server_S {
     ServerState state;
     mutex_t lock;
     thread_t thread;
+
+    struct server_network_s *network;
+
+    uint64_t tickCounter;
+    float currentTps;
+    float currentUse;
+    float averageTps[20];
+    float averageUse[20];
 } Server;
 
 extern Server g_server;

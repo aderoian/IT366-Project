@@ -31,7 +31,7 @@ typedef struct server_network_s {
 server_network_t *server_network_create(const server_network_config_t *config);
 void server_network_destroy(server_network_t *network);
 
-void server_network_start(server_network_t *network);
+int server_network_start(server_network_t *network);
 void server_network_stop(server_network_t *network);
 
 void server_network_tick(server_network_t *network);
