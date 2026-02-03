@@ -79,6 +79,8 @@ int server_shutdown(Server *server) {
     server_network_destroy(server->network);
     server->network = NULL;
     log_info("Server network stopped.");
+
+    return 1;
 }
 
 void server_close(void) {
@@ -154,7 +156,6 @@ void server_tickProcessor(Server *server) {
         if (shutdownRequested) {
             server_shutdown(server);
 
-            shutdownRequested = 0;
             mutex_lock(&server->lock);
             server->state = SERVER_STOPPED;
             mutex_unlock(&server->lock);

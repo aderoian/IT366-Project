@@ -2,7 +2,6 @@
 #include "gfc_input.h"
 
 #include "common/logger.h"
-#include "common/thread/thread.h"
 #include "common/thread/mutex.h"
 #include "common/entity.h"
 
@@ -14,21 +13,10 @@
 
 #include "common/player_entity.h"
 
-typedef enum ClientState_E {
-    CLIENT_IDLE = 0,
-    CLIENT_RUNNING = 1,
-    CLIENT_SHUTDOWN_REQUESTED = 2,
-    CLIENT_SHUTTING_DOWN = 3,
-    CLIENT_STOPPED = 4,
-} ClientState;
+void client_tickLoop(Client* client);
+void client_render(Client *client, uint64_t alpha);
 
-struct Client_S {
-    ClientState state;
-    mutex_t lock;
-    thread_t thread;
-};
-
-struct Client_S client = {0};
+static Client g_client = {0};
 
 void client_run(void);
 
@@ -37,8 +25,8 @@ int client_main(void) {
     gfc_input_init("def/input.json");
     gfc_config_def_init();
 
-    client.state = CLIENT_IDLE;
-    mutex_init(&client.lock);
+    g_client.state = CLIENT_IDLE;
+    mutex_init(&g_client.lock);
 
     gf2d_graphics_initialize(
         "gf2d",
@@ -54,81 +42,85 @@ int client_main(void) {
     entity_init(1024);
     phys_init(1024);
 
-    client_run();
+    mutex_lock(&g_client.lock);
+    g_client.state = CLIENT_RUNNING;
+    mutex_unlock(&g_client.lock);
 
-    mutex_destroy(&client.lock);
+    log_info("Client running");
+
+    player_spawn_immobile(gfc_vector2d(300, 200), "images/pointer.png");
+
+    client_tickLoop(&g_client);
 
     return 0;
 }
 
 void client_close(void) {
-    mutex_lock(&client.lock);
-    if (client.state == CLIENT_RUNNING) {
-        client.state = CLIENT_SHUTDOWN_REQUESTED;
+    mutex_lock(&g_client.lock);
+    if (g_client.state == CLIENT_RUNNING) {
+        g_client.state = CLIENT_SHUTDOWN_REQUESTED;
     }
-    mutex_unlock(&client.lock);
+    mutex_unlock(&g_client.lock);
 
-    thread_join(&client.thread);
-    mutex_destroy(&client.lock);
+    mutex_destroy(&g_client.lock);
 }
 
-void client_run(void) {
-    float now, then;
-    Sprite *bg;
+void client_tickLoop(Client* client) {
     uint8_t shutDownRequested = 0;
 
-    mutex_lock(&client.lock);
-    client.state = CLIENT_RUNNING;
-    mutex_unlock(&client.lock);
+    uint64_t dt = 1000ULL / 60ULL; // 60 FPS
+    uint64_t accumulator = 0, currentTime, frameTime, lastTime = SDL_GetTicks64();
+    float deltaUpdate;
 
-    log_info("Client running");
-
-    bg = gf2d_sprite_load_image("images/backgrounds/bg_flat.png");
-
-    player_spawn_immobile(gfc_vector2d(300, 200), "images/pointer.png");
-
-    then = (float) SDL_GetTicks() * 0.001f;
     while (1) {
-        mutex_lock(&client.lock);
-        if (client.state != CLIENT_RUNNING) {
-            mutex_unlock(&client.lock);
+        mutex_lock(&g_client.lock);
+        if (g_client.state == CLIENT_STOPPED) {
+            mutex_unlock(&g_client.lock);
             break;
         }
 
-        if (client.state == CLIENT_SHUTDOWN_REQUESTED) {
-            client.state = CLIENT_SHUTTING_DOWN;
+        if (g_client.state == CLIENT_SHUTDOWN_REQUESTED) {
+            g_client.state = CLIENT_SHUTTING_DOWN;
             shutDownRequested = 1;
         }
-        mutex_unlock(&client.lock);
+        mutex_unlock(&g_client.lock);
 
         if (shutDownRequested) {
             // perform shutdown tasks
-            shutDownRequested = 0;
-            mutex_lock(&client.lock);
-            client.state = CLIENT_STOPPED;
-            mutex_unlock(&client.lock);
+            mutex_lock(&g_client.lock);
+            g_client.state = CLIENT_STOPPED;
+            mutex_unlock(&g_client.lock);
             break;
         }
 
-        gfc_input_update();
+        currentTime = SDL_GetTicks64();
+        uint64_t frameTime = currentTime - lastTime;
+        accumulator += frameTime;
+        lastTime = currentTime;
 
-        now = (float) SDL_GetTicks() * 0.001f;
-        entity_think_all();
-        entity_update_all(now - then);
+        while (accumulator >= dt) {
+            gfc_input_update();
 
-        phys_step(now - then);
-        then = now;
+            deltaUpdate = (float) dt / 1000.0f;
+            entity_think_all();
+            entity_update_all(deltaUpdate);
 
-        gf2d_graphics_clear_screen();
-            gf2d_sprite_draw_image(bg,gfc_vector2d(0,0));
-            entity_draw_all();
+            phys_step(deltaUpdate);
+            accumulator -= dt;
 
-            //UI elements last
-
-        gf2d_graphics_next_frame();
-
-        if (gfc_input_command_down("exit")) {
-            client_close();
+            if (gfc_input_command_down("exit")) {
+                client_close();
+            }
         }
+
+
+        client_render(client, accumulator / dt);
+        gf2d_graphics_next_frame();
     }
+}
+
+void client_render(Client* client, uint64_t alpha) {
+    gf2d_graphics_clear_screen();
+
+    entity_draw_all();
 }
