@@ -232,8 +232,6 @@ void animation_state_reset(AnimationState *state) {
 
 AnimatedSprite * animation_sprite_createSprite(Sprite *sprite, const char *name) {
     AnimatedSprite *animatedSprite;
-    va_list args;
-    const char *animName;
     if (!sprite) {
         slog("Cannot create AnimatedSprite with NULL sprite");
         return NULL;

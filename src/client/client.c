@@ -94,7 +94,7 @@ void client_tickLoop(Client* client) {
         }
 
         currentTime = SDL_GetTicks64();
-        uint64_t frameTime = currentTime - lastTime;
+        frameTime = currentTime - lastTime;
         accumulator += frameTime;
         lastTime = currentTime;
 

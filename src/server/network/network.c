@@ -1,8 +1,11 @@
-#include "server/network/network.h"
-
 #include <stdio.h>
 
 #include "common/logger.h"
+#include "common/types.h"
+#include "common/network/packet/handler.h"
+#include "server/network/network.h"
+
+void server_network_handle_data(net_udp_packet_t *rawPacket, net_udp_peer_t *peer);
 
 server_network_t *server_network_create(const server_network_config_t *config) {
     server_network_t *network = malloc(sizeof(server_network_t));
@@ -89,9 +92,7 @@ void server_network_tick(server_network_t *network) {
                 // Handle new connection
                 break;
             case NET_UDP_EVENT_TYPE_RECEIVE:
-                log_info("Received data from client");
-                // Handle received data
-                net_udp_packet_destroy(event.packet);
+                server_network_handle_data(event.packet, event.peer);
                 break;
             case NET_UDP_EVENT_TYPE_DISCONNECT:
                 log_info("Client disconnected");
@@ -101,4 +102,28 @@ void server_network_tick(server_network_t *network) {
                 break;
         }
     }
+}
+
+void server_network_handle_data(net_udp_packet_t *rawPacket, net_udp_peer_t *peer) {
+    buffer_offset_t offset;
+    uint8_t packetID;
+    size_t bytes = rawPacket->dataLength;
+    packet_buffer_t buffer = rawPacket->data;
+    if (!buffer || bytes == 0) {
+        log_error("Network received NULL or empty packet.");
+        return;
+    }
+
+    offset = 0;
+    while (offset < bytes) {
+        packetID = buffer[offset];
+        if (packetID >= PACKET_COUNT) {
+            log_info("Received invalid packet ID: %d", packetID);
+            break;
+        }
+
+        packet_dispatch_table[packetID](buffer, &offset, peer);
+    }
+
+    net_udp_packet_destroy(rawPacket);
 }
