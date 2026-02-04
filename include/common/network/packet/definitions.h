@@ -15,8 +15,8 @@ X(c2s_player_input,    C2S_PLAYER_INPUT,    PLAYER_INPUT_FIELDS)
 #define PLAYER_INPUT_FIELDS(F) \
 F(uint64_t, clientTick) \
 F(uint64_t, lastServerTick) \
-F(uint32_t,    axisX) \
-F(uint32_t,    axisY)
+F(int32_t,    axisX) \
+F(int32_t,    axisY)
 
 /**
  * @brief Generated packet structures.

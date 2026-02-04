@@ -73,7 +73,7 @@ uint8_t read_uint8_t(packet_buffer_t buffer, buffer_offset_t *offset) {
 uint16_t read_uint16_t(packet_buffer_t buffer, buffer_offset_t *offset) {
     uint16_t value = 0;
     for (int i = 1; i >= 0; i--) {
-        value |= (uint8_t)(buffer[(*offset++)] << (i * 8));
+        value |= ((uint16_t)buffer[(*offset)++] << (i * 8));
     }
     return value;
 }
@@ -81,7 +81,7 @@ uint16_t read_uint16_t(packet_buffer_t buffer, buffer_offset_t *offset) {
 uint32_t read_uint32_t(packet_buffer_t buffer, buffer_offset_t *offset) {
     uint32_t value = 0;
     for (int i = 3; i >= 0; i--) {
-        value |= (uint8_t)(buffer[(*offset++)] << (i * 8));
+        value |= ((uint32_t)buffer[(*offset)++] << (i * 8));
     }
     return value;
 }
@@ -89,7 +89,7 @@ uint32_t read_uint32_t(packet_buffer_t buffer, buffer_offset_t *offset) {
 uint64_t read_uint64_t(const packet_buffer_t buffer, buffer_offset_t *offset) {
     uint64_t value = 0;
     for (int i = 7; i >= 0; i--) {
-        value |= (uint8_t)(buffer[(*offset++)] << (i * 8));
+        value |= ((uint64_t)buffer[(*offset)++] << (i * 8));
     }
     return value;
 }
@@ -101,7 +101,7 @@ int8_t read_int8_t(packet_buffer_t buffer, buffer_offset_t *offset) {
 int16_t read_int16_t(packet_buffer_t buffer, buffer_offset_t *offset) {
     int16_t value = 0;
     for (int i = 1; i >= 0; i--) {
-        value |= (uint8_t)(buffer[(*offset++)] << (i * 8));
+        value |= ((uint16_t)buffer[(*offset)++] << (i * 8));
     }
     return value;
 }
@@ -109,7 +109,7 @@ int16_t read_int16_t(packet_buffer_t buffer, buffer_offset_t *offset) {
 int32_t read_int32_t(packet_buffer_t buffer, buffer_offset_t *offset) {
     int32_t value = 0;
     for (int i = 3; i >= 0; i--) {
-        value |= (uint8_t)(buffer[(*offset++)] << (i * 8));
+        value |= ((uint32_t)buffer[(*offset)++] << (i * 8));
     }
     return value;
 }
@@ -117,7 +117,7 @@ int32_t read_int32_t(packet_buffer_t buffer, buffer_offset_t *offset) {
 int64_t read_int64_t(packet_buffer_t buffer, buffer_offset_t *offset) {
     int64_t value = 0;
     for (int i = 7; i >= 0; i--) {
-        value |= (uint8_t)(buffer[(*offset++)] << (i * 8));
+        value |= ((uint64_t)buffer[(*offset)++] << (i * 8));
     }
     return value;
 }
@@ -167,3 +167,17 @@ PACKET_LIST(PACKET_DESERIALIZE)
 
 #undef FIELD
 #undef PACKET_DESERIALIZE
+
+#define FIELD(type, name) ,type name
+#define INIT_FIELD(type, name) pkt->name = name;
+
+#define PACKET_CREATE(name, id, fields) \
+void create_##name(name##_packet_t* pkt fields(FIELD)) { \
+pkt->packetID = PACKET_##id; \
+fields(INIT_FIELD) \
+}
+
+PACKET_LIST(PACKET_CREATE)
+#undef FIELD
+#undef INIT_FIELD
+#undef PACKET_CREATE

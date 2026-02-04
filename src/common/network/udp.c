@@ -323,7 +323,7 @@ net_udp_peer_t *net_udp_host_client_connect(net_udp_host_t *host) {
         return NULL;
     }
 
-    if (!thread_create(&host->hostThread, net_udp_host_thread, host)) {
+    if (thread_create(&host->hostThread, net_udp_host_thread, host) < 0) {
         net_udp_peer_disconnect_now(host->serverPeer, 0);
         net_udp_host_destroy(host);
         free(host);

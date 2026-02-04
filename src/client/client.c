@@ -12,6 +12,8 @@
 #include "client/client.h"
 
 #include "common/player_entity.h"
+#include "common/network/packet/definitions.h"
+#include "common/network/packet/io.h"
 
 void client_tickLoop(Client* client);
 void client_render(Client *client, uint64_t alpha);
@@ -41,6 +43,24 @@ int client_main(void) {
     animation_manager_init(256);
     entity_init(1024);
     phys_init(1024);
+
+    // Init network
+    g_client.network = client_network_create(&(client_network_config_t){
+        .channelLimit = 4,
+        .inBandwidth = 0,
+        .outBandwidth = 0,
+        .connectionTimeout = 5000,
+    });
+
+    if (!g_client.network) {
+        log_error("Failed to create client network");
+        return -1;
+    }
+
+    if (client_network_start(g_client.network, "127.0.0.1", "12345") < 0) {
+        log_error("Failed to connect to server");
+        return -1;
+    }
 
     mutex_lock(&g_client.lock);
     g_client.state = CLIENT_RUNNING;
@@ -101,9 +121,15 @@ void client_tickLoop(Client* client) {
         while (accumulator >= dt) {
             gfc_input_update();
 
+            client_network_tick(client->network);
+
             deltaUpdate = (float) dt / 1000.0f;
             entity_think_all();
             entity_update_all(deltaUpdate);
+
+            c2s_player_input_packet_t packet;
+            create_c2s_player_input(&packet, 1000, 999, 1, -1);
+            client_network_send(client->network, PACKET_C2S_PLAYER_INPUT, &packet);
 
             phys_step(deltaUpdate);
             accumulator -= dt;
