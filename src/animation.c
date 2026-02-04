@@ -114,15 +114,15 @@ AnimationState * animation_state_create(Animation *animation) {
         state->currentAnimation = animation;
         state->currentFrame = animation->startFrame;
         state->isFinished = 0;
+        if (__DEBUG) slog("Created AnimationState for animation: %s", animation->name);
     } else {
         state->currentAnimation = NULL;
         state->currentFrame = 0;
         state->isFinished = 1;
+        if (__DEBUG) slog("Created AnimationState", animation->name);
     }
 
     state->elapsedTime = 0.0f;
-
-    if (__DEBUG) slog("Created AnimationState for animation: %s", animation->name);
     return state;
 }
 
