@@ -63,3 +63,6 @@ makefile.dep
 .vscode/
 .idea/
 *.code-workspace
+
+# Run Directory
+run/
