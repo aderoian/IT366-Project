@@ -108,7 +108,7 @@ void server_network_handle_data(net_udp_packet_t *rawPacket, net_udp_peer_t *pee
     buffer_offset_t offset;
     uint8_t packetID;
     size_t bytes = rawPacket->dataLength;
-    packet_buffer_t buffer = rawPacket->data;
+    buffer_t buffer = rawPacket->data;
     if (!buffer || bytes == 0) {
         log_error("Network received NULL or empty packet.");
         return;

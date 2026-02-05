@@ -99,7 +99,7 @@ void client_network_tick(client_network_t *network) {
 }
 
 void client_network_send(client_network_t *network, uint8_t packetID, void *context) {
-    packet_buffer_t buf = malloc(1024); // FIXME: packet pooling
+    buffer_t buf = (buffer_t) malloc(1024); // FIXME: packet pooling
     buffer_offset_t off = 0;
     net_udp_packet_t *packet;
 

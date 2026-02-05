@@ -1,0 +1,3 @@
+#ifndef COMMON_PLAYER_H
+#define COMMON_PLAYER_H
+

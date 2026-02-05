@@ -127,9 +127,15 @@ void client_tickLoop(Client* client) {
             entity_think_all();
             entity_update_all(deltaUpdate);
 
-            c2s_player_input_packet_t packet;
-            create_c2s_player_input(&packet, 1000, 999, 1, -1);
-            client_network_send(client->network, PACKET_C2S_PLAYER_INPUT, &packet);
+            c2s_player_input_snapshot_packet_t packet;
+            player_input_command_t inputCommand = {
+                .clientTick = SDL_GetTicks64(),
+                .lastServerTick = 0, // This would be updated with the last known server tick
+                .axisX = 1,
+                .axisY = -1,
+            };
+            create_c2s_player_input_snapshot(&packet, &inputCommand);
+            client_network_send(client->network, PACKET_C2S_PLAYER_INPUT_SNAPSHOT, &packet);
 
             phys_step(deltaUpdate);
             accumulator -= dt;

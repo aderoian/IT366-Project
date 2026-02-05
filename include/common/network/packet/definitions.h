@@ -3,25 +3,24 @@
 
 #include <stdint.h>
 
+#include "common/types.h"
+
 /**
  * @brief List of all packets.
  */
 #define PACKET_LIST(X) \
-X(c2s_player_input,    C2S_PLAYER_INPUT,    PLAYER_INPUT_FIELDS)
+X(c2s_player_input_snapshot, C2S_PLAYER_INPUT_SNAPSHOT, PLAYER_INPUT_SNAPSHOT_FIELDS)
 
 /**
  * @brief Fields for each packet.
  */
-#define PLAYER_INPUT_FIELDS(F) \
-F(uint64_t, clientTick) \
-F(uint64_t, lastServerTick) \
-F(int32_t,    axisX) \
-F(int32_t,    axisY)
+#define PLAYER_INPUT_SNAPSHOT_FIELDS(F) \
+F(player_input_command, inputCommand, CUSTOM) \
 
 /**
  * @brief Generated packet structures.
  */
-#define FIELD(type, name) type name;
+#define FIELD(type, name, _) type##_t name;
 
 #define PACKET_STRUCT(name, id, fields) \
 typedef struct name##_packet_s { \
