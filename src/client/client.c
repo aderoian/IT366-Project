@@ -18,7 +18,7 @@
 void client_tickLoop(Client* client);
 void client_render(Client *client, uint64_t alpha);
 
-static Client g_client = {0};
+Client g_client = {0};
 
 void client_run(void);
 
@@ -67,8 +67,6 @@ int client_main(void) {
     mutex_unlock(&g_client.lock);
 
     log_info("Client running");
-
-    player_spawn_immobile(gfc_vector2d(300, 200), "images/pointer.png");
 
     client_tickLoop(&g_client);
 
@@ -127,15 +125,15 @@ void client_tickLoop(Client* client) {
             entity_think_all();
             entity_update_all(deltaUpdate);
 
-            c2s_player_input_snapshot_packet_t packet;
-            player_input_command_t inputCommand = {
-                .clientTick = SDL_GetTicks64(),
-                .lastServerTick = 0, // This would be updated with the last known server tick
-                .axisX = 1,
-                .axisY = -1,
-            };
-            create_c2s_player_input_snapshot(&packet, &inputCommand);
-            client_network_send(client->network, PACKET_C2S_PLAYER_INPUT_SNAPSHOT, &packet);
+            // c2s_player_input_snapshot_packet_t packet;
+            // player_input_command_t inputCommand = {
+            //     .clientTick = SDL_GetTicks64(),
+            //     .lastServerTick = 0, // This would be updated with the last known server tick
+            //     .axisX = 1,
+            //     .axisY = -1,
+            // };
+            // create_c2s_player_input_snapshot(&packet, &inputCommand);
+            // client_network_send(client->network, PACKET_C2S_PLAYER_INPUT_SNAPSHOT, &packet);
 
             phys_step(deltaUpdate);
             accumulator -= dt;

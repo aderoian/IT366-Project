@@ -8,7 +8,7 @@
 #include <math.h>
 
 #include "common/time.h"
-#include "server/network/network.h"
+#include "../../include/server/network.h"
 
 Server g_server = {0};
 

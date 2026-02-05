@@ -600,7 +600,7 @@ static inline void net_udp_host_bandwidth_limit(const net_udp_host_t *host, cons
  * @param packet Pointer to the net_udp_packet_t to send.
  * @return 0 on success, or a negative value on failure.
  */
-#define net_tcp_host_client_send(host, channelID, packet) net_udp_peer_send(host->serverPeer, channelID, packet)
+#define net_udp_host_client_send(host, channelID, packet) net_udp_peer_send(host->serverPeer, channelID, packet)
 
 /**
  * @brief Get the server peer for the client host.

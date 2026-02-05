@@ -76,3 +76,7 @@ target_link_libraries(gf2d PRIVATE
         pthread
         m
 )
+
+target_compile_options(gf2d PRIVATE
+        $<$<CONFIG:Debug>:-g3 -O0 -Wall -Wextra>
+)

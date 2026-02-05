@@ -36,4 +36,6 @@ void server_network_stop(server_network_t *network);
 
 void server_network_tick(server_network_t *network);
 
+void server_network_send(server_network_t *network, net_udp_peer_t *peer, uint8_t packetID, void *context);
+
 #endif /* SERVER_NETWORK_H */

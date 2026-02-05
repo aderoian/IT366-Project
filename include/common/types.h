@@ -44,24 +44,24 @@ typedef size_t buffer_offset_t;
  * F(vector3, CUSTOM, velocity)
  */
 #define PACKET_TYPE_LIST(X)         \
-X(net_uint8,  PRIMITIVE, uint8_t )  \
-X(net_uint16, PRIMITIVE, uint16_t)  \
-X(net_uint32, PRIMITIVE, uint32_t)  \
-X(net_uint64, PRIMITIVE, uint64_t)  \
-X(net_int8,   PRIMITIVE, int8_t )   \
-X(net_int16,  PRIMITIVE, int16_t)   \
-X(net_int32,  PRIMITIVE, int32_t)   \
-X(net_int64,  PRIMITIVE, int64_t)   \
-X(net_float,  PRIMITIVE, float )    \
-X(net_double, PRIMITIVE, double)    \
+X(net_uint8_t,  PRIMITIVE, uint8_t )  \
+X(net_uint16_t, PRIMITIVE, uint16_t)  \
+X(net_uint32_t, PRIMITIVE, uint32_t)  \
+X(net_uint64_t, PRIMITIVE, uint64_t)  \
+X(net_int8_t,   PRIMITIVE, int8_t )   \
+X(net_int16_t,  PRIMITIVE, int16_t)   \
+X(net_int32_t,  PRIMITIVE, int32_t)   \
+X(net_int64_t,  PRIMITIVE, int64_t)   \
+X(net_float_t,  PRIMITIVE, float )    \
+X(net_double_t, PRIMITIVE, double)    \
 \
-X(player_input_command, CUSTOM, PLAYER_INPUT_COMMAND_FIELDS)
+X(player_input_command_t, CUSTOM, PLAYER_INPUT_COMMAND_FIELDS)
 
 #define PLAYER_INPUT_COMMAND_FIELDS(F)   \
-F(net_uint64, PRIMITIVE, clientTick)     \
-F(net_uint64, PRIMITIVE, lastServerTick) \
-F(net_int32,  PRIMITIVE, axisX)          \
-F(net_int32,  PRIMITIVE, axisY)
+F(net_uint64_t, PRIMITIVE, clientTick)     \
+F(net_uint64_t, PRIMITIVE, lastServerTick) \
+F(net_int32_t,  PRIMITIVE, axisX)          \
+F(net_int32_t,  PRIMITIVE, axisY)
 
 /**
  * @internal Below are macros to generate type definitions based on the PACKET_TYPE_LIST.
@@ -70,7 +70,7 @@ F(net_int32,  PRIMITIVE, axisY)
 /**
  * Generates the struct definition for a CUSTOM type.
  */
-#define FIELD(type, _, name) type##_t name;
+#define FIELD(type, _, name) type name;
 #define CUSTOM_STRUCT_DEF(name, fields) \
 struct name##_s { \
 fields(FIELD) \
@@ -80,8 +80,8 @@ fields(FIELD) \
  * Generates the type definition for a type based on its kind (PRIMITIVE or CUSTOM).
  */
 #define GEN_TYPE_DEF(name, type, def) type##_TYPE_DEF(name, def)
-#define PRIMITIVE_TYPE_DEF(name, def) typedef def name##_t;
-#define CUSTOM_TYPE_DEF(name, def) typedef CUSTOM_STRUCT_DEF(name, def) name##_t;
+#define PRIMITIVE_TYPE_DEF(name, def) typedef def name;
+#define CUSTOM_TYPE_DEF(name, def) typedef CUSTOM_STRUCT_DEF(name, def) name;
 
 /**
  * Generate all type definitions.

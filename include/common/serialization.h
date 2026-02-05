@@ -31,7 +31,7 @@ float read_float(buffer_t buffer, buffer_offset_t *offset);
 double read_double(buffer_t buffer, buffer_offset_t *offset);
 
 #define SERIALIZE_PRIMITIVE(name, def)                                                          \
-static inline void serialize_##name(buffer_t buffer, buffer_offset_t *offset, name##_t value) { \
+static inline void serialize_##name(buffer_t buffer, buffer_offset_t *offset, name value) {     \
     write_##def(buffer, offset, value);                                                         \
 }
 
@@ -39,7 +39,7 @@ static inline void serialize_##name(buffer_t buffer, buffer_offset_t *offset, na
 static inline void deserialize_##name(   \
 buffer_t buffer,                         \
 buffer_offset_t *offset,                 \
-name##_t *value) {                       \
+name *value) {                           \
 *value = read_##def(buffer, offset);     \
 }
 
@@ -47,7 +47,7 @@ name##_t *value) {                       \
 static inline void serialize_##name(   \
 buffer_t buffer,                       \
 buffer_offset_t *offset,               \
-const name##_t *value) {                     \
+const name *value) {                   \
 fields(GEN_SERIALIZE_FIELD)            \
 }
 
@@ -55,7 +55,7 @@ fields(GEN_SERIALIZE_FIELD)            \
 static inline void deserialize_##name(   \
 buffer_t buffer,                         \
 buffer_offset_t *offset,                 \
-name##_t *value) {                       \
+name *value) {                           \
 fields(GEN_DESERIALIZE_FIELD)            \
 }
 

@@ -3,7 +3,7 @@
 #include "common/logger.h"
 #include "common/types.h"
 #include "common/network/packet/handler.h"
-#include "server/network/network.h"
+#include "../../../include/server/network.h"
 
 void server_network_handle_data(net_udp_packet_t *rawPacket, net_udp_peer_t *peer);
 
@@ -126,4 +126,19 @@ void server_network_handle_data(net_udp_packet_t *rawPacket, net_udp_peer_t *pee
     }
 
     net_udp_packet_destroy(rawPacket);
+}
+
+void server_network_send(server_network_t *network, net_udp_peer_t *peer, uint8_t packetID, void *context) {
+    buffer_t buf = (buffer_t) malloc(1024); // FIXME: packet pooling
+    buffer_offset_t off = 0;
+    net_udp_packet_t *packet;
+
+    if (!network || !network->running) {
+        free(buf);
+        return;
+    }
+
+    packet_send_table[packetID](packetID, context, buf, &off);
+    packet = net_udp_packet_create(buf, off, NET_UDP_FLAG_RELIABLE);
+    net_udp_peer_send(peer, 0, packet);
 }
