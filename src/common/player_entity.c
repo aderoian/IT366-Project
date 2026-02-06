@@ -7,6 +7,10 @@
 
 #include "common/player_entity.h"
 
+#include "client/camera.h"
+
+void player_update(Entity *ent, float deltaTime);
+
 Entity * player_spawn(GFC_Vector2D pos, const char * sprite) {
     Entity *ent;
     Sprite *spriteImage;
@@ -27,6 +31,7 @@ Entity * player_spawn(GFC_Vector2D pos, const char * sprite) {
     }
 
     ent->think = player_think;
+    ent->update = player_update;
 
     ent->mass = 10.0f;
     ent->invMass = 1.0f / ent->mass;
@@ -66,6 +71,14 @@ Entity * player_spawn_immobile(GFC_Vector2D pos, const char * sprite) {
 }
 
 void player_think(Entity *ent) {
+
+}
+
+void player_update(Entity *ent, float deltaTime) {
+    GFC_Vector2D position, mousePosition;
+
+    entity_update_animated(ent, deltaTime);
+
     if (gfc_input_command_down("up")) {
         //phys_addImpulse(ent, gfc_vector2d(0, -10));
         ent->position.y -= 10;
@@ -82,4 +95,8 @@ void player_think(Entity *ent) {
         //phys_addImpulse(ent, gfc_vector2d(10, 0));
         ent->position.x += 10;
     }
+
+    position = ent->position;
+    camera_get_mouse_world_position(&g_camera, &mousePosition);
+    ent->rotation = atan2f(mousePosition.y - position.y, mousePosition.x - position.x) * 180.0f / M_PI;
 }
