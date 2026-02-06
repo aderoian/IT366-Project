@@ -5,11 +5,15 @@
 #include "common/thread/mutex.h"
 #include "common/entity.h"
 
+#include "common/player_entity.h"
+
 #include "client/animation.h"
 #include "client/gf2d_graphics.h"
 #include "client/gf2d_sprite.h"
 
 #include "client/client.h"
+
+#include "client/camera.h"
 
 void client_tickLoop(Client* client);
 void client_render(Client *client, uint64_t alpha);
@@ -40,6 +44,8 @@ int client_main(void) {
     entity_init(1024);
     phys_init(1024);
 
+    camera_init(&g_camera);
+
     // Init network
     g_client.network = client_network_create(&(network_settings_t){
         .channelLimit = 4,
@@ -53,14 +59,16 @@ int client_main(void) {
         return -1;
     }
 
-    if (client_network_start(g_client.network, "127.0.0.1", "12345") < 0) {
-        log_error("Failed to connect to server");
-        return -1;
-    }
-
     mutex_lock(&g_client.lock);
     g_client.state = CLIENT_RUNNING;
     mutex_unlock(&g_client.lock);
+
+    g_client.renderState.background = gf2d_sprite_load_image("images/backgrounds/bg_flat.png");
+
+    Entity *ent = player_spawn(gfc_vector2d(100, 100), "images/pointer.png");
+    player_spawn_immobile(gfc_vector2d(300, 300), "images/pointer.png");
+
+    camera_set_target(&g_camera, ent);
 
     log_info("Client running");
 
@@ -121,6 +129,8 @@ void client_tickLoop(Client* client) {
             entity_think_all();
             entity_update_all(deltaUpdate);
 
+            camera_update(&g_camera);
+
             // c2s_player_input_snapshot_packet_t packet;
             // player_input_command_t inputCommand = {
             //     .clientTick = SDL_GetTicks64(),
@@ -131,7 +141,7 @@ void client_tickLoop(Client* client) {
             // create_c2s_player_input_snapshot(&packet, &inputCommand);
             // client_network_send(client->network, PACKET_C2S_PLAYER_INPUT_SNAPSHOT, &packet);
 
-            phys_step(deltaUpdate);
+            //phys_step(deltaUpdate);
             accumulator -= dt;
 
             if (gfc_input_command_down("exit")) {
@@ -147,6 +157,8 @@ void client_tickLoop(Client* client) {
 
 void client_render(Client* client, uint64_t alpha) {
     gf2d_graphics_clear_screen();
+
+    gf2d_sprite_draw_image(client->renderState.background, gfc_vector2d(0, 0));
 
     entity_draw_all();
 }

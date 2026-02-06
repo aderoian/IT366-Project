@@ -14,12 +14,18 @@ typedef enum ClientState_E {
     CLIENT_STOPPED = 6,
 } ClientState;
 
+typedef struct client_render_state_s {
+    struct Sprite_S* background;
+} client_render_state_t;
+
 typedef struct Client_S {
     ClientState state;
     mutex_t lock;
 
     client_network_t *network;
     player_t *player;
+
+    client_render_state_t renderState;
 } Client;
 
 extern Client g_client;

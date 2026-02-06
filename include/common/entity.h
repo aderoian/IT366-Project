@@ -30,17 +30,17 @@ typedef struct Entity_S {
 } Entity;
 
 void entity_init(uint32_t maxEnts);
-void entity_close();
+void entity_close(void);
 
-Entity *entity_new();
-Entity *entity_new_animated();
+Entity *entity_new(void);
+Entity *entity_new_animated(void);
 void entity_free(Entity *ent);
 void entity_draw(Entity *ent);
 
 void entity_draw_animated(Entity *ent);
 void entity_update_animated(Entity *ent, float deltaTime);
 
-void entity_think_all();
+void entity_think_all(void);
 void entity_update_all(float deltaTime);
 void entity_draw_all();
 

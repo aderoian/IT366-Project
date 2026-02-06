@@ -32,7 +32,7 @@ Entity * player_spawn(GFC_Vector2D pos, const char * sprite) {
     ent->invMass = 1.0f / ent->mass;
     gfc_vector2d_copy(ent->localBounds[1], gfc_vector2d(32, 32));
 
-    phys_addRigidbody(ent);
+    //phys_addRigidbody(ent);
 
     return ent;
 }
@@ -67,15 +67,19 @@ Entity * player_spawn_immobile(GFC_Vector2D pos, const char * sprite) {
 
 void player_think(Entity *ent) {
     if (gfc_input_command_down("up")) {
-        phys_addImpulse(ent, gfc_vector2d(0, -10));
+        //phys_addImpulse(ent, gfc_vector2d(0, -10));
+        ent->position.y -= 10;
     }
     if (gfc_input_command_down("down")) {
-        phys_addImpulse(ent, gfc_vector2d(0, 10));
+        //phys_addImpulse(ent, gfc_vector2d(0, 10));
+        ent->position.y += 10;
     }
     if (gfc_input_command_down("left")) {
-        phys_addImpulse(ent, gfc_vector2d(-10, 0));
+        //phys_addImpulse(ent, gfc_vector2d(-10, 0));
+        ent->position.x -= 10;
     }
     if (gfc_input_command_down("right")) {
-        phys_addImpulse(ent, gfc_vector2d(10, 0));
+        //phys_addImpulse(ent, gfc_vector2d(10, 0));
+        ent->position.x += 10;
     }
 }
