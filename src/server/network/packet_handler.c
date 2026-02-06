@@ -1,6 +1,6 @@
 #include "common/logger.h"
 #include "common/network/packet/handler.h"
-#include "server/network.h"
+#include "server/server_network.h"
 #include "server/server.h"
 
 void handle_c2s_player_input_snapshot(const c2s_player_input_snapshot_packet_t *packet, void *peer) {

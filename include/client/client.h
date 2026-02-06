@@ -2,7 +2,7 @@
 #define CLIENT_H
 
 #include "common/player.h"
-#include "client/network.h"
+#include "client/client_network.h"
 
 typedef enum ClientState_E {
     CLIENT_IDLE = 0,

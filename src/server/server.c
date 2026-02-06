@@ -8,7 +8,7 @@
 #include <math.h>
 
 #include "common/time.h"
-#include "../../include/server/network.h"
+#include "../../include/server/server_network.h"
 
 Server g_server = {0};
 
@@ -41,8 +41,8 @@ int server_startup(Server *server) {
     log_info("Starting server...");
 
     // FIXME: Load configuration from file or arguments
-    server_network_config_t config = {
-        .bindIP = NULL,
+    network_settings_t settings = {
+        .bindIP = "",
         .bindPort = 12345,
         .maxSessions = 1024,
         .channelLimit = 4,
@@ -51,13 +51,13 @@ int server_startup(Server *server) {
     };
 
     // Initialize server subsystems here (networking, database, etc.)
-    server->network = server_network_create(&config);
+    server->network = server_network_create(&settings);
     if (!server->network) {
         log_error("Failed to create server network");
         return 0;
     }
 
-    log_info("Starting server network on port %u...", config.bindPort);
+    log_info("Starting server network on port %u...", settings.bindPort);
     if (!server_network_start(server->network)) {
         log_error("Failed to start server network");
         server_network_destroy(server->network);
@@ -124,7 +124,7 @@ uint64_t server_tick(Server *server, const uint64_t tickTimeMs) {
 
     server->tickCounter++;
 
-    server_network_tick(server->network);
+    network_tick(&server->network->baseNetwork);
 
     tickDuration = time_now_ms() - tickTimeMs;
     server->currentTps = fminf(SERVER_TARGET_TICKRATE, 1000.0f / (float)tickDuration);
