@@ -4,6 +4,7 @@
 #include "common/logger.h"
 #include "common/thread/mutex.h"
 #include "common/entity.h"
+#include "common/tower.h"
 
 #include "common/player_entity.h"
 
@@ -12,8 +13,8 @@
 #include "client/gf2d_sprite.h"
 
 #include "client/client.h"
-
 #include "client/camera.h"
+#include "common/def.h"
 
 void client_tickLoop(Client* client);
 void client_render(Client *client, uint64_t alpha);
@@ -40,9 +41,12 @@ int client_main(void) {
         0);
     gf2d_graphics_set_frame_delay(16);
     gf2d_sprite_init(1024);
+    def_init(32);
     animation_manager_init(256);
     entity_init(1024);
     phys_init(1024);
+    tower_init(32);
+    tower_load_defs("def/towers.json");
 
     camera_init(&g_camera);
 
