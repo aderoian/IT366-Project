@@ -1,7 +1,7 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 #include "gfc_vector.h"
-#include "common/entity.h"
+#include "../common/game/entity.h"
 
 typedef struct camera_s {
     GFC_Vector2D position;

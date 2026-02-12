@@ -5,7 +5,7 @@
 #include "client/animation.h"
 #include "client/gf2d_sprite.h"
 
-#include "common/player_entity.h"
+#include "../../../include/common/game/player_entity.h"
 
 #include "client/camera.h"
 

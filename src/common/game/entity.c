@@ -1,4 +1,4 @@
-#include "common/entity.h"
+#include "../../../include/common/game/entity.h"
 
 #include "client/animation.h"
 #include "client/gf2d_sprite.h"
@@ -65,6 +65,8 @@ void entity_free(Entity* ent) {
     } else {
         if (ent->model) gf2d_sprite_free(ent->model);
     }
+
+    if (ent->data) free(ent->data);
 
     memset(ent, 0, sizeof(Entity));
 }

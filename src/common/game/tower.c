@@ -1,15 +1,21 @@
-#include "common/tower.h"
-
 #include "simple_json.h"
 #include "common/def.h"
 #include "common/logger.h"
 
+#include "common/game/tower.h"
+
+#include "client/gf2d_sprite.h"
+#include "common/game/projectile.h"
+
 tower_def_manager_t g_towerDefManager;
 tower_manager_t g_towerManager;
 
+void tower_entity_think(Entity *ent);
+void tower_entity_update(Entity *ent, float deltaTime);
+
 void tower_init(const uint32_t maxTowers) {
     uint32_t i;
-    g_towerManager.towers = gfc_allocate_array(sizeof(tower_t), maxTowers);
+    g_towerManager.towers = gfc_allocate_array(sizeof(tower_state_t), maxTowers);
     g_towerManager.towerIDs = gfc_allocate_array(sizeof(uint32_t), maxTowers);
     g_towerManager.freeSlots = gfc_allocate_array(sizeof(uint32_t), maxTowers);
     g_towerManager.numTowers = 0;
@@ -41,7 +47,7 @@ const tower_def_t *tower_def_get(const char *name) {
     return NULL; // Not found
 }
 
-tower_t *tower_create_by_name(const char* name, const GFC_Vector2D position) {
+tower_state_t *tower_create_by_name(const char* name, const GFC_Vector2D position) {
     const tower_def_t *def = tower_def_get(name);
     if (!def) {
         log_error("Tower definition not found for name: %s", name);
@@ -50,8 +56,9 @@ tower_t *tower_create_by_name(const char* name, const GFC_Vector2D position) {
     return tower_create_by_def(def, position);
 }
 
-tower_t *tower_create_by_def(const tower_def_t *def, const GFC_Vector2D position) {
-    tower_t * tower;
+tower_state_t *tower_create_by_def(const tower_def_t *def, const GFC_Vector2D position) {
+    tower_state_t * tower;
+    Entity *ent;
     if (g_towerManager.numFreeSlots == 0) {
         log_error("No free tower slots available");
         return NULL;
@@ -61,16 +68,30 @@ tower_t *tower_create_by_def(const tower_def_t *def, const GFC_Vector2D position
     tower = &g_towerManager.towers[slotIndex];
 
     tower->id = slotIndex;
-    tower->tilePos = position; // TODO: Proper tile position calculation based on world position and tile size
+    tower->tilePos.x = 0; tower->tilePos.y = 0; // TODO: Proper tile position calculation based on world position and tile size
     tower->worldPos = position;
     tower->health = def->maxHealth[0];
-    tower->towerDef = def;
+    tower->def = def;
 
     // TODO: create entity based on tower definition's modelDef and assign to tower->entity
+    ent = entity_new();
+        if (!ent) {
+            log_error("Failed to create entity for tower");
+            g_towerManager.freeSlots[g_towerManager.numFreeSlots++] = slotIndex; // Return slot to free stack
+            return NULL;
+        }
+
+    ent->think = tower_entity_think;
+    ent->update = tower_entity_update;
+    ent->model = gf2d_sprite_load_image(def->modelDef.baseSpritePath);
+    ent->position = position;
+    ent->data = tower;
+    tower->entity = ent;
+
     return tower;
 }
 
-void tower_destroy(tower_t *tower) {
+void tower_destroy(tower_state_t *tower) {
     if (!tower) return;
 
     g_towerManager.freeSlots[g_towerManager.numFreeSlots++] = tower->id;
@@ -120,7 +141,7 @@ void tower_load_defs(const char *filePath) {
 
         valueArray = def_data_get_array(towerJson, "maxHealth");
         for (j = 0; j < TOWER_MAX_LEVEL; j++) {
-            sj_get_int32_value(def_data_array_get_nth(valueArray, j), &def->maxHealth[j]);
+            sj_get_float_value(def_data_array_get_nth(valueArray, j), &def->maxHealth[j]);
         }
 
         weaponJson = def_data_get_array(towerJson, "weapons");
@@ -150,6 +171,14 @@ void tower_load_defs(const char *filePath) {
                 sj_get_float_value(def_data_array_get_nth(valueArray, k), &weaponDef->bulletSpeed[k]);
             }
 
+            str = def_data_get_string(weaponDefJson, "projectileSprite");
+            if (!str || strlen(str) >= sizeof(weaponDef->projectileSprite)) {
+                log_error("Invalid or missing projectileSprite for weapon definition at index %u of tower definition at index %u", j, i);
+                continue;
+            }
+            strncpy(weaponDef->projectileSprite, str, sizeof(weaponDef->projectileSprite) - 1);
+            weaponDef->projectileSprite[sizeof(weaponDef->projectileSprite) - 1] = '\0';
+
             weaponDef->flags = 0;
             def_data_get_int(weaponDefJson, "directional", &flag);
             if (flag) weaponDef->flags |= TOWER_WEAPON_FLAG_DIRECTIONAL;
@@ -157,15 +186,12 @@ void tower_load_defs(const char *filePath) {
             if (flag) weaponDef->flags |= TOWER_WEAPON_FLAG_PIERCING;
             def_data_get_int(weaponDefJson, "areaEffect", &flag);
             if (flag) weaponDef->flags |= TOWER_WEAPON_FLAG_AREA_EFFECT;
-            if (weaponDef->flags & TOWER_WEAPON_FLAG_DIRECTIONAL) {
                 valueArray = def_data_get_array(weaponDefJson, "direction");
                 sj_get_float_value(def_data_array_get_nth(valueArray, 0), &weaponDef->direction.x);
                 sj_get_float_value(def_data_array_get_nth(valueArray, 1), &weaponDef->direction.y);
-            }
         }
 
         modelDefJson = def_data_get_obj(towerJson, "model");
-
         str = def_data_get_string(modelDefJson, "base");
         if (!str || strlen(str) >= sizeof(def->spritePath)) {
             log_error("Invalid or missing spritePath for tower definition at index %u", i);
@@ -183,5 +209,64 @@ void tower_load_defs(const char *filePath) {
 
         strncpy(def->modelDef.baseSpritePath, str, sizeof(def->modelDef.baseSpritePath) - 1);
         def->modelDef.baseSpritePath[sizeof(def->modelDef.baseSpritePath) - 1] = '\0';
+    }
+}
+
+int tower_try_shoot(tower_state_t *tower, const float deltaTime) {
+    if (!tower || tower->def->numWeapons <= 0) return 0;
+
+    if (tower->cooldown > 0) {
+        tower->cooldown -= deltaTime;
+        if (tower->cooldown < 0) tower->cooldown = 0;
+    }
+
+    if (tower->cooldown <= 0) {
+        tower->cooldown = tower->def->weaponDefs[0].fireRate[tower->level]; // TODO: Handle multiple weapons and levels properly
+        return 1; // Can shoot
+    }
+
+    return 0; // Still cooling down
+}
+
+void tower_shoot(tower_state_t *tower, int weaponIndex) {
+    const tower_weapon_def_t *weaponDef;
+    int level;
+    if (!tower || weaponIndex < 0 || weaponIndex >= tower->def->numWeapons) return;
+
+    level = tower->level;
+    weaponDef = &tower->def->weaponDefs[weaponIndex];
+    projectile_spawn(
+        weaponDef->bulletSpeed[level],
+        weaponDef->damage[level],
+        weaponDef->range[level],
+        weaponDef->direction,
+        weaponDef->projectileSprite,
+        tower
+    );
+}
+
+void tower_shoot_all(tower_state_t *tower) {
+    int i;
+    if (!tower || tower->def->numWeapons <= 0) return;
+    for (i = 0; i < tower->def->numWeapons; i++) {
+        tower_shoot(tower, i);
+    }
+}
+
+void tower_entity_think(Entity *ent) {
+    if (!ent) return;
+    tower_state_t *tower = (tower_state_t *)ent->data;
+    if (!tower) return;
+
+    // TODO: Implement tower thinking behavior, such as targeting enemies, deciding when to shoot, etc.
+}
+
+void tower_entity_update(Entity *ent, float deltaTime) {
+    if (!ent || ! ent->data) return;
+    tower_state_t *tower = (tower_state_t *)ent->data;
+    if (!tower) return;
+
+    if (tower_try_shoot(tower, deltaTime)) {
+        tower_shoot_all(tower);
     }
 }

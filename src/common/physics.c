@@ -3,7 +3,7 @@
 
 #include "common/physics.h"
 
-#include "common/entity.h"
+#include "../../include/common/game/entity.h"
 
 #define SOLVER_ITERATIONS 15
 

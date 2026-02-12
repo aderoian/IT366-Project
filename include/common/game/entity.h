@@ -22,6 +22,7 @@ typedef struct Entity_S {
     float invMass;
     GFC_Vector2D scale;
     uint32_t flags;
+    void *data;
 
     void *model; // Sprite or AnimatedSprite, depends on animated flag
     void (*think)(struct Entity_S *ent);

@@ -1,4 +1,4 @@
-#include "common/player.h"
+#include "../../../include/common/game/player.h"
 
 #include "gfc_types.h"
 

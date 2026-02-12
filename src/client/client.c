@@ -3,10 +3,10 @@
 
 #include "common/logger.h"
 #include "common/thread/mutex.h"
-#include "common/entity.h"
-#include "common/tower.h"
+#include "../../include/common/game/entity.h"
+#include "../../include/common/game/tower.h"
 
-#include "common/player_entity.h"
+#include "../../include/common/game/player_entity.h"
 
 #include "client/animation.h"
 #include "client/gf2d_graphics.h"
@@ -73,6 +73,8 @@ int client_main(void) {
     player_spawn_immobile(gfc_vector2d(300, 300), "images/pointer.png");
 
     camera_set_target(&g_camera, ent);
+
+    tower_create_by_name("Basic Tower", gfc_vector2d(500, 500));
 
     log_info("Client running");
 

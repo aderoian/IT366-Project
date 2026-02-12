@@ -1,7 +1,7 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
-#include "common/player.h"
+#include "../common/game/player.h"
 #include "client/client_network.h"
 
 typedef enum ClientState_E {
