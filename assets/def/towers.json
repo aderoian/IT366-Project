@@ -18,7 +18,7 @@
           "range": [200, 240, 280, 320, 360],
           "fireRate": [1.0, 0.9, 0.8, 0.7, 0.6],
           "bulletSpeed": [200, 220, 240, 260, 280],
-          "projectileSprite": "images/pointer.png",
+          "projectileSprite": "images/tower/projectile/projectile_1.png",
           "directional": false,
           "piercing": false,
           "areaEffect": false,
@@ -28,8 +28,8 @@
       ],
       "production": [],
       "model": {
-        "base": "images/pointer.png",
-        "head": "images/pointer.png"
+        "base": "images/tower/base/base_1.png",
+        "head": "images/tower/head/tower_1.png"
       }
     }
   ]
