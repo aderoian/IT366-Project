@@ -31,6 +31,6 @@ int network_init(network_t *network, const network_settings_t *settings, void *n
 void network_deinit(network_t *network);
 
 void network_tick(network_t *network);
-void network_send(network_t *network, net_udp_peer_t peer, void *pkt);
+int network_send(net_udp_peer_t *peer, uint8_t pktId, void *pkt, uint32_t flags);
 
 #endif /* COMMON_NETWORK_H */

@@ -15,6 +15,7 @@ typedef struct server_network_s {
     server_session_t *sessions;
     size_t maxSessions;
     size_t currentSessionCount;
+    uint64_t nextSessionID;
 } server_network_t;
 
 server_network_t *server_network_create(const network_settings_t *settings);
@@ -22,5 +23,7 @@ void server_network_destroy(server_network_t *network);
 
 int server_network_start(server_network_t *network);
 void server_network_stop(server_network_t *network);
+
+int server_network_send(server_network_t *network, server_session_t *session, uint8_t packetID, void *context, uint32_t flags);
 
 #endif /* SERVER_NETWORK_H */

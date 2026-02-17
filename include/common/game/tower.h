@@ -13,6 +13,13 @@
 #define TOWER_WEAPON_FLAG_PIERCING    0x02 // Indicates the tower's weapon slows enemies
 #define TOWER_WEAPON_FLAG_AREA_EFFECT 0x04 // Indicates the tower's weapon affects an area
 
+typedef enum tower_type_e {
+    TOWER_TYPE_DEFENSIVE = 0,
+    TOWER_TYPE_PRODUCTION = 1,
+    TOWER_TYPE_PASSIVE = 2,
+    TOWER_TYPE_STASH = 3,
+} tower_type_t;
+
 typedef struct tower_weapon_def_s {
     float damage[TOWER_MAX_LEVEL];
     float range[TOWER_MAX_LEVEL];
@@ -31,6 +38,7 @@ typedef struct tower_model_def_s {
 typedef struct tower_def_s {
     char name[32];
     char description[256];
+    tower_type_t type;
     char spritePath[64];
     float maxHealth[TOWER_MAX_LEVEL];
     int numWeapons;

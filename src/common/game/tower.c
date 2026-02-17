@@ -103,6 +103,18 @@ void tower_destroy(tower_state_t *tower) {
     }
 }
 
+void tower_type_from_string(const char *str, tower_type_t *outType) {
+    if (strcmp(str, "defensive") == 0) {
+        *outType = TOWER_TYPE_DEFENSIVE;
+    } else if (strcmp(str, "production") == 0) {
+        *outType = TOWER_TYPE_PRODUCTION;
+    } else if (strcmp(str, "passive") == 0) {
+        *outType = TOWER_TYPE_PASSIVE;
+    } else if (strcmp(str, "stash") == 0) {
+        *outType = TOWER_TYPE_STASH;
+    }
+}
+
 void tower_load_defs(const char *filePath) {
     def_data_t *data = def_load(filePath), *towerJson, *towersArray;
     def_data_t *valueArray, *weaponJson, *weaponDefJson, *modelDefJson;
@@ -138,6 +150,13 @@ void tower_load_defs(const char *filePath) {
         }
         strncpy(def->description, str, sizeof(def->description) - 1);
         def->description[sizeof(def->description) - 1] = '\0';
+
+        str = def_data_get_string(towerJson, "type");
+        if (!str) {
+            log_error("Missing type for tower definition at index %u", i);
+            continue;
+        }
+        tower_type_from_string(str, &def->type);
 
         valueArray = def_data_get_array(towerJson, "maxHealth");
         for (j = 0; j < TOWER_MAX_LEVEL; j++) {

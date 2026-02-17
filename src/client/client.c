@@ -3,10 +3,8 @@
 
 #include "common/logger.h"
 #include "common/thread/mutex.h"
-#include "../../include/common/game/entity.h"
-#include "../../include/common/game/tower.h"
-
-#include "../../include/common/game/player_entity.h"
+#include "common/game/entity.h"
+#include "common/game/tower.h"
 
 #include "client/animation.h"
 #include "client/gf2d_graphics.h"
@@ -15,6 +13,8 @@
 #include "client/client.h"
 #include "client/camera.h"
 #include "common/def.h"
+#include "common/network/packet/definitions.h"
+#include "common/network/packet/io.h"
 
 void client_tickLoop(Client* client);
 void client_render(Client *client, uint64_t alpha);
@@ -69,12 +69,14 @@ int client_main(void) {
 
     g_client.renderState.background = gf2d_sprite_load_image("images/backgrounds/bg_flat.png");
 
-    Entity *ent = player_spawn(gfc_vector2d(100, 100), "images/pointer.png");
-    player_spawn_immobile(gfc_vector2d(300, 300), "images/pointer.png");
+    //tower_create_by_name("Basic Tower", gfc_vector2d(500, 500));
 
-    camera_set_target(&g_camera, ent);
+    client_connect(&g_client, "127.0.0.1", "12345");
+    c2s_player_join_request_packet_t pkt;
+    create_c2s_player_join_request(&pkt);
 
-    tower_create_by_name("Basic Tower", gfc_vector2d(500, 500));
+    g_client.state = CLIENT_JOINING;
+    client_send_to_server(&g_client, PACKET_C2S_PLAYER_JOIN_REQUEST, &pkt, ENET_PACKET_FLAG_RELIABLE);
 
     log_info("Client running");
 
@@ -91,6 +93,30 @@ void client_close(void) {
     mutex_unlock(&g_client.lock);
 
     mutex_destroy(&g_client.lock);
+}
+
+int client_connect(Client* client, const char *serverIP, const char *serverPort) {
+    if (!client || !client->network) {
+        return -1;
+    }
+
+    return client_network_start(client->network, serverIP, serverPort);
+}
+
+void client_disconnect(Client* client) {
+    if (!client || !client->network) {
+        return;
+    }
+
+    client_network_stop(client->network);
+}
+
+int client_send_to_server(Client *client, const uint8_t pktId, void *pkt, const uint32_t flags) {
+    if (!client || !pkt || !client->network) {
+        return -1;
+    }
+
+    return client_network_send(client->network, pktId, pkt, flags);
 }
 
 void client_tickLoop(Client* client) {
@@ -136,16 +162,6 @@ void client_tickLoop(Client* client) {
             entity_update_all(deltaUpdate);
 
             camera_update(&g_camera);
-
-            // c2s_player_input_snapshot_packet_t packet;
-            // player_input_command_t inputCommand = {
-            //     .clientTick = SDL_GetTicks64(),
-            //     .lastServerTick = 0, // This would be updated with the last known server tick
-            //     .axisX = 1,
-            //     .axisY = -1,
-            // };
-            // create_c2s_player_input_snapshot(&packet, &inputCommand);
-            // client_network_send(client->network, PACKET_C2S_PLAYER_INPUT_SNAPSHOT, &packet);
 
             //phys_step(deltaUpdate);
             accumulator -= dt;

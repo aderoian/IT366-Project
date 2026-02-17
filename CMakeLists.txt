@@ -77,6 +77,20 @@ target_link_libraries(gf2d PRIVATE
         m
 )
 
+target_include_directories(gf2d PRIVATE
+        ${enet_SOURCE_DIR}/include
+)
+
 target_compile_options(gf2d PRIVATE
         $<$<CONFIG:Debug>:-g3 -O0 -Wall -Wextra>
+)
+
+add_custom_command(
+        TARGET gf2d POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets ${CMAKE_SOURCE_DIR}/run/client
+)
+
+add_custom_command(
+        TARGET gf2d POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets ${CMAKE_SOURCE_DIR}/run/server
 )

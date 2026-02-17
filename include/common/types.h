@@ -57,9 +57,8 @@ X(net_double_t, PRIMITIVE, double)    \
 \
 X(player_input_command_t, CUSTOM, PLAYER_INPUT_COMMAND_FIELDS)
 
-#define PLAYER_INPUT_COMMAND_FIELDS(F)   \
-F(net_uint64_t, PRIMITIVE, clientTick)     \
-F(net_uint64_t, PRIMITIVE, lastServerTick) \
+#define PLAYER_INPUT_COMMAND_FIELDS(F)     \
+F(net_uint64_t, PRIMITIVE, sequenceNumber) \
 F(net_int32_t,  PRIMITIVE, axisX)          \
 F(net_int32_t,  PRIMITIVE, axisY)
 

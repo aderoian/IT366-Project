@@ -119,7 +119,6 @@ void entity_draw_animated(Entity *ent) {
     if (!animatedSprite) return;
 
     gfc_vector2d_sub(position, ent->position, g_camera.position);
-    //gf2d_sprite_draw_image(ent->model, position);
 
     gf2d_sprite_draw(
         animatedSprite->sprite,

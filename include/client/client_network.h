@@ -16,4 +16,6 @@ void client_network_destroy(client_network_t *network);
 int client_network_start(client_network_t *network, const char *serverIP, const char *serverPort);
 void client_network_stop(client_network_t *network);
 
+int client_network_send(client_network_t *network, uint8_t pktId, void *pkt, uint32_t flags);
+
 #endif /* CLIENT_NETWORK_H */

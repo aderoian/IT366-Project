@@ -52,3 +52,8 @@ PACKET_LIST(PACKET_CREATE)
 #undef PRIMITIVE_INIT_FIELD
 #undef CUSTOM_INIT_FIELD
 #undef PACKET_CREATE
+
+#define PACKET_SIZE(name, id, fields) size_of_##name,
+size_fn_t g_packet_sizes[PACKET_COUNT] = {
+    PACKET_LIST(PACKET_SIZE)
+};

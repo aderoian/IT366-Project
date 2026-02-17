@@ -88,3 +88,11 @@ void client_network_client_connect(struct network_s *network, const net_udp_even
 void client_network_client_disconnect(struct network_s *network, const net_udp_event_t *context) {
     log_info("Disconnected from server.");
 }
+
+int client_network_send(client_network_t *network, const uint8_t pktId, void *pkt, const uint32_t flags) {
+    if (!network || !network->connected) {
+        return -1;
+    }
+
+    return network_send(network->serverPeer, pktId, pkt, flags);
+}

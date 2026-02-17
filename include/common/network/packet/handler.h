@@ -19,25 +19,24 @@ PACKET_LIST(PACKET_RECEIVE)
 #undef PACKET_RECEIVE
 
 #define PACKET_SEND(name, id, fields) \
-void send_##name(uint8_t, void *, buffer_t, buffer_offset_t*);
+void prepare_send_##name(void *, buffer_t, buffer_offset_t*);
 
 PACKET_LIST(PACKET_SEND)
 
 #undef PACKET_SEND
 
 typedef void (*packet_receive_fn)(
-    buffer_t,
-    buffer_offset_t*,
-    void*
+    buffer_t buffer,
+    buffer_offset_t *offset,
+    void *context
 );
 
 extern packet_receive_fn packet_dispatch_table[PACKET_COUNT];
 
 typedef void (*packet_send_fn) (
-    uint8_t,
-    void *,
-    buffer_t,
-    buffer_offset_t*
+    void *context,
+    buffer_t buffer,
+    buffer_offset_t *offset
 );
 
 extern packet_send_fn packet_send_table[PACKET_COUNT];

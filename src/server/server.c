@@ -9,6 +9,8 @@
 
 #include "common/time.h"
 #include "../../include/server/server_network.h"
+#include "common/game/player.h"
+#include "server/game/player_manager.h"
 
 Server g_server = {0};
 
@@ -49,6 +51,12 @@ int server_startup(Server *server) {
         .inBandwidth = 0,
         .outBandwidth = 0,
     };
+
+    server->playerManager = player_manager_create(8);
+    if (!server->playerManager) {
+        log_error("Failed to create player manager");
+        return 0;
+    }
 
     // Initialize server subsystems here (networking, database, etc.)
     server->network = server_network_create(&settings);
@@ -197,5 +205,59 @@ void server_runCommandLoop(void) {
         } else {
             printf("Unknown command: %s", command);
         }
+    }
+}
+
+player_t *server_create_player(Server *server, struct server_session_s *session) {
+    player_t *player;
+    if (!server || !session) {
+        return NULL;
+    }
+
+    player = player_manager_add(server->playerManager, session->sessionID, "");
+    if (!player) {
+        log_error("Failed to create player for session ID %u", session->sessionID);
+        return NULL;
+    }
+
+    player->data = session;
+    log_info("Created player with ID %u for session ID %u", player->id, session->sessionID);
+    return player;
+}
+
+void server_destroy_player(struct player_s *player) {
+    if (!player) {
+        return;
+    }
+
+    player_manager_remove(g_server.playerManager, player->id);
+    log_info("Destroyed player with ID %u", player->id);
+}
+
+void server_send_packet(Server* server, const player_t *player, const uint8_t packetID, void *context, const uint32_t flags) {
+    server_session_t *session;
+    if (!server || !player) {
+        return;
+    }
+
+    session = (server_session_t *) player->data;
+    if (!session->peer) {
+        log_warn("Player ID %u does not have a valid session", player->id);
+        return;
+    }
+
+    server_network_send(server->network, session, packetID, context, flags);
+}
+
+void server_broadcast_packet(Server* server, const uint8_t packetID, void *context, const uint32_t flags) {
+    size_t i, playerCount;
+    const player_t **players;
+    if (!server) {
+        return;
+    }
+
+    players = player_manager_get_all(server->playerManager, &playerCount);
+    for (i = 0; i < playerCount; ++i) {
+        server_send_packet(server, players[i], packetID, context, flags);
     }
 }

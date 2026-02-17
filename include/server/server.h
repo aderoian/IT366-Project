@@ -9,6 +9,10 @@
 extern uint8_t __DEBUG;
 extern uint8_t _dedicatedServer;
 
+struct server_session_s;
+struct player_s;
+struct player_manager_s;
+
 #define SERVER_TARGET_TICKRATE 30
 #define SERVER_TARGET_SECONDS_PER_TICK (1.0f / SERVER_TARGET_TICKRATE)
 #define SERVER_TARGET_TICK_TIME_MS (1000.0f / SERVER_TARGET_TICKRATE)
@@ -27,6 +31,7 @@ typedef struct Server_S {
     thread_t thread;
 
     struct server_network_s *network;
+    struct player_manager_s *playerManager;
 
     uint64_t tickCounter;
     float currentTps;
@@ -39,5 +44,11 @@ extern Server g_server;
 
 int server_main(void);
 void server_close(void);
+
+struct player_s *server_create_player(Server *server, struct server_session_s *session);
+void server_destroy_player(struct player_s *player);
+
+void server_send_packet(Server* server, const struct player_s *player, uint8_t packetID, void *context, uint32_t flags);
+void server_broadcast_packet(Server* server, uint8_t packetID, void *context, uint32_t flags);
 
 #endif /* SERVER_H */

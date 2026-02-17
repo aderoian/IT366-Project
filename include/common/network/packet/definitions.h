@@ -1,8 +1,6 @@
 #ifndef NETWORK_PACKET_DEFINITIONS_H
 #define NETWORK_PACKET_DEFINITIONS_H
 
-#include <stdint.h>
-
 #include "common/types.h"
 
 /**
@@ -12,6 +10,7 @@
 X(c2s_player_join_request, C2S_PLAYER_JOIN_REQUEST, PLAYER_JOIN_REQUEST_FIELDS) \
 X(s2c_player_join_response, S2C_PLAYER_JOIN_RESPONSE, PLAYER_JOIN_RESPONSE_FIELDS) \
 X(c2s_player_input_snapshot, C2S_PLAYER_INPUT_SNAPSHOT, PLAYER_INPUT_SNAPSHOT_FIELDS) \
+X(s2c_player_state_snapshot, S2C_PLAYER_STATE_SNAPSHOT, PLAYER_STATE_SNAPSHOT_FIELDS) \
 X(s2c_player_create, S2C_PLAYER_CREATE, PLAYER_CREATE_PARAMS_FIELDS)
 
 /**
@@ -20,12 +19,18 @@ X(s2c_player_create, S2C_PLAYER_CREATE, PLAYER_CREATE_PARAMS_FIELDS)
 
 #define PLAYER_JOIN_REQUEST_FIELDS(F) \
 
-#define PLAYER_JOIN_RESPONSE_FIELDS(F) \
-F(net_uint8_t,  success, PRIMITIVE)      \
-F(net_uint32_t, playerID, PRIMITIVE)
+#define PLAYER_JOIN_RESPONSE_FIELDS(F)  \
+F(net_uint8_t,  success, PRIMITIVE)     \
+F(net_uint32_t, playerID, PRIMITIVE)    \
+F(net_float_t,  spawnX,   PRIMITIVE)    \
+F(net_float_t,  spawnY,   PRIMITIVE)
 
 #define PLAYER_INPUT_SNAPSHOT_FIELDS(F) \
 F(player_input_command_t, inputCommand, CUSTOM) \
+
+#define PLAYER_STATE_SNAPSHOT_FIELDS(F) \
+F(net_float_t, xPos, PRIMITIVE) \
+F(net_float_t, yPos, PRIMITIVE)
 
 #define PLAYER_CREATE_PARAMS_FIELDS(F) \
 F(net_uint32_t, playerID, PRIMITIVE) \

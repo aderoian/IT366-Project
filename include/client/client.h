@@ -33,4 +33,9 @@ extern Client g_client;
 int client_main(void);
 void client_close(void);
 
+int client_connect(Client* client, const char *serverIP, const char *serverPort);
+void client_disconnect(Client* client);
+
+int client_send_to_server(Client *client, uint8_t pktId, void *pkt, uint32_t flags);
+
 #endif /* CLIENT_H */

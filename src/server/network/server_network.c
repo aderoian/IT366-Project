@@ -2,7 +2,6 @@
 
 #include "common/logger.h"
 #include "common/types.h"
-#include "common/network/packet/handler.h"
 #include "server/server_network.h"
 
 server_network_t g_serverNetwork = {0};
@@ -26,6 +25,7 @@ server_network_t *server_network_create(const network_settings_t *settings) {
     }
     network->maxSessions = settings->maxSessions;
     network->currentSessionCount = 0;
+    network->nextSessionID = 0;
 
     return network;
 
@@ -102,7 +102,8 @@ void server_network_client_connect(struct network_s *network, const net_udp_even
 
     server_session_t *session = &serverNetwork->sessions[serverNetwork->currentSessionCount++];
     session->peer = context->peer;
-    session->sessionID = serverNetwork->currentSessionCount;
+    context->peer->data = session;
+    session->sessionID = serverNetwork->nextSessionID++;
 
     log_info("New client connected. Session ID: %u", session->sessionID);
 }
@@ -122,17 +123,10 @@ void server_network_client_disconnect(struct network_s *network, const net_udp_e
     }
 }
 
-void server_network_send(server_network_t *network, net_udp_peer_t *peer, uint8_t packetID, void *context) {
-    buffer_t buf = (buffer_t) malloc(1024); // FIXME: packet pooling
-    buffer_offset_t off = 0;
-    net_udp_packet_t *packet;
-
-    if (!network || !network->baseNetwork.running) {
-        free(buf);
-        return;
+int server_network_send(server_network_t *network, server_session_t *session, const uint8_t packetID, void *context, const uint32_t flags) {
+    if (!network || !session || !network->baseNetwork.running) {
+        return -1;
     }
 
-    packet_send_table[packetID](packetID, context, buf, &off);
-    packet = net_udp_packet_create(buf, off, NET_UDP_FLAG_RELIABLE);
-    net_udp_peer_send(peer, 0, packet);
+    return network_send(session->peer, packetID, context, flags);
 }
