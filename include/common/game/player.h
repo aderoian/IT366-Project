@@ -18,7 +18,8 @@ typedef struct player_s {
     GFC_Vector2D position;
 
     buf_spsc_ring_t *inputBuffer;
-    uint64_t sequenceNumber;
+    uint64_t lastProcessedInputTick;
+    uint8_t processedInput;
 } player_t;
 
 typedef struct player_input_actions_s {
@@ -41,11 +42,13 @@ Entity *player_entity_spawn(player_t *player, GFC_Vector2D pos, const char * spr
  * @environment CLIENT
  *
  * @param player The player to apply input for.
+ * @param position The current position of the player, used for calculating movement and rotation.
  * @param actions The input actions to apply.
  * @param deltaTime The time elapsed since the last update, used for movement calculations.
  * @param sync Whether to sync the input command with the server (only true for local player).
+ * @return The new position of the player after applying the input actions.
  */
-void player_input_apply(player_t *player, const player_input_actions_t *actions, float deltaTime, uint8_t sync);
+GFC_Vector2D player_input_apply(player_t *player, GFC_Vector2D position, const player_input_actions_t *actions, float deltaTime, uint8_t sync);
 
 /**
  * @brief Processes a player input command, applying it to the player's state.
@@ -55,9 +58,10 @@ void player_input_apply(player_t *player, const player_input_actions_t *actions,
  * @param cmd The input command received from the client.
  * @param deltaTime The time elapsed since the last update, used for movement calculations.
  */
-void player_input_process(player_t *player, player_input_command_t *cmd, float deltaTime);
+void player_input_process(player_t *player, const player_input_command_t *cmd, float deltaTime);
 
-void player_move(player_t *player, GFC_Vector2D direction, float speed, float deltaTime);
+void player_input_process_server(player_t *player, uint64_t tick, float xPos, float yPos);
 
+GFC_Vector2D player_move(GFC_Vector2D position, GFC_Vector2D direction, float speed, float deltaTime);
 
 #endif /* COMMON_PLAYER_H */

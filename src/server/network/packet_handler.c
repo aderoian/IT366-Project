@@ -1,11 +1,31 @@
 #include "common/logger.h"
+#include "common/game/game.h"
 #include "common/game/player.h"
 #include "common/network/packet/handler.h"
 #include "server/server_network.h"
 #include "server/server.h"
+#include "server/game/player_manager.h"
 
 void handle_c2s_player_input_snapshot(const c2s_player_input_snapshot_packet_t *packet, void *peer) {
+    player_t *player;
+    server_session_t *session;
+    if (!packet || !peer) {
+        return;
+    }
 
+    session = (server_session_t *) ((net_udp_peer_t *) peer)->data;
+    if (!session) {
+        log_warn("Received player input snapshot from peer without valid session");
+        return;
+    }
+
+    player = player_manager_get(g_server.playerManager, session->sessionID);
+    if (!player) {
+        log_warn("Received player input snapshot for non-existent player with session ID %u", session->sessionID);
+        return;
+    }
+
+    player_input_process(player, &packet->inputCommand, g_game.deltaTime);
 }
 
 void handle_c2s_player_join_request(const c2s_player_join_request_packet_t *pkt, void *peer) {

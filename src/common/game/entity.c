@@ -4,6 +4,7 @@
 #include "client/gf2d_sprite.h"
 
 #include "client/camera.h"
+#include "common/logger.h"
 
 typedef struct EntityManager_S {
     Entity *ents;

@@ -29,5 +29,5 @@ void handle_s2c_player_create(const s2c_player_create_packet_t *pkt, void *clien
 }
 
 void handle_s2c_player_state_snapshot(const s2c_player_state_snapshot_packet_t *pkt, void *client) {
-
+    player_input_process_server(g_client.player, pkt->tickNumber, pkt->xPos, pkt->yPos);
 }

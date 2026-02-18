@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+#include "common/game/entity.h"
 #include "common/thread/mutex.h"
 #include "common/thread/thread.h"
 
@@ -14,8 +15,8 @@ struct player_s;
 struct player_manager_s;
 
 #define SERVER_TARGET_TICKRATE 30
-#define SERVER_TARGET_SECONDS_PER_TICK (1.0f / SERVER_TARGET_TICKRATE)
-#define SERVER_TARGET_TICK_TIME_MS (1000.0f / SERVER_TARGET_TICKRATE)
+#define SERVER_TARGET_SECONDS_PER_TICK (1.0 / SERVER_TARGET_TICKRATE)
+#define SERVER_TARGET_TICK_TIME_MS (1000.0 / SERVER_TARGET_TICKRATE)
 
 typedef enum ServerState_E {
     SERVER_IDLE = 0,
@@ -33,11 +34,10 @@ typedef struct Server_S {
     struct server_network_s *network;
     struct player_manager_s *playerManager;
 
-    uint64_t tickCounter;
-    float currentTps;
-    float currentUse;
-    float averageTps[20];
-    float averageUse[20];
+    double currentTps;
+    double currentUse;
+    double averageTps[20];
+    double averageUse[20];
 } Server;
 
 extern Server g_server;
@@ -47,6 +47,8 @@ void server_close(void);
 
 struct player_s *server_create_player(Server *server, struct server_session_s *session);
 void server_destroy_player(struct player_s *player);
+
+Entity *server_spawn_player_entity(struct player_s *player, GFC_Vector2D pos);
 
 void server_send_packet(Server* server, const struct player_s *player, uint8_t packetID, void *context, uint32_t flags);
 void server_broadcast_packet(Server* server, uint8_t packetID, void *context, uint32_t flags);

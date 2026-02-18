@@ -8,16 +8,17 @@
 #include <math.h>
 
 #include "common/time.h"
-#include "../../include/server/server_network.h"
+#include "common/game/game.h"
 #include "common/game/player.h"
-#include "server/game/player_manager.h"
 
+#include "server/game/player_manager.h"
+#include "server/server_network.h"
 Server g_server = {0};
 
 void *server_run(void *arg);
 void server_runCommandLoop(void);
 
-uint64_t server_tick(Server *server, uint64_t tickTimeMs);
+void server_tick(Server *server, float deltaTime);
 void server_tickProcessor(Server *server);
 
 int server_main(void) {
@@ -25,6 +26,8 @@ int server_main(void) {
 
     g_server.state = SERVER_IDLE;
     mutex_init(&g_server.lock);
+
+    entity_init(1024);
 
     if (thread_create(&g_server.thread, server_run, &g_server) < 0) {
         log_fatal("Failed to create server thread");
@@ -120,36 +123,36 @@ void *server_run(void *arg) {
     mutex_unlock(&g_server.lock);
 
     // Main server loop
+    g_game.tickNumber = 0;
+    g_game.deltaTime = 0.0f;
+    g_game.isLocal = 0;
     server_tickProcessor(server);
     log_info("Server stopped!");
 
     return NULL;
 }
 
-uint64_t server_tick(Server *server, const uint64_t tickTimeMs) {
-    uint64_t tickDuration;
+void server_tick(Server *server, float deltaTime) {
     size_t index;
-
-    server->tickCounter++;
+    g_game.tickNumber++;
 
     network_tick(&server->network->baseNetwork);
+    entity_update_all(deltaTime);
 
-    tickDuration = time_now_ms() - tickTimeMs;
-    server->currentTps = fminf(SERVER_TARGET_TICKRATE, 1000.0f / (float)tickDuration);
-    server->currentUse = fminf(1.0f, (float)tickDuration / SERVER_TARGET_TICK_TIME_MS);
+    server->currentTps = fmin(SERVER_TARGET_TICKRATE, 1000.0 / deltaTime);
+    server->currentUse = fmin(1.0, deltaTime / SERVER_TARGET_TICK_TIME_MS);
 
     // Update average TPS and use
-    index = server->tickCounter % 20;
+    index = g_game.tickNumber % 20;
     server->averageTps[index] = server->currentTps;
     server->averageUse[index] = server->currentUse;
-
-    return tickDuration;
 }
 
 void server_tickProcessor(Server *server) {
     uint8_t shutdownRequested = 0;
-    uint64_t tickTime, tickDur;
-    int sleepTime;
+    const double targetTickMs = SERVER_TARGET_TICK_TIME_MS;
+    double currentTimeMs, frameTimeMs, workTimeMs, deltaSeconds, sleepTimeMs;
+    double previousTimeMs = (double) time_now_ms();
 
     while (1) {
         // Check for shutdown request
@@ -171,15 +174,22 @@ void server_tickProcessor(Server *server) {
         }
 
         // Perform server tick
-        tickTime = time_now_ms();
-        tickDur = server_tick(server, tickTime);
-        if (tickDur < SERVER_TARGET_TICK_TIME_MS) {
-            sleepTime = SERVER_TARGET_TICK_TIME_MS - tickDur;
-            if (sleepTime > 0) {
-                thread_sleepMs(sleepTime);
-            } else {
-                log_warn("Server overloaded! Running behind by %d ms", -sleepTime);
-            }
+        currentTimeMs = (double) time_now_ms();
+        frameTimeMs = currentTimeMs - previousTimeMs;
+        previousTimeMs = currentTimeMs;
+
+        deltaSeconds = frameTimeMs / 1000.0;
+
+        g_game.deltaTime = (float) deltaSeconds;
+        server_tick(server, g_game.deltaTime);
+
+        workTimeMs = (double) time_now_ms() - currentTimeMs;
+        sleepTimeMs = targetTickMs - workTimeMs;
+
+        if (sleepTimeMs > 0.0) {
+            thread_sleepMs((uint32_t)sleepTimeMs);
+        } else {
+            log_warn("Server overloaded! Behind by %.2f ms", -sleepTimeMs);
         }
     }
 }
@@ -222,6 +232,8 @@ player_t *server_create_player(Server *server, struct server_session_s *session)
 
     player->data = session;
     log_info("Created player with ID %u for session ID %u", player->id, session->sessionID);
+
+    server_spawn_player_entity(player, gfc_vector2d(0.0f, 0.0f)); // FIXME: Use actual spawn position
     return player;
 }
 
@@ -232,6 +244,14 @@ void server_destroy_player(struct player_s *player) {
 
     player_manager_remove(g_server.playerManager, player->id);
     log_info("Destroyed player with ID %u", player->id);
+}
+
+Entity * server_spawn_player_entity(struct player_s *player, GFC_Vector2D pos) {
+    if (!player) {
+        return NULL;
+    }
+
+    return player_entity_spawn(player, pos, NULL);
 }
 
 void server_send_packet(Server* server, const player_t *player, const uint8_t packetID, void *context, const uint32_t flags) {

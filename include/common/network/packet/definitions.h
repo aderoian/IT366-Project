@@ -29,6 +29,7 @@ F(net_float_t,  spawnY,   PRIMITIVE)
 F(player_input_command_t, inputCommand, CUSTOM) \
 
 #define PLAYER_STATE_SNAPSHOT_FIELDS(F) \
+F(net_uint64_t, tickNumber, PRIMITIVE) \
 F(net_float_t, xPos, PRIMITIVE) \
 F(net_float_t, yPos, PRIMITIVE)
 

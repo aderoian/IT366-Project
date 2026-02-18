@@ -5,16 +5,16 @@
 #include "common/thread/mutex.h"
 #include "common/game/entity.h"
 #include "common/game/tower.h"
+#include "common/game/game.h"
+#include "common/def.h"
+#include "common/network/packet/definitions.h"
+#include "common/network/packet/io.h"
 
 #include "client/animation.h"
 #include "client/gf2d_graphics.h"
 #include "client/gf2d_sprite.h"
-
 #include "client/client.h"
 #include "client/camera.h"
-#include "common/def.h"
-#include "common/network/packet/definitions.h"
-#include "common/network/packet/io.h"
 
 void client_tickLoop(Client* client);
 void client_render(Client *client, uint64_t alpha);
@@ -69,7 +69,7 @@ int client_main(void) {
 
     g_client.renderState.background = gf2d_sprite_load_image("images/backgrounds/bg_flat.png");
 
-    //tower_create_by_name("Basic Tower", gfc_vector2d(500, 500));
+    tower_create_by_name("Basic Tower", gfc_vector2d(500, 500));
 
     client_connect(&g_client, "127.0.0.1", "12345");
     c2s_player_join_request_packet_t pkt;
@@ -80,6 +80,9 @@ int client_main(void) {
 
     log_info("Client running");
 
+    g_game.tickNumber = 0;
+    g_game.deltaTime = 0.0f;
+    g_game.isLocal = 1;
     client_tickLoop(&g_client);
 
     return 0;
@@ -122,9 +125,8 @@ int client_send_to_server(Client *client, const uint8_t pktId, void *pkt, const 
 void client_tickLoop(Client* client) {
     uint8_t shutDownRequested = 0;
 
-    uint64_t dt = 1000ULL / 60ULL; // 60 FPS
+    uint64_t dt = 1000ULL / 30ULL; // 30 ticks per second
     uint64_t accumulator = 0, currentTime, frameTime, lastTime = SDL_GetTicks64();
-    float deltaUpdate;
 
     while (1) {
         mutex_lock(&g_client.lock);
@@ -153,13 +155,14 @@ void client_tickLoop(Client* client) {
         lastTime = currentTime;
 
         while (accumulator >= dt) {
-            gfc_input_update();
+            g_game.tickNumber++;
+            g_game.deltaTime = (float) dt / 1000.0f;
 
+            gfc_input_update();
             network_tick(&client->network->baseNetwork);
 
-            deltaUpdate = (float) dt / 1000.0f;
             entity_think_all();
-            entity_update_all(deltaUpdate);
+            entity_update_all(g_game.deltaTime);
 
             camera_update(&g_camera);
 
@@ -171,7 +174,6 @@ void client_tickLoop(Client* client) {
             }
         }
 
-
         client_render(client, accumulator / dt);
         gf2d_graphics_next_frame();
     }
@@ -181,6 +183,5 @@ void client_render(Client* client, uint64_t alpha) {
     gf2d_graphics_clear_screen();
 
     gf2d_sprite_draw_image(client->renderState.background, gfc_vector2d(0, 0));
-
     entity_draw_all();
 }

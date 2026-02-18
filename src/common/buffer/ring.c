@@ -71,6 +71,26 @@ int buf_spsc_ring_pop(buf_spsc_ring_t* ring, void* item) {
     return 1;
 }
 
+int buf_spsc_ring_peek(const buf_spsc_ring_t* ring, void* item) {
+    uint32_t writeIdx, readIdx;
+    void *src;
+    if (!ring || !item) {
+        return 0;
+    }
+
+    writeIdx = atomic_u32_load_acquire(&ring->writeIdx);
+    readIdx = atomic_u32_load_relaxed(&ring->readIdx);
+
+    if (readIdx == writeIdx) {
+        return 0; // Ring is empty
+    }
+
+    src = (uint8_t*)ring->buffer + (readIdx * ring->item_size);
+    memcpy(item, src, ring->item_size);
+
+    return 1;
+}
+
 int buf_spsc_ring_is_empty(const buf_spsc_ring_t* ring) {
     uint32_t writeIdx, readIdx;
     if (!ring) {
@@ -94,4 +114,36 @@ int buf_spsc_ring_is_full(const buf_spsc_ring_t* ring) {
     nextWriteIdx = (writeIdx + 1) % ring->capacity;
 
     return (nextWriteIdx == readIdx);
+}
+
+uint32_t buf_spsc_ring_head_index(const buf_spsc_ring_t *ring) {
+    if (!ring) {
+        return 0;
+    }
+
+    return atomic_u32_load_acquire(&ring->readIdx);
+}
+
+uint32_t buf_spsc_ring_tail_index(const buf_spsc_ring_t *ring) {
+    if (!ring) {
+        return 0;
+    }
+
+    return atomic_u32_load_acquire(&ring->writeIdx);
+}
+
+uint32_t buf_spsc_ring_next_index(const buf_spsc_ring_t *ring, const uint32_t index) {
+    if (!ring) {
+        return 0;
+    }
+
+    return (index + 1) % ring->capacity;
+}
+
+void *buf_spsc_ring_get(const buf_spsc_ring_t *ring, const uint32_t index) {
+    if (!ring || index >= ring->capacity) {
+        return NULL;
+    }
+
+    return (uint8_t*)ring->buffer + (index * ring->item_size);
 }

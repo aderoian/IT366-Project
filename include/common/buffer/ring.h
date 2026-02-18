@@ -50,6 +50,15 @@ int buf_spsc_ring_push(buf_spsc_ring_t* ring, const void* item);
 int buf_spsc_ring_pop(buf_spsc_ring_t* ring, void* item);
 
 /**
+ * @brief Peek at the next item in the ring buffer without popping it.
+ *
+ * @param ring Pointer to the buf_spsc_ring_t.
+ * @param item Pointer to the buffer where the peeked item will be stored.
+ * @return 1 on success, 0 if the buffer is empty.
+ */
+int buf_spsc_ring_peek(const buf_spsc_ring_t* ring, void* item);
+
+/**
  * @brief Check if the ring buffer is empty.
  *
  * @param ring Pointer to the buf_spsc_ring_t.
@@ -64,5 +73,11 @@ int buf_spsc_ring_is_empty(const buf_spsc_ring_t* ring);
  * @return 1 if the buffer is full, 0 otherwise.
  */
 int buf_spsc_ring_is_full(const buf_spsc_ring_t* ring);
+
+
+uint32_t buf_spsc_ring_head_index(const buf_spsc_ring_t* ring);
+uint32_t buf_spsc_ring_tail_index(const buf_spsc_ring_t* ring);
+uint32_t buf_spsc_ring_next_index(const buf_spsc_ring_t* ring, uint32_t index);
+void *buf_spsc_ring_get(const buf_spsc_ring_t* ring, uint32_t index);
 
 #endif /* RING_H */
