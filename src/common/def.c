@@ -146,12 +146,24 @@ const char *def_data_get_string(def_data_t *def, const char *key) {
     return sj_object_get_value_as_string(def, key);
 }
 
+const char * def_data_get_string_value(def_data_t *def) {
+    return sj_get_string_value(def);
+}
+
 int def_data_get_int(def_data_t *def, const char *key, int *output) {
     return sj_object_get_value_as_int(def, key, output);
 }
 
+int def_data_get_int_value(def_data_t *def, int *output) {
+    return sj_get_int32_value(def, output);
+}
+
 int def_data_get_float(def_data_t *def, const char *key, float *output) {
     return sj_object_get_value_as_float(def, key, output);
+}
+
+int def_data_get_float_value(def_data_t *def, float *output) {
+    return sj_get_float_value(def, output);
 }
 
 int def_data_get_double(def_data_t *def, const char *key, double *output) {

@@ -57,6 +57,13 @@ def_data_t *def_data_get_array(def_data_t *def, const char *key);
 const char *def_data_get_string(def_data_t *def, const char *key);
 
 /**
+ * @brief Get a string value from a definition data
+ * @param def the definition data to search
+ * @return NULL on error or the definition data value
+ */
+const char *def_data_get_string_value(def_data_t *def);
+
+/**
  * @brief Get an int value from a definition data
  * @param def the definition data to search
  * @param key the key to search by
@@ -66,6 +73,14 @@ const char *def_data_get_string(def_data_t *def, const char *key);
 int def_data_get_int(def_data_t *def, const char *key, int *output);
 
 /**
+ * @brief Get an int value from a definition data
+ * @param def the definition data to search
+ * @param output where the value is written to
+ * @return 0 on error, 1 if the value was retrieved successfully
+ */
+int def_data_get_int_value(def_data_t *def, int *output);
+
+/**
  * @brief Get a float value from a definition data
  * @param def the definition data to search
  * @param key the key to search by
@@ -73,6 +88,14 @@ int def_data_get_int(def_data_t *def, const char *key, int *output);
  * @return 0 on error, 1 if the value was retrieved successfully
  */
 int def_data_get_float(def_data_t *def, const char *key, float *output);
+
+/**
+ * @brief Get a float value from a definition data
+ * @param def the definition data to search
+ * @param output where the value is written to
+ * @return 0 on error, 1 if the value was retrieved successfully
+ */
+int def_data_get_float_value(def_data_t *def, float *output);
 
 /**
  * @brief Get a double value from a definition data
