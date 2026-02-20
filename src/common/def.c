@@ -182,3 +182,18 @@ int def_data_array_get_count(def_data_t *array, int *count) {
     }
     return c;
 }
+
+int def_data_get_vector2d(def_data_t *def, const char *key, GFC_Vector2D *output) {
+    def_data_t *valueArray;
+    if (!def || !key || !output) return 0;
+
+    valueArray = sj_object_get_value(def, key);
+    if (!valueArray || !sj_is_array(valueArray)) return 0;
+
+    if (sj_array_get_count(valueArray) < 2) return 0;
+
+    if (!sj_get_float_value(sj_array_get_nth(valueArray, 0), &output->x)) return 0;
+    if (!sj_get_float_value(sj_array_get_nth(valueArray, 1), &output->y)) return 0;
+
+    return 1;
+}

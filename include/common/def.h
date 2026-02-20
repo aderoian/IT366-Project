@@ -3,6 +3,8 @@
 
 #include <gfc_types.h>
 
+#include "gfc_vector.h"
+
 typedef struct SJson_S def_data_t;
 
 typedef struct Definition_s {
@@ -121,5 +123,7 @@ def_data_t *def_data_array_get_nth(def_data_t *array, int n);
  * @return 0 on error, 1 if the count was retrieved successfully
  */
 int def_data_array_get_count(def_data_t *array, int *count);
+
+int def_data_get_vector2d(def_data_t *def, const char *key, GFC_Vector2D *output);
 
 #endif /* DEF_H */

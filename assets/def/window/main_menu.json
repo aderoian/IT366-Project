@@ -1,0 +1,34 @@
+{
+    "title": "Main Menu",
+    "type": "container",
+    "id": "main_menu",
+    "position": [100, 100],
+    "size": [400, 300],
+    "image": "images/ui/main_menu/background.png",
+    "elements": [
+        {
+            "type": "button",
+            "id": "single_player_button",
+            "text": "Single Player",
+            "position": [50, 50],
+            "size": [300, 50],
+            "image": "images/ui/main_menu/button.png"
+        },
+        {
+            "type": "button",
+            "id": "multiplayer_button",
+            "text": "Multiplayer",
+            "position": [50, 120],
+            "size": [300, 50],
+            "image": "images/ui/main_menu/button.png"
+        },
+        {
+            "type": "button",
+            "id": "exit_button",
+            "text": "Exit",
+            "position": [50, 190],
+            "size": [300, 50],
+            "image": "images/ui/main_menu/button.png"
+        }
+    ]
+}
