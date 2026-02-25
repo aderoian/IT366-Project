@@ -7,6 +7,7 @@
 typedef struct server_session_s {
     net_udp_peer_t *peer;
     uint32_t sessionID;
+    struct player_s *player;
 } server_session_t;
 
 typedef struct server_network_s {

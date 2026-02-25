@@ -240,6 +240,7 @@ player_t *server_create_player(Server *server, struct server_session_s *session)
     }
 
     player->data = session;
+    session->player = player;
     log_info("Created player with ID %u for session ID %u", player->id, session->sessionID);
 
     server_spawn_player_entity(player, gfc_vector2d(0.0f, 0.0f)); // FIXME: Use actual spawn position

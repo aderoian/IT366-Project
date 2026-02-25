@@ -1,8 +1,8 @@
 #include <stdio.h>
 
 #include "common/logger.h"
-#include "common/types.h"
 #include "server/server_network.h"
+#include "server/server.h"
 
 server_network_t g_serverNetwork = {0};
 
@@ -110,9 +110,15 @@ void server_network_client_connect(struct network_s *network, const net_udp_even
 
 void server_network_client_disconnect(struct network_s *network, const net_udp_event_t *context) {
     server_network_t *serverNetwork = network->networkAdapter;
+    server_session_t *session;
     for (size_t i = 0; i < serverNetwork->currentSessionCount; ++i) {
         if (serverNetwork->sessions[i].peer == context->peer) {
-            log_info("Client disconnected. Session ID: %u", serverNetwork->sessions[i].sessionID);
+            session = &serverNetwork->sessions[i];
+            if (session->player) {
+                server_destroy_player(session->player);
+            }
+            log_info("Client disconnected. Session ID: %u", session->sessionID);
+
             // Shift remaining sessions down
             for (size_t j = i; j < serverNetwork->currentSessionCount - 1; ++j) {
                 serverNetwork->sessions[j] = serverNetwork->sessions[j + 1];

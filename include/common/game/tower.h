@@ -138,6 +138,17 @@ tower_state_t *tower_create_by_name(const char* name, GFC_Vector2D position);
 tower_state_t *tower_create_by_def(const tower_def_t *def, GFC_Vector2D position);
 
 /**
+ * @brief Places a tower in the world at a specified position with a unique ID. This function initializes the tower state,
+ * creates an associated entity, and sets up the tower's properties based on the provided definition.
+ *
+ * @param def A pointer to the tower definition to use for placing the tower.
+ * @param position The world position where the tower should be placed.
+ * @param id The unique ID to assign to the tower.
+ * @return A pointer to the newly placed tower state, or NULL if there are no free slots or if entity creation fails.
+ */
+tower_state_t *tower_place(const tower_def_t *def, GFC_Vector2D position, uint32_t id);
+
+/**
  * @brief Retrieves a tower state by its unique ID. This function looks up the tower manager's mapping of tower IDs to their corresponding states
  * and returns a pointer to the tower state if found.
  *

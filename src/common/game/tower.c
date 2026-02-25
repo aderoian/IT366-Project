@@ -4,7 +4,9 @@
 
 #include "common/game/tower.h"
 
+#include "client/client.h"
 #include "client/gf2d_sprite.h"
+#include "common/game/game.h"
 #include "common/game/projectile.h"
 #include "common/game/world.h"
 #include "server/server.h"
@@ -67,6 +69,18 @@ tower_state_t *tower_create_by_name(const char* name, const GFC_Vector2D positio
 }
 
 tower_state_t *tower_create_by_def(const tower_def_t *def, const GFC_Vector2D position) {
+    tower_state_t *tower = tower_place(def, position, g_towerManager.nextTowerID++);
+    if (!tower) {
+        log_error("Failed to create tower at position (%f, %f)", position.x, position.y);
+        return NULL;
+    }
+
+    tower->worldPos = world_pos_tile_snap(g_server.world, position);
+    tower->entity->position = tower->worldPos;
+    return tower;
+}
+
+tower_state_t *tower_place(const tower_def_t *def, const GFC_Vector2D position, const uint32_t id) {
     tower_state_t * tower;
     Entity *ent;
     if (g_towerManager.numFreeSlots == 0) {
@@ -77,9 +91,8 @@ tower_state_t *tower_create_by_def(const tower_def_t *def, const GFC_Vector2D po
     uint32_t slotIndex = g_towerManager.freeSlots[--g_towerManager.numFreeSlots];
     tower = &g_towerManager.towers[slotIndex];
 
-    tower->id = g_towerManager.nextTowerID++;
+    tower->id = id;
     g_towerManager.towerIDs[tower->id] = slotIndex; // Map tower ID to index in towers array
-    tower->worldPos = world_pos_tile_snap(g_server.world, position);
     tower->health = def->maxHealth[0];
     tower->def = def;
 
@@ -93,10 +106,14 @@ tower_state_t *tower_create_by_def(const tower_def_t *def, const GFC_Vector2D po
 
     ent->think = tower_entity_think;
     ent->update = tower_entity_update;
-    ent->model = gf2d_sprite_load_image(def->modelDef.baseSpritePath);
-    ent->position = tower->worldPos;
     ent->data = tower;
     tower->entity = ent;
+
+    if (g_game.isLocal) {
+        tower->worldPos = world_pos_tile_snap(g_client.world, position);
+        ent->position = tower->worldPos;
+        ent->model = gf2d_sprite_load_image(def->modelDef.baseSpritePath);
+    }
 
     return tower;
 }

@@ -41,12 +41,11 @@ void handle_s2c_tower_create(const s2c_tower_create_packet_t *pkt, void *client)
         return;
     }
 
-    tower_state_t *tower = tower_create_by_def(def, gfc_vector2d(pkt->xPos, pkt->yPos));
+    tower_state_t *tower = tower_place(def, gfc_vector2d(pkt->xPos, pkt->yPos), pkt->towerID);
     if (!tower) {
         log_error("Failed to create tower from server packet");
         return;
     }
 
     log_info("Tower created with ID: %u at position (%f, %f)", pkt->towerID, pkt->xPos, pkt->yPos);
-    tower->id = pkt->towerID; // Set tower ID from server
 }
