@@ -36,6 +36,7 @@ typedef struct tower_model_def_s {
 } tower_model_def_t;
 
 typedef struct tower_def_s {
+    uint32_t index;
     char name[32];
     char description[256];
     tower_type_t type;

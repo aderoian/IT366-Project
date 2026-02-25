@@ -15,8 +15,10 @@
 #include "client/gf2d_sprite.h"
 #include "client/client.h"
 #include "client/camera.h"
+#include "client/game/build.h"
 #include "client/ui/overlay.h"
 #include "client/ui/window.h"
+#include "common/game/world.h"
 
 void client_tickLoop(Client* client);
 void client_render(Client *client, uint64_t alpha);
@@ -74,6 +76,7 @@ int client_main(void) {
     g_client.renderState.background = gf2d_sprite_load_image("images/backgrounds/bg_flat.png");
 
     tower_create_by_name("Basic Tower", gfc_vector2d(500, 500));
+    build_mode_enter(tower_def_get("Basic Tower"));
 
     client_connect(&g_client, "127.0.0.1", "12345");
     c2s_player_join_request_packet_t pkt;
@@ -174,6 +177,8 @@ void client_tickLoop(Client* client) {
 
             camera_update(&g_camera);
 
+            build_mode_update();
+
             //phys_step(deltaUpdate);
             accumulator -= dt;
 
@@ -193,5 +198,6 @@ void client_render(Client* client, uint64_t alpha) {
     gf2d_sprite_draw_image(client->renderState.background, gfc_vector2d(0, 0));
     entity_draw_all();
     overlay_draw(&g_client.overlay);
+    build_mode_render();
     window_draw_all();
 }

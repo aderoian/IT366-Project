@@ -10,6 +10,7 @@
 #include "common/time.h"
 #include "common/game/game.h"
 #include "common/game/player.h"
+#include "common/game/world.h"
 
 #include "server/game/player_manager.h"
 #include "server/server_network.h"
@@ -75,6 +76,8 @@ int server_startup(Server *server) {
         return 0;
     }
     log_info("Server network started successfully.");
+
+    server->world = world_create(100, 100, 0);
 
     log_info("Server started successfully.");
     return 1;

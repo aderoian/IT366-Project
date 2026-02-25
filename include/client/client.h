@@ -4,6 +4,7 @@
 #include "common/game/player.h"
 #include "client/client_network.h"
 #include "client/ui/overlay.h"
+#include "common/game/world.h"
 
 typedef enum ClientState_E {
     CLIENT_IDLE = 0,
@@ -25,6 +26,7 @@ typedef struct Client_S {
 
     client_network_t *network;
     player_t *player;
+    world_t *world;
 
     client_render_state_t renderState;
     float deltaTime;

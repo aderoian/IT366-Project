@@ -228,6 +228,7 @@ void tower_load_defs(const char *filePath) {
 
         strncpy(def->modelDef.baseSpritePath, str, sizeof(def->modelDef.baseSpritePath) - 1);
         def->modelDef.baseSpritePath[sizeof(def->modelDef.baseSpritePath) - 1] = '\0';
+        def->index = i;
     }
 }
 
