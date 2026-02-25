@@ -15,6 +15,7 @@
 #include "client/gf2d_sprite.h"
 #include "client/client.h"
 #include "client/camera.h"
+#include "client/ui/overlay.h"
 #include "client/ui/window.h"
 
 void client_tickLoop(Client* client);
@@ -45,6 +46,7 @@ int client_main(void) {
     def_init(32);
     animation_manager_init(256);
     window_init(32, 256, 256);
+    overlay_init(&g_client.overlay, 32, "def/overlay.json");
     entity_init(1024);
     phys_init(1024);
     tower_init(32);
@@ -72,9 +74,6 @@ int client_main(void) {
     g_client.renderState.background = gf2d_sprite_load_image("images/backgrounds/bg_flat.png");
 
     tower_create_by_name("Basic Tower", gfc_vector2d(500, 500));
-
-    window_t *window = window_load_from_json(def_load("def/window/main_menu.json"));
-    window_show(window);
 
     client_connect(&g_client, "127.0.0.1", "12345");
     c2s_player_join_request_packet_t pkt;
@@ -168,6 +167,7 @@ void client_tickLoop(Client* client) {
 
             window_handle_event_all();
             window_update_all(g_game.deltaTime);
+            overlay_update(&g_client.overlay, g_game.deltaTime);
 
             entity_think_all();
             entity_update_all(g_game.deltaTime);
@@ -192,5 +192,6 @@ void client_render(Client* client, uint64_t alpha) {
 
     gf2d_sprite_draw_image(client->renderState.background, gfc_vector2d(0, 0));
     entity_draw_all();
+    overlay_draw(&g_client.overlay);
     window_draw_all();
 }

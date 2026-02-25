@@ -1,8 +1,9 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
-#include "../common/game/player.h"
+#include "common/game/player.h"
 #include "client/client_network.h"
+#include "client/ui/overlay.h"
 
 typedef enum ClientState_E {
     CLIENT_IDLE = 0,
@@ -27,6 +28,8 @@ typedef struct Client_S {
 
     client_render_state_t renderState;
     float deltaTime;
+
+    overlay_t overlay;
 } Client;
 
 extern Client g_client;

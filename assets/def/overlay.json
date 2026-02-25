@@ -1,0 +1,9 @@
+{
+  "elements": [
+    {
+      "type": "hudbar",
+      "position": [217, 602],
+      "sprite": "images/ui/overlay/hudbar.png"
+    }
+  ]
+}
