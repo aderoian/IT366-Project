@@ -7,9 +7,11 @@
 
 #include <math.h>
 
+#include "common/def.h"
 #include "common/time.h"
 #include "common/game/game.h"
 #include "common/game/player.h"
+#include "common/game/tower.h"
 #include "common/game/world.h"
 
 #include "server/game/player_manager.h"
@@ -76,6 +78,10 @@ int server_startup(Server *server) {
         return 0;
     }
     log_info("Server network started successfully.");
+
+    def_init(32);
+    tower_init(128);
+    tower_load_defs("def/towers.json");
 
     server->world = world_create(100, 100, 0);
 

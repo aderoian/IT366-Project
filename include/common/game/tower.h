@@ -58,7 +58,6 @@ typedef struct tower_state_s {
     float health;
     int level;
     float cooldown;
-    GFC_Vector2I tilePos;
     GFC_Vector2D worldPos;
     struct Entity_S *entity;
 } tower_state_t;
@@ -70,6 +69,7 @@ typedef struct tower_manager_s {
     uint32_t numTowers;
     uint32_t numFreeSlots;
     uint32_t maxTowers;
+    uint32_t nextTowerID;
 } tower_manager_t;
 
 /** * Global managers for tower definitions and tower states */
@@ -108,6 +108,15 @@ void tower_load_defs(const char *filePath);
 const tower_def_t *tower_def_get(const char *name);
 
 /**
+ * @brief Retrieves a tower definition by its index. This function returns a pointer to the tower definition
+ * at the specified index in the tower_def_manager's array of definitions.
+ *
+ * @param index The index of the tower definition to retrieve.
+ * @return A pointer to the tower definition if the index is valid, or NULL if the index is out of bounds.
+ */
+const tower_def_t *tower_def_get_by_index(int index);
+
+/**
  * @brief Creates a new tower state based on a tower definition name and a specified position.
  * This function looks up the tower definition by name and initializes a new tower state with
  * the properties defined in the tower definition.
@@ -129,6 +138,15 @@ tower_state_t *tower_create_by_name(const char* name, GFC_Vector2D position);
 tower_state_t *tower_create_by_def(const tower_def_t *def, GFC_Vector2D position);
 
 /**
+ * @brief Retrieves a tower state by its unique ID. This function looks up the tower manager's mapping of tower IDs to their corresponding states
+ * and returns a pointer to the tower state if found.
+ *
+ * @param id The unique ID of the tower to retrieve.
+ * @return A pointer to the tower state if found, or NULL if no tower with the specified ID exists.
+ */
+tower_state_t *tower_get_by_id(uint32_t id);
+
+/**
  * @brief Destroys a tower state, freeing any associated resources and marking its slot as free.
  * This function should be called when a tower is removed from the game to ensure proper cleanup.
  *
@@ -136,7 +154,30 @@ tower_state_t *tower_create_by_def(const tower_def_t *def, GFC_Vector2D position
  */
 void tower_destroy(tower_state_t *tower);
 
+/**
+ * @brief Attempts to shoot with the tower's weapon. This function checks if the tower can shoot based on its cooldown
+ * and updates the cooldown timer accordingly. If the tower can shoot, it returns a non-zero value; otherwise, it returns zero.
+ *
+ * @param tower A pointer to the tower state that is attempting to shoot.
+ * @param deltaTime The time elapsed since the last update, used to update the cooldown timer.
+ * @return A non-zero value if the tower can shoot, or zero if it is still cooling down.
+ */
 int tower_try_shoot(tower_state_t *tower, float deltaTime);
+
+/**
+ * @brief Executes the shooting action for a specific weapon index of the tower. This function spawns projectiles based on the weapon definition
+ * and applies the appropriate properties such as damage, range, and direction.
+ *
+ * @param tower A pointer to the tower state that is shooting.
+ * @param weaponIndex The index of the weapon to use for shooting, based on the tower's weapon definitions.
+ */
 void tower_shoot(tower_state_t *tower, int weaponIndex);
+
+/**
+ * @brief Executes the shooting action for all weapons of the tower. This function iterates through all the tower's weapons and calls the shooting function for each one.
+ *
+ * @param tower A pointer to the tower state that is shooting.
+ */
 void tower_shoot_all(tower_state_t *tower);
+
 #endif /* TOWER_H */

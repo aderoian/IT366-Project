@@ -75,7 +75,6 @@ int client_main(void) {
 
     g_client.renderState.background = gf2d_sprite_load_image("images/backgrounds/bg_flat.png");
 
-    tower_create_by_name("Basic Tower", gfc_vector2d(500, 500));
     build_mode_enter(tower_def_get("Basic Tower"));
 
     client_connect(&g_client, "127.0.0.1", "12345");

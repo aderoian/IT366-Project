@@ -2,6 +2,7 @@
 #include "common/network/packet/handler.h"
 
 #include "client/client.h"
+#include "common/game/tower.h"
 
 void handle_s2c_player_join_response(const s2c_player_join_response_packet_t *pkt, void *client) {
     if (!pkt) {
@@ -31,4 +32,21 @@ void handle_s2c_player_create(const s2c_player_create_packet_t *pkt, void *clien
 
 void handle_s2c_player_state_snapshot(const s2c_player_state_snapshot_packet_t *pkt, void *client) {
     player_input_process_server(g_client.player, pkt->tickNumber, pkt->xPos, pkt->yPos);
+}
+
+void handle_s2c_tower_create(const s2c_tower_create_packet_t *pkt, void *client) {
+    const tower_def_t *def = tower_def_get_by_index(pkt->towerDefIndex);
+    if (!def) {
+        log_error("Received tower create packet with invalid tower definition index: %u", pkt->towerDefIndex);
+        return;
+    }
+
+    tower_state_t *tower = tower_create_by_def(def, gfc_vector2d(pkt->xPos, pkt->yPos));
+    if (!tower) {
+        log_error("Failed to create tower from server packet");
+        return;
+    }
+
+    log_info("Tower created with ID: %u at position (%f, %f)", pkt->towerID, pkt->xPos, pkt->yPos);
+    tower->id = pkt->towerID; // Set tower ID from server
 }

@@ -23,6 +23,17 @@ void world_destroy(world_t *world) {
     }
 }
 
+GFC_Vector2D world_pos_tile_snap(const world_t *world, const GFC_Vector2D worldPos) {
+    GFC_Vector2D tilePos;
+    if (!world) {
+        return (GFC_Vector2D){0, 0};
+    }
+
+    tilePos.x = floorf(worldPos.x / TILE_SIZE) * TILE_SIZE;
+    tilePos.y = floorf(worldPos.y / TILE_SIZE) * TILE_SIZE;
+    return tilePos;
+}
+
 void world_update(world_t *world, float deltaTime) {
     if (!world) {
         return;

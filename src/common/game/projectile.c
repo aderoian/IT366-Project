@@ -4,6 +4,7 @@
 #include "common/game/tower.h"
 
 #include "client/gf2d_sprite.h"
+#include "common/game/game.h"
 
 void projectile_think(Entity *ent);
 void projectile_update(Entity *ent, float deltaTime);
@@ -42,11 +43,14 @@ int projectile_spawn(float speed, float damage, float range, GFC_Vector2D direct
     // Set up the entity's properties
     ent->think = projectile_think;
     ent->update = projectile_update;
-    ent->model = gf2d_sprite_load_image(spriteModel);
 
     // Position the entity at the source tower's location
     ent->position = sourceTower->worldPos;
     ent->data = projectile;
+
+    if (g_game.isLocal) {
+        ent->model = gf2d_sprite_load_image(spriteModel);
+    }
 
     return 0;
 }

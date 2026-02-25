@@ -6,6 +6,8 @@
 
 #include "client/gf2d_sprite.h"
 #include "common/game/projectile.h"
+#include "common/game/world.h"
+#include "server/server.h"
 
 tower_def_manager_t g_towerDefManager;
 tower_manager_t g_towerManager;
@@ -21,6 +23,7 @@ void tower_init(const uint32_t maxTowers) {
     g_towerManager.numTowers = 0;
     g_towerManager.numFreeSlots = maxTowers;
     g_towerManager.maxTowers = maxTowers;
+    g_towerManager.nextTowerID = 0;
 
     for (i = 0; i < maxTowers; i++) {
         g_towerManager.freeSlots[i] = maxTowers - 1 - i; // Fill free slots stack
@@ -47,6 +50,13 @@ const tower_def_t *tower_def_get(const char *name) {
     return NULL; // Not found
 }
 
+const tower_def_t * tower_def_get_by_index(const int index) {
+    if (index >= g_towerDefManager.numTowerDefs) {
+        return NULL; // Index out of bounds
+    }
+    return &g_towerDefManager.towerDefs[index];
+}
+
 tower_state_t *tower_create_by_name(const char* name, const GFC_Vector2D position) {
     const tower_def_t *def = tower_def_get(name);
     if (!def) {
@@ -67,34 +77,52 @@ tower_state_t *tower_create_by_def(const tower_def_t *def, const GFC_Vector2D po
     uint32_t slotIndex = g_towerManager.freeSlots[--g_towerManager.numFreeSlots];
     tower = &g_towerManager.towers[slotIndex];
 
-    tower->id = slotIndex;
-    tower->tilePos.x = 0; tower->tilePos.y = 0; // TODO: Proper tile position calculation based on world position and tile size
-    tower->worldPos = position;
+    tower->id = g_towerManager.nextTowerID++;
+    g_towerManager.towerIDs[tower->id] = slotIndex; // Map tower ID to index in towers array
+    tower->worldPos = world_pos_tile_snap(g_server.world, position);
     tower->health = def->maxHealth[0];
     tower->def = def;
 
     // TODO: create entity based on tower definition's modelDef and assign to tower->entity
     ent = entity_new();
-        if (!ent) {
-            log_error("Failed to create entity for tower");
-            g_towerManager.freeSlots[g_towerManager.numFreeSlots++] = slotIndex; // Return slot to free stack
-            return NULL;
-        }
+    if (!ent) {
+        log_error("Failed to create entity for tower");
+        g_towerManager.freeSlots[g_towerManager.numFreeSlots++] = slotIndex; // Return slot to free stack
+        return NULL;
+    }
 
     ent->think = tower_entity_think;
     ent->update = tower_entity_update;
     ent->model = gf2d_sprite_load_image(def->modelDef.baseSpritePath);
-    ent->position = position;
+    ent->position = tower->worldPos;
     ent->data = tower;
     tower->entity = ent;
 
     return tower;
 }
 
+tower_state_t * tower_get_by_id(const uint32_t id) {
+    uint32_t index;
+    if (id >= g_towerManager.maxTowers) {
+        return NULL; // Invalid ID
+    }
+    index = g_towerManager.towerIDs[id];
+    if (index == UINT32_MAX || index >= g_towerManager.maxTowers) {
+        return NULL; // ID not in use or index out of bounds
+    }
+    return &g_towerManager.towers[index];
+}
+
 void tower_destroy(tower_state_t *tower) {
+    uint32_t index;
     if (!tower) return;
 
-    g_towerManager.freeSlots[g_towerManager.numFreeSlots++] = tower->id;
+    index = g_towerManager.towerIDs[tower->id];
+    if (index == UINT32_MAX || index >= g_towerManager.maxTowers) {
+        log_error("Attempted to destroy tower with invalid ID: %u", tower->id);
+        return;
+    }
+    g_towerManager.freeSlots[g_towerManager.numFreeSlots++] = index;
     tower->id = UINT32_MAX;
 
     if (tower->entity) {

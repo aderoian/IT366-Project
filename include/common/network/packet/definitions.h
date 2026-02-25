@@ -12,7 +12,8 @@ X(s2c_player_join_response, S2C_PLAYER_JOIN_RESPONSE, PLAYER_JOIN_RESPONSE_FIELD
 X(c2s_player_input_snapshot, C2S_PLAYER_INPUT_SNAPSHOT, PLAYER_INPUT_SNAPSHOT_FIELDS) \
 X(s2c_player_state_snapshot, S2C_PLAYER_STATE_SNAPSHOT, PLAYER_STATE_SNAPSHOT_FIELDS) \
 X(s2c_player_create, S2C_PLAYER_CREATE, PLAYER_CREATE_PARAMS_FIELDS) \
-X(c2s_tower_build_request, C2S_TOWER_BUILD_REQUEST, TOWER_BUILD_REQUEST_FIELDS)
+X(c2s_tower_build_request, C2S_TOWER_BUILD_REQUEST, TOWER_BUILD_REQUEST_FIELDS) \
+X(s2c_tower_create, S2C_TOWER_CREATE, TOWER_CREATE_FIELDS)
 
 /**
  * @brief Fields for each packet.
@@ -45,6 +46,12 @@ F(net_float_t,  spawnY,   PRIMITIVE)
 F(net_float_t, xPos, PRIMITIVE) \
 F(net_float_t, yPos, PRIMITIVE) \
 F(net_uint32_t, towerDefIndex, PRIMITIVE)
+
+#define TOWER_CREATE_FIELDS(F) \
+F(net_float_t, xPos, PRIMITIVE) \
+F(net_float_t, yPos, PRIMITIVE) \
+F(net_uint32_t, towerDefIndex, PRIMITIVE) \
+F(net_uint32_t, towerID, PRIMITIVE)
 
 /**
  * @brief Generated packet structures.
