@@ -4,6 +4,8 @@
 #include "client/ui/window.h"
 #include "client/ui/types/elements.h"
 
+#include "common/logger.h"
+
 void container_draw(widget_t *widget) {
     elm_container_data_t *data;
     size_t i;
@@ -21,6 +23,23 @@ void container_draw(widget_t *widget) {
             widget_draw(data->elements[i]);
         }
     }
+}
+
+int container_on_event(widget_t *widget, const window_event_t *event) {
+    elm_container_data_t *data;
+    size_t i;
+    if (!widget || !widget->data || !event) {
+        return 0;
+    }
+
+    data = (elm_container_data_t *)widget->data;
+    for (i = 0; i < data->numElements; i++) {
+        if (data->elements[i] && widget_handle_event(data->elements[i], event)) {
+            return 1; // Event handled by an element
+        }
+    }
+
+    return 0;
 }
 
 void container_destroy(widget_t *widget) {
@@ -80,6 +99,7 @@ int elm_container_init(widget_t *widget, const char *spritePath, const size_t ma
 
     widget->data = data;
     widget->draw = container_draw;
+    widget->handle_event = container_on_event;
     widget->destroy = container_destroy;
 
     return 0;
@@ -118,7 +138,7 @@ int elm_container_json_load(def_data_t *json, widget_t *widget) {
             continue;
         }
 
-        sibling = widget_load_from_json(element, widget);
+        sibling = widget_load_from_json(element, widget, widget->parent);
         if (!sibling) {
             slog("Failed to load element widget from JSON at index %d", i);
             continue;
@@ -149,8 +169,7 @@ int button_on_event(widget_t *widget, const window_event_t *event) {
         return 0;
     }
 
-    if (event->type == EVENT_TYPE_MOUSE && event->data.mouse.type == MOUSE_EVENT_BUTTON_DOWN &&
-        (event->data.mouse.buttons & EVENT_MOUSE_BUTTON_LEFT)) {
+    if (event->type == EVENT_TYPE_MOUSE && (event->data.mouse.buttons & EVENT_MOUSE_BUTTON_LEFT)) {
         SDL_GetMouseState(&mouseX, &mouseY);
         if (mouseX >= widget->rect.x && mouseX <= widget->rect.x + widget->rect.w &&
             mouseY >= widget->rect.y && mouseY <= widget->rect.y + widget->rect.h) {

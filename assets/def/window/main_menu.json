@@ -2,33 +2,41 @@
     "title": "Main Menu",
     "type": "container",
     "id": "main_menu",
-    "position": [100, 100],
-    "size": [400, 300],
-    "image": "images/ui/main_menu/background.png",
+    "position": [350, 60],
+    "size": [500, 600],
+    "image": "images/ui/main_menu/main_bg.png",
     "elements": [
         {
             "type": "button",
             "id": "single_player_button",
             "text": "Single Player",
-            "position": [50, 50],
-            "size": [300, 50],
-            "image": "images/ui/main_menu/button.png"
+            "position": [137, 144],
+            "size": [215, 75],
+            "image": "images/ui/main_menu/btn_single.png"
         },
         {
             "type": "button",
-            "id": "multiplayer_button",
-            "text": "Multiplayer",
-            "position": [50, 120],
-            "size": [300, 50],
-            "image": "images/ui/main_menu/button.png"
+            "id": "coop_button",
+            "text": "Co-op",
+            "position": [137, 253],
+            "size": [215, 75],
+            "image": "images/ui/main_menu/btn_coop.png"
         },
         {
             "type": "button",
-            "id": "exit_button",
-            "text": "Exit",
-            "position": [50, 190],
-            "size": [300, 50],
-            "image": "images/ui/main_menu/button.png"
+            "id": "multi_player_button",
+            "text": "Online Multiplayer",
+            "position": [137, 362],
+            "size": [215, 75],
+            "image": "images/ui/main_menu/btn_online.png"
+        },
+        {
+            "type": "button",
+            "id": "quit_button",
+            "text": "Quit",
+            "position": [137, 471],
+            "size": [215, 75],
+            "image": "images/ui/main_menu/btn_quit.png"
         }
     ]
 }

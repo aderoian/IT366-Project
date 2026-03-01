@@ -3,11 +3,12 @@
 
 #include "client/ui/event.h"
 
+#include "common/logger.h"
+
 typedef struct event_buffer_s {
     window_event_t *events;
     size_t maxEvents;
-    size_t head;
-    size_t tail;
+    size_t count;
 } event_buffer_t;
 
 event_buffer_t event_buffer;
@@ -15,8 +16,7 @@ event_buffer_t event_buffer;
 void event_buffer_init(const size_t maxEvents) {
     event_buffer.events = gfc_allocate_array(sizeof(window_event_t), maxEvents);
     event_buffer.maxEvents = maxEvents;
-    event_buffer.head = 0;
-    event_buffer.tail = 0;
+    event_buffer.count = 0;
     atexit(event_buffer_close);
 }
 
@@ -26,8 +26,7 @@ void event_buffer_close(void) {
         event_buffer.events = NULL;
     }
     event_buffer.maxEvents = 0;
-    event_buffer.head = 0;
-    event_buffer.tail = 0;
+    event_buffer.count = 0;
 }
 
 window_event_t *event_buffer_create(void) {
@@ -35,14 +34,12 @@ window_event_t *event_buffer_create(void) {
     if (!event_buffer.events) {
         return NULL;
     }
-
-    event_buffer.head = (event_buffer.head + 1) % event_buffer.maxEvents;
-    if (event_buffer.head == event_buffer.tail) {
-        // Buffer is full, move tail to overwrite oldest event
-        event_buffer.tail = (event_buffer.tail + 1) % event_buffer.maxEvents;
+    if (event_buffer.count >= event_buffer.maxEvents) {
+        log_warn("Event buffer is full, cannot create new event");
+        return NULL;
     }
 
-    event = &event_buffer.events[event_buffer.head];
+    event = &event_buffer.events[event_buffer.count++];
     memset(event, 0, sizeof(window_event_t));
     return event;
 }
@@ -90,12 +87,8 @@ void event_process_command(const char *command) {
     }
 }
 
-size_t event_buffer_head(void) {
-    return event_buffer.head;
-}
-
 size_t event_buffer_tail(void) {
-    return event_buffer.tail;
+    return event_buffer.count;
 }
 
 const window_event_t * event_buffer_get(const size_t index) {
@@ -105,21 +98,6 @@ const window_event_t * event_buffer_get(const size_t index) {
     return &event_buffer.events[index];
 }
 
-size_t event_buffer_next(const size_t current) {
-    size_t next;
-    if (event_buffer.head == event_buffer.tail) {
-        return event_buffer.tail; // Buffer is empty
-    }
-
-    next = (current + 1) % event_buffer.maxEvents;
-    if (next == event_buffer.tail) {
-        return event_buffer.tail; // Reached the end of the buffer
-    }
-
-    return next;
-}
-
 void event_buffer_clear(void) {
-    event_buffer.head = 0;
-    event_buffer.tail = 0;
+    event_buffer.count = 0;
 }

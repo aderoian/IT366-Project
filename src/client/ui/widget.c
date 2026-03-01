@@ -164,7 +164,7 @@ int widget_handle_event(widget_t *widget, const window_event_t *event) {
     return 0; // Event not handled
 }
 
-widget_t *widget_load_from_json(def_data_t *json, widget_t *parent) {
+widget_t *widget_load_from_json(def_data_t *json, widget_t *parent, window_t *parent_window) {
     const char *id;
     widget_t *widget;
     def_data_t *child;
@@ -189,6 +189,7 @@ widget_t *widget_load_from_json(def_data_t *json, widget_t *parent) {
     if (parent) {
         widget_set_offset(widget, gfc_vector2d(parent->rect.x, parent->rect.y));
     }
+    widget->parent = parent_window;
 
     if (def_data_get_vector2d(json, "size", &size)) {
         widget_set_size(widget, (int)size.x, (int)size.y);
@@ -205,12 +206,13 @@ widget_t *widget_load_from_json(def_data_t *json, widget_t *parent) {
 
     child = def_data_get_obj(json, "child");
     if (child) {
-        widget_t *childWidget = widget_load_from_json(child, widget);
+        widget_t *childWidget = widget_load_from_json(child, widget, parent_window);
         if (childWidget) {
             widget_set_child(widget, childWidget);
         } else {
             slog("Failed to load child widget from JSON");
         }
     }
+
     return widget;
 }

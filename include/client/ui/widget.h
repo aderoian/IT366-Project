@@ -126,6 +126,6 @@ int widget_handle_event(widget_t *widget, const struct window_event_s *event);
  * @param parent The parent widget to which the loaded widget will be attached.
  * @return A pointer to the loaded widget, or NULL if loading failed.
  */
-widget_t *widget_load_from_json(def_data_t *json, widget_t *parent);
+widget_t *widget_load_from_json(def_data_t *json, widget_t *parent, struct window_s *parent_window);
 
 #endif /* WIDGIT_H */

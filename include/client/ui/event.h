@@ -25,15 +25,6 @@ typedef enum keyboard_event_type_e {
 } keyboard_event_type_e;
 
 /**
- * @brief Enumeration for different types of mouse events.
- */
-typedef enum mouse_event_type_e {
-    MOUSE_EVENT_BUTTON_DOWN = 0,
-    MOUSE_EVENT_BUTTON_UP = 1,
-    MOUSE_EVENT_MOVE = 2,
-} mouse_event_type_e;
-
-/**
  * @brief Structure representing a keyboard event, including the type of event, key code, and whether the key is held down.
  */
 typedef struct keyboard_event_s {
@@ -55,7 +46,6 @@ typedef struct keyboard_event_s {
  * @brief Structure representing a mouse event, including the type of event, x and y coordinates, and a bitmask for mouse buttons.
  */
 typedef struct mouse_event_s {
-    mouse_event_type_e type;
     int x, y;
     uint32_t buttons; // Bitmask for mouse buttons (e.g., 1 for left, 2 for right, 4 for middle)
 } mouse_event_t;
@@ -124,13 +114,6 @@ void event_process_keyboard(void);
 void event_process_command(const char *command);
 
 /**
- * @brief Retrieves the current head index of the event buffer.
- *
- * @return The index of the head of the event buffer.
- */
-size_t event_buffer_head(void);
-
-/**
  * @brief Retrieves the current tail index of the event buffer.
  *
  * @return The index of the tail of the event buffer.
@@ -144,14 +127,6 @@ size_t event_buffer_tail(void);
  * @return A pointer to the event at the specified index, or NULL if the index is out of bounds.
  */
 const window_event_t *event_buffer_get(size_t index);
-
-/**
- * @brief Retrieves the index of the next event in the buffer after the specified current index.
- *
- * @param current The current index in the event buffer.
- * @return The index of the next event in the buffer, or the tail index if there are no more events.
- */
-size_t event_buffer_next(size_t current);
 
 /**
  * @brief Clears the event buffer, resetting the head and tail indices to indicate that the buffer is empty.

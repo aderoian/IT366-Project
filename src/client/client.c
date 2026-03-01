@@ -7,8 +7,6 @@
 #include "common/game/tower.h"
 #include "common/game/game.h"
 #include "common/def.h"
-#include "common/network/packet/definitions.h"
-#include "common/network/packet/io.h"
 
 #include "client/animation.h"
 #include "client/gf2d_graphics.h"
@@ -18,6 +16,7 @@
 #include "client/game/build.h"
 #include "client/ui/overlay.h"
 #include "client/ui/window.h"
+#include "client/ui/types/windows.h"
 #include "common/game/item.h"
 
 void client_tickLoop(Client* client);
@@ -76,14 +75,9 @@ int client_main(void) {
 
     g_client.renderState.background = gf2d_sprite_load_image("images/backgrounds/bg_flat.png");
 
-    build_mode_enter(tower_def_get("Basic Tower"));
-
-    client_connect(&g_client, "127.0.0.1", "12345");
-    c2s_player_join_request_packet_t pkt;
-    create_c2s_player_join_request(&pkt);
-
-    g_client.state = CLIENT_JOINING;
-    client_send_to_server(&g_client, PACKET_C2S_PLAYER_JOIN_REQUEST, &pkt, ENET_PACKET_FLAG_RELIABLE);
+    window_t *mainMenu = window_load_from_json(def_load("def/window/main_menu.json"));
+    mainMenu->on_button_click = window_main_on_button_click;
+    window_show(mainMenu);
 
     log_info("Client running");
 

@@ -7,6 +7,7 @@
 
 #include "simple_logger.h"
 #include "client/ui/widget.h"
+#include "common/logger.h"
 
 typedef struct window_manager_s {
     window_t *active;
@@ -186,7 +187,7 @@ void window_update_all(const float deltaTime) {
 }
 
 void window_handle_event_all(void) {
-    size_t head, tail;
+    size_t head = 0, tail;
     const window_event_t *event;
     if (!g_windowManager.active) {
         return;
@@ -196,12 +197,11 @@ void window_handle_event_all(void) {
     event_process_mouse();
     event_process_keyboard();
 
-    head = event_buffer_head();
     tail = event_buffer_tail();
     while (head != tail) {
         event = event_buffer_get(head);
         window_handle_event(g_windowManager.active, event);
-        head = event_buffer_next(head);
+        head++;
     }
 }
 
@@ -229,7 +229,8 @@ window_t * window_load_from_json(def_data_t *json) {
         return NULL;
     }
 
-    window->root = widget_load_from_json(json, NULL);
+    window->root = widget_load_from_json(json, NULL, window);
+    window->root->parent = window;
     return window;
 
 }
