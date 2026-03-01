@@ -10,7 +10,7 @@
 extern uint8_t __DEBUG;
 extern uint8_t _dedicatedServer;
 
-struct server_session_s;
+struct network_session_s;
 struct player_s;
 struct player_manager_s;
 
@@ -46,7 +46,7 @@ extern Server g_server;
 int server_main(void);
 void server_close(void);
 
-struct player_s *server_create_player(Server *server, struct server_session_s *session);
+struct player_s *server_create_player(Server *server, struct network_session_s *session);
 void server_destroy_player(struct player_s *player);
 
 Entity *server_spawn_player_entity(struct player_s *player, GFC_Vector2D pos);

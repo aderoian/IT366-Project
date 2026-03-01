@@ -1,7 +1,8 @@
 #include <stdio.h>
 
 #include "common/logger.h"
-#include "server/server_network.h"
+#include "server/network/server_network.h"
+#include "server/network/network_session.h"
 #include "server/server.h"
 
 server_network_t g_serverNetwork = {0};
@@ -19,7 +20,7 @@ server_network_t *server_network_create(const network_settings_t *settings) {
     network->baseNetwork.settings.onConnect = server_network_client_connect;
     network->baseNetwork.settings.onDisconnect = server_network_client_disconnect;
 
-    network->sessions = malloc(sizeof(server_session_t) * settings->maxSessions);
+    network->sessions = malloc(sizeof(network_session_t) * settings->maxSessions);
     if (!network->sessions) {
         goto fail;
     }
@@ -100,17 +101,17 @@ void server_network_client_connect(struct network_s *network, const net_udp_even
         return;
     }
 
-    server_session_t *session = &serverNetwork->sessions[serverNetwork->currentSessionCount++];
-    session->peer = context->peer;
-    context->peer->data = session;
-    session->sessionID = serverNetwork->nextSessionID++;
-
-    log_info("New client connected. Session ID: %u", session->sessionID);
+    network_session_create(
+        &serverNetwork->sessions[serverNetwork->currentSessionCount++],
+        context->peer,
+        serverNetwork->nextSessionID++
+    );
+    log_info("Client connected. Assigned Session ID: %u", serverNetwork->sessions[serverNetwork->currentSessionCount - 1].sessionID);
 }
 
 void server_network_client_disconnect(struct network_s *network, const net_udp_event_t *context) {
     server_network_t *serverNetwork = network->networkAdapter;
-    server_session_t *session;
+    network_session_t *session;
     for (size_t i = 0; i < serverNetwork->currentSessionCount; ++i) {
         if (serverNetwork->sessions[i].peer == context->peer) {
             session = &serverNetwork->sessions[i];
@@ -127,12 +128,4 @@ void server_network_client_disconnect(struct network_s *network, const net_udp_e
             break;
         }
     }
-}
-
-int server_network_send(server_network_t *network, server_session_t *session, const uint8_t packetID, void *context, const uint32_t flags) {
-    if (!network || !session || !network->baseNetwork.running) {
-        return -1;
-    }
-
-    return network_send(session->peer, packetID, context, flags);
 }

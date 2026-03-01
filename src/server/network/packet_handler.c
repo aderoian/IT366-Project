@@ -4,18 +4,19 @@
 #include "common/game/tower.h"
 #include "common/game/world.h"
 #include "common/network/packet/handler.h"
-#include "server/server_network.h"
+#include "../../../include/server/network/server_network.h"
 #include "server/server.h"
 #include "server/game/player_manager.h"
+#include "server/network/network_session.h"
 
 void handle_c2s_player_input_snapshot(const c2s_player_input_snapshot_packet_t *packet, void *peer) {
     player_t *player;
-    server_session_t *session;
+    network_session_t *session;
     if (!packet || !peer) {
         return;
     }
 
-    session = (server_session_t *) ((net_udp_peer_t *) peer)->data;
+    session = (network_session_t *) ((net_udp_peer_t *) peer)->data;
     if (!session) {
         log_warn("Received player input snapshot from peer without valid session");
         return;
@@ -48,7 +49,7 @@ void handle_c2s_player_join_request(const c2s_player_join_request_packet_t *pkt,
 
 void handle_c2s_tower_build_request(const c2s_tower_build_request_packet_t *pkt, void *peer) {
     player_t *player;
-    server_session_t *session;
+    network_session_t *session;
     tower_state_t *tower;
     s2c_tower_create_packet_t towerPkt;
     const tower_def_t *towerDef;
@@ -56,7 +57,7 @@ void handle_c2s_tower_build_request(const c2s_tower_build_request_packet_t *pkt,
         return;
     }
 
-    session = (server_session_t *) ((net_udp_peer_t *) peer)->data;
+    session = (network_session_t *) ((net_udp_peer_t *) peer)->data;
     if (!session) {
         log_warn("Received tower build request from peer without valid session");
         return;

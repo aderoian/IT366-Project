@@ -18,7 +18,7 @@
 #include "client/game/build.h"
 #include "client/ui/overlay.h"
 #include "client/ui/window.h"
-#include "common/game/world.h"
+#include "common/game/item.h"
 
 void client_tickLoop(Client* client);
 void client_render(Client *client, uint64_t alpha);
@@ -51,6 +51,7 @@ int client_main(void) {
     overlay_init(&g_client.overlay, 32, "def/overlay.json");
     entity_init(1024);
     phys_init(1024);
+    item_init("def/items.json");
     tower_init(32);
     tower_load_defs("def/towers.json");
 

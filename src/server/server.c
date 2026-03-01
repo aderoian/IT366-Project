@@ -10,12 +10,14 @@
 #include "common/def.h"
 #include "common/time.h"
 #include "common/game/game.h"
+#include "common/game/item.h"
 #include "common/game/player.h"
 #include "common/game/tower.h"
 #include "common/game/world.h"
 
 #include "server/game/player_manager.h"
-#include "server/server_network.h"
+#include "../../include/server/network/server_network.h"
+#include "server/network/network_session.h"
 Server g_server = {0};
 
 void *server_run(void *arg);
@@ -80,6 +82,7 @@ int server_startup(Server *server) {
     log_info("Server network started successfully.");
 
     def_init(32);
+    item_init("def/items.json");
     tower_init(128);
     tower_load_defs("def/towers.json");
 
@@ -227,7 +230,7 @@ void server_runCommandLoop(void) {
     }
 }
 
-player_t *server_create_player(Server *server, struct server_session_s *session) {
+player_t *server_create_player(Server *server, network_session_t *session) {
     player_t *player;
     if (!server || !session) {
         return NULL;
@@ -265,18 +268,18 @@ Entity * server_spawn_player_entity(struct player_s *player, GFC_Vector2D pos) {
 }
 
 void server_send_packet(Server* server, const player_t *player, const uint8_t packetID, void *context, const uint32_t flags) {
-    server_session_t *session;
+    network_session_t *session;
     if (!server || !player) {
         return;
     }
 
-    session = (server_session_t *) player->data;
+    session = (network_session_t *) player->data;
     if (!session->peer) {
         log_warn("Player ID %u does not have a valid session", player->id);
         return;
     }
 
-    server_network_send(server->network, session, packetID, context, flags);
+    network_session_send(session, packetID, context, flags);
 }
 
 void server_broadcast_packet(Server* server, const uint8_t packetID, void *context, const uint32_t flags) {

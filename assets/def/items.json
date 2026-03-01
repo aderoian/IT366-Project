@@ -1,0 +1,22 @@
+{
+  "items": [
+    {
+      "name": "wood",
+      "description": "A piece of wood.",
+      "type": "material",
+      "sprite": ""
+    },
+    {
+      "name": "stone",
+      "description": "A piece of stone.",
+      "type": "material",
+      "sprite": ""
+    },
+    {
+      "name": "gold",
+      "description": "A piece of gold.",
+      "type": "material",
+      "sprite": ""
+    }
+  ]
+}
