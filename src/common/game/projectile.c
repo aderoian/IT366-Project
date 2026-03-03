@@ -1,13 +1,15 @@
 #include "common/logger.h"
 #include "common/game/entity.h"
 #include "common/game/projectile.h"
+
+#include "client/client.h"
 #include "common/game/tower.h"
 
 #include "client/gf2d_sprite.h"
 #include "common/game/game.h"
 
-void projectile_think(Entity *ent);
-void projectile_update(Entity *ent, float deltaTime);
+void projectile_think(const entity_manager_t *entityManager, Entity *ent);
+void projectile_update(const entity_manager_t *entityManager, Entity *ent, float deltaTime);
 
 int projectile_spawn(const entity_manager_t *entityManager, const float speed, const float damage, const float range,
                         const GFC_Vector2D direction, const char *spriteModel, struct tower_state_s *sourceTower) {
@@ -29,7 +31,7 @@ int projectile_spawn(const entity_manager_t *entityManager, const float speed, c
     projectile = (projectile_state_t *)gfc_allocate_array(sizeof(projectile_state_t), 1);
     if (!projectile) {
         log_error("Failed to allocate memory for projectile state");
-        entity_free(ent);
+        entity_free(entityManager, ent);
         return -1;
     }
 
@@ -49,19 +51,19 @@ int projectile_spawn(const entity_manager_t *entityManager, const float speed, c
     ent->position = sourceTower->worldPos;
     ent->data = projectile;
 
-    if (g_game.isLocal) {
+    if (g_client.isLocal) {
         ent->model = gf2d_sprite_load_image(spriteModel);
     }
 
     return 0;
 }
 
-void projectile_think(Entity *ent) {
+void projectile_think(const entity_manager_t *entityManager, Entity *ent) {
     // Currently, the projectile does not have any specific thinking behavior.
     // This function can be expanded in the future to handle things like homing behavior, collision detection, etc.
 }
 
-void projectile_update(Entity *ent, const float deltaTime) {
+void projectile_update(const entity_manager_t *entityManager, Entity *ent, const float deltaTime) {
     GFC_Vector2D movement;
     if (!ent || !ent->data) {
         log_error("Invalid entity or missing projectile data in projectile_update");

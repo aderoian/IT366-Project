@@ -65,7 +65,7 @@ Entity *entity_new_animated(const entity_manager_t *manager) {
     return ent;
 }
 
-void entity_free(Entity* ent) {
+void entity_free(const entity_manager_t *entityManager, Entity* ent) {
     if (!ent) return;
 
     if (ent->flags & ENT_FLAG_ANIMATED) {

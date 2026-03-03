@@ -263,7 +263,7 @@ tower_state_t *tower_place(const entity_manager_t *entityManager, tower_manager_
     ent->data = tower;
     tower->entity = ent;
 
-    if (g_game.isLocal) {
+    if (g_client.isLocal) {
         tower->worldPos = world_pos_tile_snap(g_client.world, position);
         ent->position = tower->worldPos;
         ent->model = gf2d_sprite_load_image(def->modelDef.baseSpritePath);
@@ -297,7 +297,7 @@ void tower_destroy(tower_manager_t *towerManager, tower_state_t *tower) {
     tower->id = UINT32_MAX;
 
     if (tower->entity) {
-        entity_free(tower->entity);
+        entity_free(towerManager, tower->entity);
         tower->entity = NULL;
     }
 }

@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "common/game/entity.h"
+#include "common/game/game.h"
 #include "common/thread/mutex.h"
 #include "common/thread/thread.h"
 
@@ -27,6 +28,8 @@ typedef enum ServerState_E {
 } ServerState;
 
 typedef struct Server_S {
+    game_t local;
+
     struct def_manager_s *defManager;
     struct entity_manager_s *entityManager;
     struct item_def_manager_s *itemManager;
@@ -44,6 +47,8 @@ typedef struct Server_S {
     double currentUse;
     double averageTps[20];
     double averageUse[20];
+
+    void (*onStart)(struct Server_S *server);
 } Server;
 
 extern Server g_server;

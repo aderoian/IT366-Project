@@ -2,6 +2,7 @@
 #include "common/network/packet/handler.h"
 
 #include "client/client.h"
+#include "client/game/build.h"
 #include "common/game/tower.h"
 
 void handle_s2c_player_join_response(const s2c_player_join_response_packet_t *pkt, void *client) {
@@ -21,6 +22,8 @@ void handle_s2c_player_join_response(const s2c_player_join_response_packet_t *pk
         player_entity_spawn(g_client.entityManager, g_client.player, gfc_vector2d(pkt->spawnX, pkt->spawnY), "images/pointer.png");
         g_client.state = CLIENT_PLAYING;
         g_client.world = world_create(pkt->worldW, pkt->worldL, 0);
+
+        build_mode_enter(tower_def_get(g_client.towerManager, "Basic Tower"));
     } else {
         log_info("Failed to join server.");
     }

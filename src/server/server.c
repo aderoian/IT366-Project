@@ -17,6 +17,7 @@
 
 #include "server/game/player_manager.h"
 #include "../../include/server/network/server_network.h"
+#include "client/client.h"
 #include "server/network/network_session.h"
 Server g_server = {0};
 
@@ -39,6 +40,7 @@ int server_main(void) {
     }
 
     if (_dedicatedServer) {
+        g_client.isLocal = 0;
         server_runCommandLoop();
     }
 
@@ -132,10 +134,14 @@ void *server_run(void *arg) {
     g_server.state = SERVER_RUNNING;
     mutex_unlock(&g_server.lock);
 
+    if (server->onStart) {
+        server->onStart(server);
+    }
+
+    game_t game_s = g_server.local;
     // Main server loop
-    g_game.tickNumber = 0;
-    g_game.deltaTime = 0.0f;
-    g_game.isLocal = 0;
+    game_s.tickNumber = 0;
+    g_server.local.deltaTime = 0.0f;
     server_tickProcessor(server);
     log_info("Server stopped!");
 
@@ -144,7 +150,7 @@ void *server_run(void *arg) {
 
 void server_tick(Server *server, float deltaTime) {
     size_t index;
-    g_game.tickNumber++;
+    g_server.local.tickNumber++;
 
     network_tick(&server->network->baseNetwork);
     entity_update_all(server->entityManager, deltaTime);
@@ -153,7 +159,7 @@ void server_tick(Server *server, float deltaTime) {
     server->currentUse = fmin(1.0, deltaTime / SERVER_TARGET_TICK_TIME_MS);
 
     // Update average TPS and use
-    index = g_game.tickNumber % 20;
+    index = g_server.local.tickNumber % 20;
     server->averageTps[index] = server->currentTps;
     server->averageUse[index] = server->currentUse;
 }
@@ -190,8 +196,8 @@ void server_tickProcessor(Server *server) {
 
         deltaSeconds = frameTimeMs / 1000.0;
 
-        g_game.deltaTime = (float) deltaSeconds;
-        server_tick(server, g_game.deltaTime);
+        g_server.local.deltaTime = (float) deltaSeconds;
+        server_tick(server, g_server.local.deltaTime);
 
         workTimeMs = (double) time_now_ms() - currentTimeMs;
         sleepTimeMs = targetTickMs - workTimeMs;

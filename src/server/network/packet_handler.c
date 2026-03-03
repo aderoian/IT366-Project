@@ -28,7 +28,7 @@ void handle_c2s_player_input_snapshot(const c2s_player_input_snapshot_packet_t *
         return;
     }
 
-    player_input_process(player, &packet->inputCommand, g_game.deltaTime);
+    player_input_process(player, &packet->inputCommand, g_server.local.deltaTime);
 }
 
 void handle_c2s_player_join_request(const c2s_player_join_request_packet_t *pkt, void *peer) {

@@ -37,7 +37,7 @@ void entity_close(const entity_manager_t* manager);
 
 Entity *entity_new(const entity_manager_t* manager);
 Entity *entity_new_animated(const entity_manager_t* manager);
-void entity_free(Entity *ent);
+void entity_free(const entity_manager_t *entityManager, Entity *ent);
 void entity_draw(const entity_manager_t *entityManager, Entity *ent);
 
 void entity_draw_animated(const entity_manager_t *entityManager, Entity *ent);

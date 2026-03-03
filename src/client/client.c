@@ -18,6 +18,9 @@
 #include "client/ui/window.h"
 #include "client/ui/types/windows.h"
 #include "common/game/item.h"
+#include "common/network/packet/definitions.h"
+#include "common/network/packet/io.h"
+#include "server/server.h"
 
 void client_tickLoop(Client* client);
 void client_render(Client *client, uint64_t alpha);
@@ -80,9 +83,9 @@ int client_main(void) {
 
     log_info("Client running");
 
-    g_game.tickNumber = 0;
-    g_game.deltaTime = 0.0f;
-    g_game.isLocal = 1;
+    g_client.local.tickNumber = 0;
+    g_client.local.deltaTime = 0.0f;
+    g_client.isLocal = 1;
     client_tickLoop(&g_client);
 
     return 0;
@@ -90,7 +93,7 @@ int client_main(void) {
 
 void client_close(void) {
     mutex_lock(&g_client.lock);
-    if (g_client.state == CLIENT_RUNNING) {
+    if (g_client.state == CLIENT_RUNNING || g_client.state == CLIENT_PLAYING) {
         g_client.state = CLIENT_SHUTDOWN_REQUESTED;
     }
     mutex_unlock(&g_client.lock);
@@ -112,6 +115,31 @@ void client_disconnect(Client* client) {
     }
 
     client_network_stop(client->network);
+}
+
+void client_on_local_server_start(Server *server) {
+    client_connect(&g_client, "127.0.0.1", "12345");
+
+    c2s_player_join_request_packet_t pkt;
+    create_c2s_player_join_request(&pkt);
+    client_send_to_server(&g_client, PACKET_C2S_PLAYER_JOIN_REQUEST, &pkt, ENET_PACKET_FLAG_RELIABLE);
+}
+
+int client_begin_singleplayer(Client *client) {
+    if (!client) {
+        return -1;
+    }
+
+    mutex_lock(&client->lock);
+    client->mode = CLIENT_MODE_SINGLEPLAYER;
+    client->state = CLIENT_JOINING;
+    mutex_unlock(&client->lock);
+
+    g_server.onStart = client_on_local_server_start;
+    _dedicatedServer = 0;
+    server_main();
+
+    return 0;
 }
 
 int client_send_to_server(Client *client, const uint8_t pktId, void *pkt, const uint32_t flags) {
@@ -155,18 +183,18 @@ void client_tickLoop(Client* client) {
         lastTime = currentTime;
 
         while (accumulator >= dt) {
-            g_game.tickNumber++;
-            g_game.deltaTime = (float) dt / 1000.0f;
+            g_client.local.tickNumber++;
+            g_client.local.deltaTime = (float) dt / 1000.0f;
 
             gfc_input_update();
             network_tick(&client->network->baseNetwork);
 
             window_handle_event_all();
-            window_update_all(g_game.deltaTime);
-            overlay_update(&g_client.overlay, g_game.deltaTime);
+            window_update_all(g_client.local.deltaTime);
+            overlay_update(&g_client.overlay, g_client.local.deltaTime);
 
             entity_think_all(g_client.entityManager);
-            entity_update_all(g_client.entityManager, g_game.deltaTime);
+            entity_update_all(g_client.entityManager, g_client.local.deltaTime);
 
             camera_update(&g_camera);
 

@@ -55,7 +55,7 @@ Entity * player_entity_spawn(const entity_manager_t *entityManager, player_t *pl
     ent = entity_new_animated(entityManager);
     ent->position = pos;
 
-    if (IS_CLIENT()) {
+    if (g_client.isLocal) {
         if (!sprite) {
             return NULL;
         }
@@ -68,7 +68,7 @@ Entity * player_entity_spawn(const entity_manager_t *entityManager, player_t *pl
 
         if (!ent->model) {
             log_error("failed to load entity sprite: '%s'", sprite);
-            entity_free(ent);
+            entity_free(entityManager, ent);
             return NULL;
         }
 
@@ -104,7 +104,7 @@ GFC_Vector2D player_input_apply(player_t *player, const GFC_Vector2D position, c
         player_snapshot_t snapshot = {
             .position = newPos,
             .cmd = {
-                .tickNumber = g_game.tickNumber,
+                .tickNumber = g_client.local.tickNumber,
                 .axisX = (int32_t)direction.x,
                 .axisY = (int32_t)direction.y
             }
@@ -168,7 +168,7 @@ void player_input_process_server(player_t *player, uint64_t tick, float xPos, fl
             while (idx != tail) {
                 peeked = (player_snapshot_t *)buf_spsc_ring_get(player->inputBuffer, idx);
                 inputDirection = gfc_vector2d((float)peeked->cmd.axisX, (float)peeked->cmd.axisY);
-                predPosition = player_move(predPosition, inputDirection, PLAYER_SPEED, g_game.deltaTime);
+                predPosition = player_move(predPosition, inputDirection, PLAYER_SPEED, g_server.local.deltaTime);
                 idx = buf_spsc_ring_next_index(player->inputBuffer, idx);
             }
         } else {
@@ -206,7 +206,7 @@ void player_update(const entity_manager_t *entityManager, Entity *ent, float del
 
     player = (player_t *)ent->data;
 
-    if (IS_CLIENT()) {
+    if (g_client.isLocal) {
         entity_update_animated(entityManager, ent, deltaTime);
 
         actions.up = gfc_input_command_down("up");
