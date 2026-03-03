@@ -8,6 +8,8 @@
 
 #define ENT_FLAG_ANIMATED    0x0001
 
+typedef struct entity_manager_s entity_manager_t;
+
 typedef struct Entity_S {
     uint8_t _inUse;
     GFC_Vector2D position;
@@ -25,24 +27,24 @@ typedef struct Entity_S {
     void *data;
 
     void *model; // Sprite or AnimatedSprite, depends on animated flag
-    void (*think)(struct Entity_S *ent);
-    void (*update)(struct Entity_S *ent, float deltaTime);
-    void (*draw)(struct Entity_S *ent);
+    void (*think)(const entity_manager_t *entityManager, struct Entity_S *ent);
+    void (*update)(const entity_manager_t *entityManager, struct Entity_S *ent, float deltaTime);
+    void (*draw)(const entity_manager_t *entityManager, struct Entity_S *ent);
 } Entity;
 
-void entity_init(uint32_t maxEnts);
-void entity_close(void);
+entity_manager_t *entity_init(size_t maxEnts);
+void entity_close(const entity_manager_t* manager);
 
-Entity *entity_new(void);
-Entity *entity_new_animated(void);
+Entity *entity_new(const entity_manager_t* manager);
+Entity *entity_new_animated(const entity_manager_t* manager);
 void entity_free(Entity *ent);
-void entity_draw(Entity *ent);
+void entity_draw(const entity_manager_t *entityManager, Entity *ent);
 
-void entity_draw_animated(Entity *ent);
-void entity_update_animated(Entity *ent, float deltaTime);
+void entity_draw_animated(const entity_manager_t *entityManager, Entity *ent);
+void entity_update_animated(const entity_manager_t *entityManager, Entity *ent, float deltaTime);
 
-void entity_think_all(void);
-void entity_update_all(float deltaTime);
-void entity_draw_all();
+void entity_think_all(const entity_manager_t *manager);
+void entity_update_all(const entity_manager_t *manager, float deltaTime);
+void entity_draw_all(const entity_manager_t *manager);
 
 #endif /* ENTITY_H */

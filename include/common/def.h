@@ -13,20 +13,28 @@ typedef struct Definition_s {
     def_data_t *data;
 } def_t;
 
-void def_init(unsigned int maxDefs);
+typedef struct def_manager_s def_manager_t;
+
+/**
+ * @brief initialize the definition manager
+ * @param maxDefs the maximum number of definitions to manage
+ */
+def_manager_t* def_init(size_t maxDefs);
 
 /**
  * @brief load a definition file
+ * @param manager the definition manager to load into
  * @param filename the file to load
  * @return NULL on error or the loaded definition
  */
-def_data_t *def_load(const char *filename);
+def_data_t *def_load(const def_manager_t *manager, const char *filename);
 
 /**
  * @brief load all definition files in a directory
+ * @param manager the definition manager to load into
  * @param directory the directory to load from
  */
-void def_load_directory(const char *directory);
+void def_load_directory(def_manager_t *manager, const char *directory);
 
 /**
  * @brief free a previously loaded definition

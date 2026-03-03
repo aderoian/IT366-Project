@@ -11,6 +11,8 @@
 #define OVERLAY_ELEMENTS(X) \
 X(hudbar, HUDBAR, SIMPLE)
 
+struct def_manager_s;
+
 typedef struct overlay_element_s {
     GFC_Vector2D position;
     void *data;
@@ -28,7 +30,7 @@ typedef struct overlay_s {
     uint8_t visible;
 } overlay_t;
 
-void overlay_init(overlay_t *overlay, size_t initialCapacity, const char *config);
+void overlay_init(const struct def_manager_s *defManager, overlay_t *overlay, size_t initialCapacity, const char *config);
 
 void overlay_destroy(overlay_t *overlay);
 

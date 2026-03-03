@@ -69,13 +69,13 @@ void handle_c2s_tower_build_request(const c2s_tower_build_request_packet_t *pkt,
         return;
     }
 
-    towerDef = tower_def_get_by_index(pkt->towerDefIndex);
+    towerDef = tower_def_get_by_index(g_server.towerManager, pkt->towerDefIndex);
     if (!towerDef) {
         log_warn("Received tower build request with invalid tower definition index %u from player ID %u", pkt->towerDefIndex, player->id);
         return;
     }
 
-    tower = tower_create_by_def(towerDef, (GFC_Vector2D){pkt->xPos, pkt->yPos});
+    tower = tower_create_by_def(g_server.entityManager, g_server.towerManager, towerDef, (GFC_Vector2D){pkt->xPos, pkt->yPos});
     if (tower) {
         log_info("Player ID %u built a tower at position (%f, %f) with definition index %u", player->id, pkt->xPos, pkt->yPos, pkt->towerDefIndex);
         create_s2c_tower_create(&towerPkt, pkt->xPos, pkt->yPos, pkt->towerDefIndex, tower->id);

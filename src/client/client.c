@@ -44,15 +44,14 @@ int client_main(void) {
         0);
     gf2d_graphics_set_frame_delay(16);
     gf2d_sprite_init(1024);
-    def_init(32);
+    g_client.defManager = def_init(32);
     animation_manager_init(256);
     window_init(32, 256, 256);
-    overlay_init(&g_client.overlay, 32, "def/overlay.json");
-    entity_init(1024);
+    overlay_init(g_client.defManager, &g_client.overlay, 32, "def/overlay.json");
+    g_client.entityManager = entity_init(1024);
     phys_init(1024);
-    item_init("def/items.json");
-    tower_init(32);
-    tower_load_defs("def/towers.json");
+    g_client.itemManager = item_init(g_client.defManager, "def/items.json");
+    g_client.towerManager = tower_init(tower_load_defs(g_client.defManager, "def/towers.json"), 32);
 
     camera_init(&g_camera);
 
@@ -75,7 +74,7 @@ int client_main(void) {
 
     g_client.renderState.background = gf2d_sprite_load_image("images/backgrounds/bg_flat.png");
 
-    window_t *mainMenu = window_load_from_json(def_load("def/window/main_menu.json"));
+    window_t *mainMenu = window_load_from_json(g_client.defManager, "def/window/main_menu.json");
     mainMenu->on_button_click = window_main_on_button_click;
     window_show(mainMenu);
 
@@ -166,8 +165,8 @@ void client_tickLoop(Client* client) {
             window_update_all(g_game.deltaTime);
             overlay_update(&g_client.overlay, g_game.deltaTime);
 
-            entity_think_all();
-            entity_update_all(g_game.deltaTime);
+            entity_think_all(g_client.entityManager);
+            entity_update_all(g_client.entityManager, g_game.deltaTime);
 
             camera_update(&g_camera);
 
@@ -190,7 +189,7 @@ void client_render(Client* client, uint64_t alpha) {
     gf2d_graphics_clear_screen();
 
     gf2d_sprite_draw_image(client->renderState.background, gfc_vector2d(0, 0));
-    entity_draw_all();
+    entity_draw_all(g_client.entityManager);
     overlay_draw(&g_client.overlay);
     build_mode_render();
     window_draw_all();

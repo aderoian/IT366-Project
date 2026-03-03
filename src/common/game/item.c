@@ -3,36 +3,42 @@
 
 struct item_def_manager_s {
     item_def_t *itemDefs;
-    int numItemDefs;
+    size_t numItemDefs;
 };
 
-static item_def_manager_t g_itemDefManager = {0};
-
-void item_init(const char *def) {
+item_def_manager_t *item_init(const struct def_manager_s *defManager, const char *defFile) {
+    item_def_manager_t *manager;
     def_data_t *data, *itemsDef, *itemDef;
     item_def_t *item;
     const char *str;
-    int i;
-    if (!def) {
-        return;
+    int size;
+    size_t i;
+    if (!defFile) {
+        return NULL;
     }
 
-    data = def_load(def);
+    data = def_load(defManager, defFile);
     if (!data) {
-        return;
+        return NULL;
     }
 
     itemsDef = def_data_get_array(data, "items");
     if (!itemsDef) {
-        return;
+        return NULL;
     }
 
-    def_data_array_get_count(itemsDef, &g_itemDefManager.numItemDefs);
-    g_itemDefManager.itemDefs = gfc_allocate_array(sizeof(item_def_t), g_itemDefManager.numItemDefs);
+    manager = gfc_allocate_array(sizeof(item_def_manager_t), 1);
+    if (!manager) {
+        return NULL;
+    }
 
-    for (i = 0; i < g_itemDefManager.numItemDefs; i++) {
+    def_data_array_get_count(itemsDef, &size);
+    manager->numItemDefs = size;
+    manager->itemDefs = gfc_allocate_array(sizeof(item_def_t), manager->numItemDefs);
+
+    for (i = 0; i < manager->numItemDefs; i++) {
         itemDef = def_data_array_get_nth(itemsDef, i);
-        item = &g_itemDefManager.itemDefs[i];
+        item = &manager->itemDefs[i];
 
         str = def_data_get_string(itemDef, "name");
         memcpy(item->name, str, sizeof(item->name) - 1);
@@ -51,35 +57,37 @@ void item_init(const char *def) {
 
         item->index = i;
     }
+
+    return manager;
 }
 
-void item_close(void) {
-    if (g_itemDefManager.itemDefs) {
-        free(g_itemDefManager.itemDefs);
-        g_itemDefManager.itemDefs = NULL;
-        g_itemDefManager.numItemDefs = 0;
+void item_close(item_def_manager_t *manager) {
+    if (manager->itemDefs) {
+        free(manager->itemDefs);
+        manager->itemDefs = NULL;
+        manager->numItemDefs = 0;
     }
 }
 
-const item_def_t * item_def_get(const char *name) {
-    int i;
-    for (i = 0; i < g_itemDefManager.numItemDefs; i++) {
-        if (strcmp(g_itemDefManager.itemDefs[i].name, name) == 0) {
-            return &g_itemDefManager.itemDefs[i];
+const item_def_t * item_def_get(const item_def_manager_t *manager, const char *name) {
+    size_t i;
+    for (i = 0; i < manager->numItemDefs; i++) {
+        if (strcmp(manager->itemDefs[i].name, name) == 0) {
+            return &manager->itemDefs[i];
         }
     }
     return NULL; // Not found
 }
 
-const item_def_t * item_def_get_by_index(int index) {
-    if (index < 0 || index >= g_itemDefManager.numItemDefs) {
+const item_def_t * item_def_get_by_index(const item_def_manager_t *manager, const size_t index) {
+    if (index >= manager->numItemDefs) {
         return NULL; // Index out of bounds
     }
-    return &g_itemDefManager.itemDefs[index];
+    return &manager->itemDefs[index];
 }
 
-int item_get_count(void) {
-    return g_itemDefManager.numItemDefs;
+int item_get_count(const item_def_manager_t *manager) {
+    return manager->numItemDefs;
 }
 
 uint8_t item_compare(const item_def_t *a, const item_def_t *b) {

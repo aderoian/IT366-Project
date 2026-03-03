@@ -32,8 +32,6 @@ int server_main(void) {
     g_server.state = SERVER_IDLE;
     mutex_init(&g_server.lock);
 
-    entity_init(1024);
-
     if (thread_create(&g_server.thread, server_run, &g_server) < 0) {
         log_fatal("Failed to create server thread");
         mutex_destroy(&g_server.lock);
@@ -81,10 +79,10 @@ int server_startup(Server *server) {
     }
     log_info("Server network started successfully.");
 
-    def_init(32);
-    item_init("def/items.json");
-    tower_init(128);
-    tower_load_defs("def/towers.json");
+    server->defManager = def_init(32);
+    server->entityManager = entity_init(1024);
+    server->itemManager = item_init(server->defManager, "def/items.json");
+    server->towerManager = tower_init(tower_load_defs(server->defManager, "def/towers.json"), 128);
 
     server->world = world_create(100, 100, 0);
 
@@ -149,7 +147,7 @@ void server_tick(Server *server, float deltaTime) {
     g_game.tickNumber++;
 
     network_tick(&server->network->baseNetwork);
-    entity_update_all(deltaTime);
+    entity_update_all(server->entityManager, deltaTime);
 
     server->currentTps = fmin(SERVER_TARGET_TICKRATE, 1000.0 / deltaTime);
     server->currentUse = fmin(1.0, deltaTime / SERVER_TARGET_TICK_TIME_MS);
@@ -264,7 +262,7 @@ Entity * server_spawn_player_entity(struct player_s *player, GFC_Vector2D pos) {
         return NULL;
     }
 
-    return player_entity_spawn(player, pos, NULL);
+    return player_entity_spawn(g_server.entityManager, player, pos, NULL);
 }
 
 void server_send_packet(Server* server, const player_t *player, const uint8_t packetID, void *context, const uint32_t flags) {

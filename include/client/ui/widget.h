@@ -6,6 +6,8 @@
 #include "gfc_shape.h"
 #include "gfc_vector.h"
 
+#include "common/def.h"
+
 struct window_s;
 struct window_event_s;
 

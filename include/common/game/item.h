@@ -25,15 +25,15 @@ typedef struct item_def_s {
 
 typedef struct item_def_manager_s item_def_manager_t;
 
-void item_init(const char *def);
+item_def_manager_t *item_init(const struct def_manager_s *defManager, const char *defFile);
 
-void item_close(void);
+void item_close(item_def_manager_t *manager);
 
-const item_def_t *item_def_get(const char *name);
+const item_def_t *item_def_get(const item_def_manager_t *manager, const char *name);
 
-const item_def_t *item_def_get_by_index(int index);
+const item_def_t *item_def_get_by_index(const item_def_manager_t *manager, size_t index);
 
-int item_get_count(void);
+int item_get_count(const item_def_manager_t *manager);
 
 uint8_t item_compare(const item_def_t *a, const item_def_t *b);
 

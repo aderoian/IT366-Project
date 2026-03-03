@@ -4,10 +4,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "common/def.h"
-
 #include "client/ui/event.h"
 #include "client/ui/widget.h"
+
+struct def_manager_s;
 
 #define MAX_TITLE_LENGTH 64
 
@@ -115,10 +115,11 @@ void window_handle_event_all(void);
 /**
  * @brief Loads a window from a JSON definition.
  *
- * @param json The JSON data containing the window definition.
+ * @param defManager A pointer to the definition manager to use for loading resources.
+ * @param filePath The file path to the JSON definition of the window.
  * @return A pointer to the newly created window, or NULL if loading failed.
  */
-window_t *window_load_from_json(def_data_t *json);
+window_t *window_load_from_json(const struct def_manager_s *defManager, const char *filePath);
 
 
 #endif /* WINDOW_H */

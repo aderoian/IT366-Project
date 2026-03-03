@@ -6,30 +6,41 @@
 #include "client/camera.h"
 #include "common/logger.h"
 
-typedef struct EntityManager_S {
+struct entity_manager_s {
     Entity *ents;
-    uint32_t maxEnts;
-} EntityManager;
+    size_t maxEnts;
+};
 
-static EntityManager ent_manager = {0};
+entity_manager_t *entity_init(const size_t maxEnts) {
+    entity_manager_t *manager = malloc(sizeof(entity_manager_t));
+    if (!manager) {
+        log_error("Failed to allocate memory for entity manager");
+        return NULL;
+    }
 
-void entity_init(const uint32_t maxEnts) {
-    ent_manager.ents = gfc_allocate_array(sizeof(Entity), maxEnts);
-    ent_manager.maxEnts = maxEnts;
+    manager->ents = gfc_allocate_array(sizeof(Entity), maxEnts);
+    if (!manager->ents) {
+        free(manager);
+        log_error("Failed to allocate memory for entities");
+        return NULL;
+    }
+
+    manager->maxEnts = maxEnts;
+    return manager;
 }
 
-void entity_close(void) {
-    if (ent_manager.ents) free(ent_manager.ents);
+void entity_close(const entity_manager_t *manager) {
+    if (manager->ents) free(manager->ents);
 }
 
-Entity *entity_new(void) {
-    uint32_t i;
+Entity *entity_new(const entity_manager_t *manager) {
+    size_t i;
     Entity* ent;
-    if (!ent_manager.ents) 
+    if (!manager->ents) 
         return NULL;
 
-    for (i = 0; i < ent_manager.maxEnts; i++) {
-        ent = &ent_manager.ents[i];
+    for (i = 0; i < manager->maxEnts; i++) {
+        ent = &manager->ents[i];
         if (ent->_inUse > 0) continue;
 
         ent->_inUse = 1;
@@ -43,8 +54,8 @@ Entity *entity_new(void) {
     return NULL;
 }
 
-Entity *entity_new_animated(void) {
-    Entity *ent = entity_new();
+Entity *entity_new_animated(const entity_manager_t *manager) {
+    Entity *ent = entity_new(manager);
     if (!ent) return NULL;
 
     ent->flags |= ENT_FLAG_ANIMATED;
@@ -72,26 +83,26 @@ void entity_free(Entity* ent) {
     memset(ent, 0, sizeof(Entity));
 }
 
-void entity_think_all(void) {
-    uint32_t i;
+void entity_think_all(const entity_manager_t *manager) {
+    size_t i;
     Entity *ent;
-    for (i = 0; i < ent_manager.maxEnts; i++) {
-        ent = &ent_manager.ents[i];
+    for (i = 0; i < manager->maxEnts; i++) {
+        ent = &manager->ents[i];
         if (ent->_inUse == 0 || !ent->think) continue;
-        ent->think(ent);
+        ent->think(manager, ent);
     }
 }
-void entity_update_all(const float deltaTime) {
-    uint32_t i;
+void entity_update_all(const entity_manager_t *manager, const float deltaTime) {
+    size_t i;
     Entity *ent;
-    for (i = 0; i < ent_manager.maxEnts; i++) {
-        ent = &ent_manager.ents[i];
+    for (i = 0; i < manager->maxEnts; i++) {
+        ent = &manager->ents[i];
         if (ent->_inUse == 0 || !ent->update) continue;
-        ent->update(ent, deltaTime);
+        ent->update(manager, ent, deltaTime);
     }
 }
 
-void entity_update_animated(Entity *ent, float deltaTime) {
+void entity_update_animated(const entity_manager_t *entityManager, Entity *ent, float deltaTime) {
     if (!ent) return;
     if (!(ent->flags & ENT_FLAG_ANIMATED)) return;
 
@@ -102,7 +113,7 @@ void entity_update_animated(Entity *ent, float deltaTime) {
     animation_state_update(animatedSprite->state, deltaTime);
 }
 
-void entity_draw(Entity *ent) {
+void entity_draw(const entity_manager_t *entityManager, Entity *ent) {
     GFC_Vector2D position;
     if (!ent) return;
 
@@ -110,7 +121,7 @@ void entity_draw(Entity *ent) {
     gf2d_sprite_draw_image(ent->model, position);
 }
 
-void entity_draw_animated(Entity *ent) {
+void entity_draw_animated(const entity_manager_t *entityManager, Entity *ent) {
     GFC_Vector2D position;
     if (!ent) return;
     if (!(ent->flags & ENT_FLAG_ANIMATED)) return;
@@ -133,12 +144,12 @@ void entity_draw_animated(Entity *ent) {
     );
 }
 
-void entity_draw_all(void) {
-    uint32_t i;
+void entity_draw_all(const entity_manager_t *manager) {
+    size_t i;
     Entity *ent;
-    for (i = 0; i < ent_manager.maxEnts; i++) {
-        ent = &ent_manager.ents[i];
+    for (i = 0; i < manager->maxEnts; i++) {
+        ent = &manager->ents[i];
         if (ent->_inUse == 0 || !ent->draw) continue;
-        ent->draw(ent);
+        ent->draw(manager, ent);
     }
 }

@@ -19,7 +19,7 @@ static void* overlay_element_creators[] = {
 };
 #undef OVERLAY_CREATION
 
-void overlay_init(overlay_t *overlay, const size_t initialCapacity, const char *config) {
+void overlay_init(const def_manager_t *defManager, overlay_t *overlay, const size_t initialCapacity, const char *config) {
     def_data_t *def, *elements, *elementDef;
     int i, c;
     const char *sprite;
@@ -38,7 +38,7 @@ void overlay_init(overlay_t *overlay, const size_t initialCapacity, const char *
     }
     memset(overlay->elements, 0, sizeof(overlay_element_t) * initialCapacity);
 
-    def = def_load(config);
+    def = def_load(defManager, config);
     elements = def_data_get_array(def, "elements");
     def_data_array_get_count(elements, &c);
     for (i = 0; i < c; i++) {

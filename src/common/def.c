@@ -8,62 +8,67 @@
 #include "common/logger.h"
 #include "common/def.h"
 
-typedef struct def_tManager_s {
+struct def_manager_s {
     def_t *definitions;
-    int defMax;
-} def_tManager;
+    size_t defMax;
+};
 
-def_tManager def_manager = {0};
-
-void def_close(void) {
-    int i;
-    if (def_manager.definitions) {
-        for (i = 0; i < def_manager.defMax; i++) {
-            if (def_manager.definitions[i]._refc) {
-                def_free(&def_manager.definitions[i]);
+void def_close(def_manager_t *manager) {
+    size_t i;
+    if (manager->definitions) {
+        for (i = 0; i < manager->defMax; i++) {
+            if (manager->definitions[i]._refc) {
+                def_free(&manager->definitions[i]);
             }
         }
-        free(def_manager.definitions);
-        def_manager.definitions = NULL;
-        def_manager.defMax = 0;
+        free(manager->definitions);
+        manager->definitions = NULL;
+        manager->defMax = 0;
     }
 }
 
-void def_init(unsigned int maxDefs) {
-    def_manager.definitions = (def_t *)calloc(maxDefs, sizeof(def_t));
-    if (!def_manager.definitions) {
+def_manager_t *def_init(const size_t maxDefs) {
+    def_manager_t *manager = malloc(sizeof(def_manager_t));
+    if (!manager) {
+        log_error("Failed to allocate memory for definition manager");
+        return NULL;
+    }
+
+    manager->definitions = (def_t *)calloc(maxDefs, sizeof(def_t));
+    if (!manager->definitions) {
+        free(manager);
         log_error("Failed to allocate memory for definitions");
-        return;
+        return NULL;
     }
-    def_manager.defMax = maxDefs;
-    atexit(def_close);
+    manager->defMax = maxDefs;
+    return manager;
 }
 
-def_t *def_new(void) {
-    int i;
-    for (i = 0; i < def_manager.defMax; i++) {
-        if (!def_manager.definitions[i]._refc) {
-            def_manager.definitions[i]._refc += 1;
-            return &def_manager.definitions[i];
+def_t *def_new(const def_manager_t *manager) {
+    size_t i;
+    for (i = 0; i < manager->defMax; i++) {
+        if (!manager->definitions[i]._refc) {
+            manager->definitions[i]._refc += 1;
+            return &manager->definitions[i];
         }
     }
     log_warn("No free definition slots available");
     return NULL;
 }
 
-def_data_t *def_load(const char *filename) {
+def_data_t *def_load(const def_manager_t *manager, const char *filename) {
     def_t *def;
     def_data_t *data;
-    int i;
+    size_t i;
     if (!filename) return NULL;
-    for (i = 0; i < def_manager.defMax; i++) {
-        if (def_manager.definitions[i]._refc && strcmp(def_manager.definitions[i].name, filename) == 0) {
-            def_manager.definitions[i]._refc++;
-            return def_manager.definitions[i].data;
+    for (i = 0; i < manager->defMax; i++) {
+        if (manager->definitions[i]._refc && strcmp(manager->definitions[i].name, filename) == 0) {
+            manager->definitions[i]._refc++;
+            return manager->definitions[i].data;
         }
     }
 
-    def = def_new();
+    def = def_new(manager);
     if (!def) return NULL;
 
     data = sj_load(filename);
@@ -79,7 +84,7 @@ def_data_t *def_load(const char *filename) {
     return data;
 }
 
-void def_load_directory(const char *directory) {
+void def_load_directory(def_manager_t *manager, const char *directory) {
 	struct stat status;
 	mode_t mode;
 	int result;
@@ -108,7 +113,7 @@ void def_load_directory(const char *directory) {
     while ((entryP = readdir(dirP)) != NULL) {
         if (entryP->d_type == DT_REG) {
             snprintf(fName, sizeof(fName), "%s/%s", directory, entryP->d_name);
-            if (!def_load(fName)) {
+            if (!def_load(manager, fName)) {
                 log_error("Failed to load definition file: %s", fName);
             }
         }

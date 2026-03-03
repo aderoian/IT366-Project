@@ -22,9 +22,9 @@ typedef struct player_snapshot_s {
     player_input_command_t cmd;
 } player_snapshot_t;
 
-void player_think(Entity *ent);
-void player_update(Entity *ent, float deltaTime);
-void player_draw(Entity *ent);
+void player_think(const entity_manager_t *entityManager, Entity *ent);
+void player_update(const entity_manager_t *entityManager, Entity *ent, float deltaTime);
+void player_draw(const entity_manager_t *entityManager, Entity *ent);
 
 player_t *player_create(uint32_t id, const char *name) {
     player_t *player = (player_t *)gfc_allocate_array(sizeof(player_t), 1);
@@ -48,11 +48,11 @@ void player_destroy(player_t *player) {
     }
 }
 
-Entity * player_entity_spawn(player_t *player, GFC_Vector2D pos, const char *sprite) {
+Entity * player_entity_spawn(const entity_manager_t *entityManager, player_t *player, GFC_Vector2D pos, const char *sprite) {
     Entity *ent;
     Sprite *spriteImage;
 
-    ent = entity_new_animated();
+    ent = entity_new_animated(entityManager);
     ent->position = pos;
 
     if (IS_CLIENT()) {
@@ -188,7 +188,7 @@ GFC_Vector2D player_move(GFC_Vector2D position, GFC_Vector2D direction, const fl
     return position;
 }
 
-void player_think(Entity *ent) {
+void player_think(const entity_manager_t *entityManager, Entity *ent) {
     if (!ent || !ent->data) {
         return;
     }
@@ -196,7 +196,7 @@ void player_think(Entity *ent) {
     // Placeholder for future thinking logic (e.g., AI, state changes)
 }
 
-void player_update(Entity *ent, float deltaTime) {
+void player_update(const entity_manager_t *entityManager, Entity *ent, float deltaTime) {
     GFC_Vector2D position, mousePosition;
     player_t *player;
     player_input_actions_t actions;
@@ -207,7 +207,7 @@ void player_update(Entity *ent, float deltaTime) {
     player = (player_t *)ent->data;
 
     if (IS_CLIENT()) {
-        entity_update_animated(ent, deltaTime);
+        entity_update_animated(entityManager, ent, deltaTime);
 
         actions.up = gfc_input_command_down("up");
         actions.down = gfc_input_command_down("down");
@@ -228,11 +228,11 @@ void player_update(Entity *ent, float deltaTime) {
     }
 }
 
-void player_draw(Entity *ent) {
+void player_draw(const entity_manager_t *entityManager, Entity *ent) {
     if (!ent || !ent->data) {
         return;
     }
 
     ent->position = ((player_t *)ent->data)->position;
-    entity_draw_animated(ent);
+    entity_draw_animated(entityManager, ent);
 }

@@ -21,6 +21,11 @@ typedef struct client_render_state_s {
 } client_render_state_t;
 
 typedef struct Client_S {
+    struct def_manager_s *defManager;
+    struct entity_manager_s *entityManager;
+    struct item_def_manager_s *itemManager;
+    struct tower_manager_s *towerManager;
+
     ClientState state;
     mutex_t lock;
 

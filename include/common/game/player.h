@@ -35,7 +35,7 @@ player_t *player_create(uint32_t id, const char *name);
 
 void player_destroy(player_t *player);
 
-Entity *player_entity_spawn(player_t *player, GFC_Vector2D pos, const char * sprite);
+Entity *player_entity_spawn(const struct entity_manager_s *entityManager, player_t *player, GFC_Vector2D pos, const char * sprite);
 
 /**
  * @brief Applies player input actions to the player's state and optionally syncs with the server.

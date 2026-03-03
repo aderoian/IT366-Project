@@ -7,6 +7,7 @@
 
 #include "simple_logger.h"
 #include "client/ui/widget.h"
+#include "common/def.h"
 #include "common/logger.h"
 
 typedef struct window_manager_s {
@@ -205,10 +206,13 @@ void window_handle_event_all(void) {
     }
 }
 
-window_t * window_load_from_json(def_data_t *json) {
+window_t * window_load_from_json(const struct def_manager_s *defManager, const char *filePath) {
+    def_data_t *json;
     window_t *window;
     const char *title;
     GFC_Vector2D position, size;
+
+    json = def_load(defManager, filePath);
     if (!json) {
         slog("Failed to load window from JSON: null data");
         return NULL;

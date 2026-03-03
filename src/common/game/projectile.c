@@ -9,7 +9,8 @@
 void projectile_think(Entity *ent);
 void projectile_update(Entity *ent, float deltaTime);
 
-int projectile_spawn(float speed, float damage, float range, GFC_Vector2D direction, const char *spriteModel, struct tower_state_s *sourceTower) {
+int projectile_spawn(const entity_manager_t *entityManager, const float speed, const float damage, const float range,
+                        const GFC_Vector2D direction, const char *spriteModel, struct tower_state_s *sourceTower) {
     projectile_state_t *projectile;
     Entity *ent;
 
@@ -18,7 +19,7 @@ int projectile_spawn(float speed, float damage, float range, GFC_Vector2D direct
         return -1;
     }
 
-    ent = entity_new();
+    ent = entity_new(entityManager);
     if (!ent) {
         log_error("Failed to create new entity for projectile");
         return -1;

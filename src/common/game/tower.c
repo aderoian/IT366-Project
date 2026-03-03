@@ -11,174 +11,89 @@
 #include "common/game/world.h"
 #include "server/server.h"
 
-tower_def_manager_t g_towerDefManager;
-tower_manager_t g_towerManager;
+struct tower_def_manager_s {
+    tower_def_t *towerDefs;
+    int numTowerDefs;
+};
 
-void tower_entity_think(Entity *ent);
-void tower_entity_update(Entity *ent, float deltaTime);
+struct tower_manager_s {
+    tower_state_t *towers;
+    uint32_t *towerIDs; // Maps tower ID to index in towers array
+    uint32_t *freeSlots; // Stack of free tower slots
+    uint32_t numTowers;
+    uint32_t numFreeSlots;
+    uint32_t maxTowers;
+    uint32_t nextTowerID;
+    tower_def_manager_t *towerDefManager;
+};
 
-void tower_init(const uint32_t maxTowers) {
+void tower_entity_think(const entity_manager_t *entityManager, Entity *ent);
+void tower_entity_update(const entity_manager_t *entityManager, Entity *ent, float deltaTime);
+
+tower_manager_t *tower_init(tower_def_manager_t *defManager, const uint32_t maxTowers) {
     uint32_t i;
-    g_towerManager.towers = gfc_allocate_array(sizeof(tower_state_t), maxTowers);
-    g_towerManager.towerIDs = gfc_allocate_array(sizeof(uint32_t), maxTowers);
-    g_towerManager.freeSlots = gfc_allocate_array(sizeof(uint32_t), maxTowers);
-    g_towerManager.numTowers = 0;
-    g_towerManager.numFreeSlots = maxTowers;
-    g_towerManager.maxTowers = maxTowers;
-    g_towerManager.nextTowerID = 0;
+    tower_manager_t *towerManager = gfc_allocate_array(sizeof(tower_manager_t), 1);
+    if (!towerManager) {
+        return NULL;
+    }
+
+    towerManager->towers = gfc_allocate_array(sizeof(tower_state_t), maxTowers);
+    towerManager->towerIDs = gfc_allocate_array(sizeof(uint32_t), maxTowers);
+    towerManager->freeSlots = gfc_allocate_array(sizeof(uint32_t), maxTowers);
+    towerManager->numTowers = 0;
+    towerManager->numFreeSlots = maxTowers;
+    towerManager->maxTowers = maxTowers;
+    towerManager->nextTowerID = 0;
+    towerManager->towerDefManager = defManager;
 
     for (i = 0; i < maxTowers; i++) {
-        g_towerManager.freeSlots[i] = maxTowers - 1 - i; // Fill free slots stack
-        g_towerManager.towerIDs[i] = UINT32_MAX; // Mark all IDs as invalid
+        towerManager->freeSlots[i] = maxTowers - 1 - i; // Fill free slots stack
+        towerManager->towerIDs[i] = UINT32_MAX; // Mark all IDs as invalid
+    }
+
+    return towerManager;
+}
+
+void tower_close(const tower_manager_t *towerManager) {
+    if (towerManager->towers) free(towerManager->towers);
+    if (towerManager->towerIDs) free(towerManager->towerIDs);
+    if (towerManager->freeSlots) free(towerManager->freeSlots);
+
+    if (towerManager->towerDefManager) {
+        if (towerManager->towerDefManager->towerDefs) free(towerManager->towerDefManager->towerDefs);
+        free(towerManager->towerDefManager);
     }
 }
 
-void tower_close(void) {
-    if (g_towerManager.towers) free(g_towerManager.towers);
-    if (g_towerManager.towerIDs) free(g_towerManager.towerIDs);
-    if (g_towerManager.freeSlots) free(g_towerManager.freeSlots);
-
-    // Free tower definitions
-    if (g_towerDefManager.towerDefs) free(g_towerDefManager.towerDefs);
-}
-
-const tower_def_t *tower_def_get(const char *name) {
-    uint32_t i;
-    for (i = 0; i < g_towerDefManager.numTowerDefs; i++) {
-        if (strcmp(g_towerDefManager.towerDefs[i].name, name) == 0) {
-            return &g_towerDefManager.towerDefs[i];
-        }
-    }
-    return NULL; // Not found
-}
-
-const tower_def_t * tower_def_get_by_index(const int index) {
-    if (index >= g_towerDefManager.numTowerDefs) {
-        return NULL; // Index out of bounds
-    }
-    return &g_towerDefManager.towerDefs[index];
-}
-
-tower_state_t *tower_create_by_name(const char* name, const GFC_Vector2D position) {
-    const tower_def_t *def = tower_def_get(name);
-    if (!def) {
-        log_error("Tower definition not found for name: %s", name);
-        return NULL;
-    }
-    return tower_create_by_def(def, position);
-}
-
-tower_state_t *tower_create_by_def(const tower_def_t *def, const GFC_Vector2D position) {
-    tower_state_t *tower = tower_place(def, position, g_towerManager.nextTowerID++);
-    if (!tower) {
-        log_error("Failed to create tower at position (%f, %f)", position.x, position.y);
-        return NULL;
-    }
-
-    tower->worldPos = world_pos_tile_snap(g_server.world, position);
-    tower->entity->position = tower->worldPos;
-    return tower;
-}
-
-tower_state_t *tower_place(const tower_def_t *def, const GFC_Vector2D position, const uint32_t id) {
-    tower_state_t * tower;
-    Entity *ent;
-    if (g_towerManager.numFreeSlots == 0) {
-        log_error("No free tower slots available");
-        return NULL;
-    }
-
-    uint32_t slotIndex = g_towerManager.freeSlots[--g_towerManager.numFreeSlots];
-    tower = &g_towerManager.towers[slotIndex];
-
-    tower->id = id;
-    g_towerManager.towerIDs[tower->id] = slotIndex; // Map tower ID to index in towers array
-    tower->health = def->maxHealth[0];
-    tower->def = def;
-
-    // TODO: create entity based on tower definition's modelDef and assign to tower->entity
-    ent = entity_new();
-    if (!ent) {
-        log_error("Failed to create entity for tower");
-        g_towerManager.freeSlots[g_towerManager.numFreeSlots++] = slotIndex; // Return slot to free stack
-        return NULL;
-    }
-
-    ent->think = tower_entity_think;
-    ent->update = tower_entity_update;
-    ent->data = tower;
-    tower->entity = ent;
-
-    if (g_game.isLocal) {
-        tower->worldPos = world_pos_tile_snap(g_client.world, position);
-        ent->position = tower->worldPos;
-        ent->model = gf2d_sprite_load_image(def->modelDef.baseSpritePath);
-    }
-
-    return tower;
-}
-
-tower_state_t * tower_get_by_id(const uint32_t id) {
-    uint32_t index;
-    if (id >= g_towerManager.maxTowers) {
-        return NULL; // Invalid ID
-    }
-    index = g_towerManager.towerIDs[id];
-    if (index == UINT32_MAX || index >= g_towerManager.maxTowers) {
-        return NULL; // ID not in use or index out of bounds
-    }
-    return &g_towerManager.towers[index];
-}
-
-void tower_destroy(tower_state_t *tower) {
-    uint32_t index;
-    if (!tower) return;
-
-    index = g_towerManager.towerIDs[tower->id];
-    if (index == UINT32_MAX || index >= g_towerManager.maxTowers) {
-        log_error("Attempted to destroy tower with invalid ID: %u", tower->id);
-        return;
-    }
-    g_towerManager.freeSlots[g_towerManager.numFreeSlots++] = index;
-    tower->id = UINT32_MAX;
-
-    if (tower->entity) {
-        entity_free(tower->entity);
-        tower->entity = NULL;
-    }
-}
-
-void tower_type_from_string(const char *str, tower_type_t *outType) {
-    if (strcmp(str, "defensive") == 0) {
-        *outType = TOWER_TYPE_DEFENSIVE;
-    } else if (strcmp(str, "production") == 0) {
-        *outType = TOWER_TYPE_PRODUCTION;
-    } else if (strcmp(str, "passive") == 0) {
-        *outType = TOWER_TYPE_PASSIVE;
-    } else if (strcmp(str, "stash") == 0) {
-        *outType = TOWER_TYPE_STASH;
-    }
-}
-
-void tower_load_defs(const char *filePath) {
-    def_data_t *data = def_load(filePath), *towerJson, *towersArray;
+tower_def_manager_t * tower_load_defs(const struct def_manager_s *defManager, char *filePath) {
+    tower_def_manager_t *towerDefManager;
+    def_data_t *data, *towerJson, *towersArray;
     def_data_t *valueArray, *weaponJson, *weaponDefJson, *modelDefJson;
     tower_def_t *def;
     tower_weapon_def_t *weaponDef;
     const char * str;
     int i, j, k, flag;
+
+    towerDefManager = gfc_allocate_array(sizeof(tower_def_manager_t), 1);
+    if (!towerDefManager) {
+        log_error("Failed to allocate memory for tower definition manager");
+        return NULL;
+    }
+
+    data = def_load(defManager, filePath);
     if (!data) {
         log_error("Failed to load tower definitions from file: %s", filePath);
-        return;
+        free(towerDefManager);
+        return NULL;
     }
 
     towersArray = def_data_get_array(data, "towers");
 
-    def_data_array_get_count(towersArray, &g_towerDefManager.numTowerDefs);
-    g_towerDefManager.towerDefs = gfc_allocate_array(sizeof(tower_def_t), g_towerDefManager.numTowerDefs);
-    for (i = 0; i < g_towerDefManager.numTowerDefs; i++) {
+    def_data_array_get_count(towersArray, &towerDefManager->numTowerDefs);
+    towerDefManager->towerDefs = gfc_allocate_array(sizeof(tower_def_t), towerDefManager->numTowerDefs);
+    for (i = 0; i < towerDefManager->numTowerDefs; i++) {
         towerJson = def_data_array_get_nth(towersArray, i);
-        def = &g_towerDefManager.towerDefs[i];
+        def = &towerDefManager->towerDefs[i];
 
         str = def_data_get_string(towerJson, "name");
         if (!str || strlen(str) >= sizeof(def->name)) {
@@ -250,9 +165,9 @@ void tower_load_defs(const char *filePath) {
             if (flag) weaponDef->flags |= TOWER_WEAPON_FLAG_PIERCING;
             def_data_get_int(weaponDefJson, "areaEffect", &flag);
             if (flag) weaponDef->flags |= TOWER_WEAPON_FLAG_AREA_EFFECT;
-                valueArray = def_data_get_array(weaponDefJson, "direction");
-                sj_get_float_value(def_data_array_get_nth(valueArray, 0), &weaponDef->direction.x);
-                sj_get_float_value(def_data_array_get_nth(valueArray, 1), &weaponDef->direction.y);
+            valueArray = def_data_get_array(weaponDefJson, "direction");
+            sj_get_float_value(def_data_array_get_nth(valueArray, 0), &weaponDef->direction.x);
+            sj_get_float_value(def_data_array_get_nth(valueArray, 1), &weaponDef->direction.y);
         }
 
         modelDefJson = def_data_get_obj(towerJson, "model");
@@ -275,6 +190,128 @@ void tower_load_defs(const char *filePath) {
         def->modelDef.baseSpritePath[sizeof(def->modelDef.baseSpritePath) - 1] = '\0';
         def->index = i;
     }
+
+    return towerDefManager;
+}
+
+const tower_def_t *tower_def_get(const tower_manager_t *towerManager, const char *name) {
+    int i;
+    for (i = 0; i < towerManager->towerDefManager->numTowerDefs; i++) {
+        if (strcmp(towerManager->towerDefManager->towerDefs[i].name, name) == 0) {
+            return &towerManager->towerDefManager->towerDefs[i];
+        }
+    }
+    return NULL; // Not found
+}
+
+const tower_def_t * tower_def_get_by_index(const tower_manager_t *towerManager, const int index) {
+    if (index >= towerManager->towerDefManager->numTowerDefs) {
+        return NULL; // Index out of bounds
+    }
+    return &towerManager->towerDefManager->towerDefs[index];
+}
+
+tower_state_t *tower_create_by_name(const entity_manager_t *entityManager, tower_manager_t *towerManager, const char* name, const GFC_Vector2D position) {
+    const tower_def_t *def = tower_def_get(towerManager, name);
+    if (!def) {
+        log_error("Tower definition not found for name: %s", name);
+        return NULL;
+    }
+    return tower_create_by_def(entityManager, towerManager, def, position);
+}
+
+tower_state_t *tower_create_by_def(const entity_manager_t *entityManager, tower_manager_t *towerManager,
+                                    const tower_def_t *def, const GFC_Vector2D position) {
+    tower_state_t *tower = tower_place(entityManager, towerManager, def, position, towerManager->nextTowerID++);
+    if (!tower) {
+        log_error("Failed to create tower at position (%f, %f)", position.x, position.y);
+        return NULL;
+    }
+
+    tower->worldPos = world_pos_tile_snap(g_server.world, position);
+    tower->entity->position = tower->worldPos;
+    return tower;
+}
+
+tower_state_t *tower_place(const entity_manager_t *entityManager, tower_manager_t *towerManager, const tower_def_t *def,
+                            const GFC_Vector2D position, const uint32_t id) {
+    tower_state_t * tower;
+    Entity *ent;
+    if (towerManager->numFreeSlots == 0) {
+        log_error("No free tower slots available");
+        return NULL;
+    }
+
+    uint32_t slotIndex = towerManager->freeSlots[--towerManager->numFreeSlots];
+    tower = &towerManager->towers[slotIndex];
+
+    tower->id = id;
+    towerManager->towerIDs[tower->id] = slotIndex; // Map tower ID to index in towers array
+    tower->health = def->maxHealth[0];
+    tower->def = def;
+
+    // TODO: create entity based on tower definition's modelDef and assign to tower->entity
+    ent = entity_new(entityManager);
+    if (!ent) {
+        log_error("Failed to create entity for tower");
+        towerManager->freeSlots[towerManager->numFreeSlots++] = slotIndex; // Return slot to free stack
+        return NULL;
+    }
+
+    ent->think = tower_entity_think;
+    ent->update = tower_entity_update;
+    ent->data = tower;
+    tower->entity = ent;
+
+    if (g_game.isLocal) {
+        tower->worldPos = world_pos_tile_snap(g_client.world, position);
+        ent->position = tower->worldPos;
+        ent->model = gf2d_sprite_load_image(def->modelDef.baseSpritePath);
+    }
+
+    return tower;
+}
+
+tower_state_t * tower_get_by_id(tower_manager_t *towerManager, const uint32_t id) {
+    uint32_t index;
+    if (id >= towerManager->maxTowers) {
+        return NULL; // Invalid ID
+    }
+    index = towerManager->towerIDs[id];
+    if (index == UINT32_MAX || index >= towerManager->maxTowers) {
+        return NULL; // ID not in use or index out of bounds
+    }
+    return &towerManager->towers[index];
+}
+
+void tower_destroy(tower_manager_t *towerManager, tower_state_t *tower) {
+    uint32_t index;
+    if (!tower) return;
+
+    index = towerManager->towerIDs[tower->id];
+    if (index == UINT32_MAX || index >= towerManager->maxTowers) {
+        log_error("Attempted to destroy tower with invalid ID: %u", tower->id);
+        return;
+    }
+    towerManager->freeSlots[towerManager->numFreeSlots++] = index;
+    tower->id = UINT32_MAX;
+
+    if (tower->entity) {
+        entity_free(tower->entity);
+        tower->entity = NULL;
+    }
+}
+
+void tower_type_from_string(const char *str, tower_type_t *outType) {
+    if (strcmp(str, "defensive") == 0) {
+        *outType = TOWER_TYPE_DEFENSIVE;
+    } else if (strcmp(str, "production") == 0) {
+        *outType = TOWER_TYPE_PRODUCTION;
+    } else if (strcmp(str, "passive") == 0) {
+        *outType = TOWER_TYPE_PASSIVE;
+    } else if (strcmp(str, "stash") == 0) {
+        *outType = TOWER_TYPE_STASH;
+    }
 }
 
 int tower_try_shoot(tower_state_t *tower, const float deltaTime) {
@@ -293,7 +330,7 @@ int tower_try_shoot(tower_state_t *tower, const float deltaTime) {
     return 0; // Still cooling down
 }
 
-void tower_shoot(tower_state_t *tower, int weaponIndex) {
+void tower_shoot(const entity_manager_t *entityManager, tower_state_t *tower, int weaponIndex) {
     const tower_weapon_def_t *weaponDef;
     int level;
     if (!tower || weaponIndex < 0 || weaponIndex >= tower->def->numWeapons) return;
@@ -301,6 +338,7 @@ void tower_shoot(tower_state_t *tower, int weaponIndex) {
     level = tower->level;
     weaponDef = &tower->def->weaponDefs[weaponIndex];
     projectile_spawn(
+        entityManager,
         weaponDef->bulletSpeed[level],
         weaponDef->damage[level],
         weaponDef->range[level],
@@ -310,15 +348,15 @@ void tower_shoot(tower_state_t *tower, int weaponIndex) {
     );
 }
 
-void tower_shoot_all(tower_state_t *tower) {
+void tower_shoot_all(const entity_manager_t *entityManager, tower_state_t *tower) {
     int i;
     if (!tower || tower->def->numWeapons <= 0) return;
     for (i = 0; i < tower->def->numWeapons; i++) {
-        tower_shoot(tower, i);
+        tower_shoot(entityManager, tower, i);
     }
 }
 
-void tower_entity_think(Entity *ent) {
+void tower_entity_think(const entity_manager_t *entityManager, Entity *ent) {
     if (!ent) return;
     tower_state_t *tower = (tower_state_t *)ent->data;
     if (!tower) return;
@@ -326,12 +364,12 @@ void tower_entity_think(Entity *ent) {
     // TODO: Implement tower thinking behavior, such as targeting enemies, deciding when to shoot, etc.
 }
 
-void tower_entity_update(Entity *ent, float deltaTime) {
+void tower_entity_update(const entity_manager_t *entityManager, Entity *ent, float deltaTime) {
     if (!ent || ! ent->data) return;
     tower_state_t *tower = (tower_state_t *)ent->data;
     if (!tower) return;
 
     if (tower_try_shoot(tower, deltaTime)) {
-        tower_shoot_all(tower);
+        tower_shoot_all(entityManager, tower);
     }
 }
