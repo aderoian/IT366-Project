@@ -60,16 +60,19 @@ void network_tick(network_t *network) {
     }
 }
 
-int network_send(net_udp_peer_t *peer, const uint8_t pktId, void *pkt, const uint32_t flags) {
-    size_t numBytes;
+int network_send(net_udp_peer_t *peer, void *pkt, const uint32_t flags) {
+    size_t numBytes, length;
     uint8_t *buffer;
     buffer_offset_t offset = 0;
+    uint8_t pktId;
     if (!pkt) {
         return -1;
     }
 
     // TODO: Avoid heap alloc here by using a packet pool and reusing buffers.
-    numBytes = g_packet_sizes[pktId]();
+    pktId = *((uint8_t *)pkt);
+    length = *((uint64_t *)pkt + 1);
+    numBytes = length + PACKET_HEADER_SIZE;
     buffer = malloc(numBytes);
     packet_send_table[pktId](pkt, buffer, &offset);
     net_udp_packet_t *packet = net_udp_packet_create(buffer, numBytes, flags);
@@ -86,7 +89,7 @@ void network_handle_receive(network_t *network, const net_udp_event_t *context) 
     net_udp_peer_t *peer;
     buffer_offset_t offset;
     uint8_t packetID;
-    size_t bytes;
+    size_t length, bytes;
     buffer_t buffer;
 
     if (!network || !context->packet || !context->peer) {
@@ -105,8 +108,14 @@ void network_handle_receive(network_t *network, const net_udp_event_t *context) 
     offset = 0;
     while (offset < bytes) {
         packetID = buffer[offset];
+        length = be64toh(*((uint64_t *)(buffer + offset + sizeof(uint8_t))));
         if (packetID >= PACKET_COUNT) {
             log_info("Received invalid packet ID: %d", packetID);
+            break;
+        }
+
+        if (offset + PACKET_HEADER_SIZE + length > bytes) {
+            log_info("Received incomplete packet with ID: %d", packetID);
             break;
         }
 

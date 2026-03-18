@@ -44,7 +44,7 @@ void handle_c2s_player_join_request(const c2s_player_join_request_packet_t *pkt,
         0,
         0
     ); // FIXME: Use actual spawn position
-    server_send_packet(&g_server, player, PACKET_S2C_PLAYER_JOIN_RESPONSE, &packet, NET_UDP_FLAG_RELIABLE);
+    server_send_packet(&g_server, player, &packet, NET_UDP_FLAG_RELIABLE);
 }
 
 void handle_c2s_tower_build_request(const c2s_tower_build_request_packet_t *pkt, void *peer) {
@@ -79,7 +79,7 @@ void handle_c2s_tower_build_request(const c2s_tower_build_request_packet_t *pkt,
     if (tower) {
         log_info("Player ID %u built a tower at position (%f, %f) with definition index %u", player->id, pkt->xPos, pkt->yPos, pkt->towerDefIndex);
         create_s2c_tower_create(&towerPkt, pkt->xPos, pkt->yPos, pkt->towerDefIndex, tower->id);
-        server_broadcast_packet(&g_server, PACKET_S2C_TOWER_CREATE, &towerPkt, NET_UDP_FLAG_RELIABLE);
+        server_broadcast_packet(&g_server, &towerPkt, NET_UDP_FLAG_RELIABLE);
     } else {
         log_error("Failed to create tower for player ID %u at position (%f, %f) with definition index %u", player->id, pkt->xPos, pkt->yPos, pkt->towerDefIndex);
     }

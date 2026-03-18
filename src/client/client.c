@@ -120,9 +120,17 @@ void client_disconnect(Client* client) {
 void client_on_local_server_start(Server *server) {
     client_connect(&g_client, "127.0.0.1", "12345");
 
+    strncpy(g_client.playerName, "LocalPlayer", sizeof(g_client.playerName) - 1);
+    g_client.playerName[sizeof(g_client.playerName) - 1] = '\0';
+
+    net_string_t name = {
+        .count = strlen(g_client.playerName),
+        .elements = (net_uint8_t *) g_client.playerName
+    };
+
     c2s_player_join_request_packet_t pkt;
-    create_c2s_player_join_request(&pkt);
-    client_send_to_server(&g_client, PACKET_C2S_PLAYER_JOIN_REQUEST, &pkt, ENET_PACKET_FLAG_RELIABLE);
+    create_c2s_player_join_request(&pkt, &name);
+    client_send_to_server(&g_client, &pkt, ENET_PACKET_FLAG_RELIABLE);
 }
 
 int client_begin_singleplayer(Client *client) {
@@ -142,12 +150,12 @@ int client_begin_singleplayer(Client *client) {
     return 0;
 }
 
-int client_send_to_server(Client *client, const uint8_t pktId, void *pkt, const uint32_t flags) {
+int client_send_to_server(Client *client, void *pkt, const uint32_t flags) {
     if (!client || !pkt || !client->network) {
         return -1;
     }
 
-    return client_network_send(client->network, pktId, pkt, flags);
+    return client_network_send(client->network, pkt, flags);
 }
 
 void client_tickLoop(Client* client) {

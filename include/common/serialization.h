@@ -2,6 +2,7 @@
 #define SERIALIZATION_H
 
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "common/types.h"
 
@@ -40,7 +41,7 @@ static inline void deserialize_##name(   \
 buffer_t buffer,                         \
 buffer_offset_t *offset,                 \
 name *value) {                           \
-*value = read_##def(buffer, offset);     \
+    *value = read_##def(buffer, offset);     \
 }
 
 #define SERIALIZE_CUSTOM(name, fields) \
@@ -48,7 +49,7 @@ static inline void serialize_##name(   \
 buffer_t buffer,                       \
 buffer_offset_t *offset,               \
 const name *value) {                   \
-fields(GEN_SERIALIZE_FIELD)            \
+    fields(GEN_SERIALIZE_FIELD)            \
 }
 
 #define DESERIALIZE_CUSTOM(name, fields) \
@@ -56,7 +57,53 @@ static inline void deserialize_##name(   \
 buffer_t buffer,                         \
 buffer_offset_t *offset,                 \
 name *value) {                           \
-fields(GEN_DESERIALIZE_FIELD)            \
+    fields(GEN_DESERIALIZE_FIELD)            \
+}
+
+#define SERIALIZE_LIST_PRIMITIVE(name, type) \
+static inline void serialize_##name(   \
+buffer_t buffer,                       \
+buffer_offset_t *offset,               \
+const name *value) {                   \
+    write_uint64_t(buffer, offset, value->count); \
+    for (size_t i = 0; i < value->count; ++i) { \
+        serialize_##type(buffer, offset, value->elements[i]); \
+} \
+}
+
+#define DESERIALIZE_LIST_PRIMITIVE(name, type) \
+static inline void deserialize_##name(   \
+buffer_t buffer,                       \
+buffer_offset_t *offset,               \
+name *value) {                   \
+    value->count = read_uint64_t(buffer, offset); \
+    value->elements = malloc(sizeof(type) * value->count); \
+    for (size_t i = 0; i < value->count; ++i) { \
+        deserialize_##type(buffer, offset, &value->elements[i]); \
+} \
+}
+
+#define SERIALIZE_LIST_CUSTOM(name, type) \
+static inline void serialize_##name(   \
+buffer_t buffer,                       \
+buffer_offset_t *offset,               \
+const name *value) {                   \
+    write_uint64_t(buffer, offset, value->count); \
+    for (size_t i = 0; i < value->count; ++i) { \
+        serialize_##type(buffer, offset, &value->elements[i]); \
+} \
+}
+
+#define DESERIALIZE_LIST_CUSTOM(name, type) \
+static inline void deserialize_##name(   \
+buffer_t buffer,                       \
+buffer_offset_t *offset,               \
+name *value) {                   \
+    value->count = read_uint64_t(buffer, offset); \
+    value->elements = malloc(sizeof(type) * value->count); \
+    for (size_t i = 0; i < value->count; ++i) { \
+        deserialize_##type(buffer, offset, &value->elements[i]); \
+} \
 }
 
 #define GEN_SERIALIZE_FIELD(type, field_type, field) SERIALIZE_##field_type##_FIELD(type, field_type, field)
@@ -70,12 +117,34 @@ fields(GEN_DESERIALIZE_FIELD)            \
 #define GEN_SERIALIZE(name, kind, payload) GEN_SERIALIZE_##kind(name, payload)
 #define GEN_SERIALIZE_PRIMITIVE(name, def) SERIALIZE_PRIMITIVE(name, def)
 #define GEN_SERIALIZE_CUSTOM(name, fields) SERIALIZE_CUSTOM(name, fields)
+#define GEN_SERIALIZE_LIST_PRIMITIVE(name, type) SERIALIZE_LIST_PRIMITIVE(name, type)
+#define GEN_SERIALIZE_LIST_CUSTOM(name, type) SERIALIZE_LIST_CUSTOM(name, type)
 
 #define GEN_DESERIALIZE(name, kind, payload) GEN_DESERIALIZE_##kind(name, payload)
 #define GEN_DESERIALIZE_PRIMITIVE(name, def) DESERIALIZE_PRIMITIVE(name, def)
 #define GEN_DESERIALIZE_CUSTOM(name, fields) DESERIALIZE_CUSTOM(name, fields)
+#define GEN_DESERIALIZE_LIST_PRIMITIVE(name, type) DESERIALIZE_LIST_PRIMITIVE(name, type)
+#define GEN_DESERIALIZE_LIST_CUSTOM(name, type) DESERIALIZE_LIST_CUSTOM(name, type)
 
 PACKET_TYPE_LIST(GEN_SERIALIZE)
 PACKET_TYPE_LIST(GEN_DESERIALIZE)
+
+#undef GEN_SERIALIZE
+#undef GEN_DESERIALIZE
+#undef GEN_SERIALIZE_FIELD
+#undef GEN_DESERIALIZE_FIELD
+#undef SERIALIZE_PRIMITIVE_FIELD
+#undef SERIALIZE_CUSTOM_FIELD
+#undef DESERIALIZE_PRIMITIVE_FIELD
+#undef DESERIALIZE_CUSTOM_FIELD
+
+#undef SERIALIZE_PRIMITIVE
+#undef DESERIALIZE_PRIMITIVE
+#undef SERIALIZE_CUSTOM
+#undef DESERIALIZE_CUSTOM
+#undef SERIALIZE_LIST_PRIMITIVE
+#undef DESERIALIZE_LIST_PRIMITIVE
+#undef SERIALIZE_LIST_CUSTOM
+#undef DESERIALIZE_LIST_CUSTOM
 
 #endif /* SERIALIZATION_H */

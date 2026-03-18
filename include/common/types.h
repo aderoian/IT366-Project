@@ -54,6 +54,7 @@ X(net_int32_t,  PRIMITIVE, int32_t)   \
 X(net_int64_t,  PRIMITIVE, int64_t)   \
 X(net_float_t,  PRIMITIVE, float )    \
 X(net_double_t, PRIMITIVE, double)    \
+X(net_string_t, LIST_PRIMITIVE,      net_uint8_t)      \
 \
 X(player_input_command_t, CUSTOM, PLAYER_INPUT_COMMAND_FIELDS)
 
@@ -74,6 +75,11 @@ F(net_int32_t,  PRIMITIVE, axisY)
 struct name##_s { \
 fields(FIELD) \
 }
+#define LIST_STRUCT_DEF(name, type) \
+struct name##_list_s { \
+size_t count; \
+type *elements; \
+}
 
 /**
  * Generates the type definition for a type based on its kind (PRIMITIVE or CUSTOM).
@@ -81,6 +87,8 @@ fields(FIELD) \
 #define GEN_TYPE_DEF(name, type, def) type##_TYPE_DEF(name, def)
 #define PRIMITIVE_TYPE_DEF(name, def) typedef def name;
 #define CUSTOM_TYPE_DEF(name, def) typedef CUSTOM_STRUCT_DEF(name, def) name;
+#define LIST_PRIMITIVE_TYPE_DEF(name, def) typedef LIST_STRUCT_DEF(name, def) name;
+#define LIST_CUSTOM_TYPE_DEF(name, def) typedef LIST_STRUCT_DEF(name, def) name;
 
 /**
  * Generate all type definitions.
@@ -95,7 +103,9 @@ PACKET_TYPE_LIST(GEN_TYPE_DEF)
 
 typedef enum {
  TYPE_PRIMITIVE,
- TYPE_CUSTOM
+ TYPE_CUSTOM,
+ TYPE_LIST_PRIMITIVE,
+ TYPE_LIST_CUSTOM
 } type_kind_t;
 
 #define GEN_TYPE_TRAIT(name, kind, def) \

@@ -61,7 +61,7 @@ void server_destroy_player(struct player_s *player);
 
 Entity *server_spawn_player_entity(struct player_s *player, GFC_Vector2D pos);
 
-void server_send_packet(Server* server, const struct player_s *player, uint8_t packetID, void *context, uint32_t flags);
-void server_broadcast_packet(Server* server, uint8_t packetID, void *context, uint32_t flags);
+void server_send_packet(Server* server, const struct player_s *player, void *context, uint32_t flags);
+void server_broadcast_packet(Server* server, void *context, uint32_t flags);
 
 #endif /* SERVER_H */

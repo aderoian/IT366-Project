@@ -271,7 +271,7 @@ Entity * server_spawn_player_entity(struct player_s *player, GFC_Vector2D pos) {
     return player_entity_spawn(g_server.entityManager, player, pos, NULL);
 }
 
-void server_send_packet(Server* server, const player_t *player, const uint8_t packetID, void *context, const uint32_t flags) {
+void server_send_packet(Server* server, const player_t *player, void *context, const uint32_t flags) {
     network_session_t *session;
     if (!server || !player) {
         return;
@@ -283,10 +283,10 @@ void server_send_packet(Server* server, const player_t *player, const uint8_t pa
         return;
     }
 
-    network_session_send(session, packetID, context, flags);
+    network_session_send(session, context, flags);
 }
 
-void server_broadcast_packet(Server* server, const uint8_t packetID, void *context, const uint32_t flags) {
+void server_broadcast_packet(Server* server, void *context, const uint32_t flags) {
     size_t i, playerCount;
     const player_t **players;
     if (!server) {
@@ -295,6 +295,6 @@ void server_broadcast_packet(Server* server, const uint8_t packetID, void *conte
 
     players = player_manager_get_all(server->playerManager, &playerCount);
     for (i = 0; i < playerCount; ++i) {
-        server_send_packet(server, players[i], packetID, context, flags);
+        server_send_packet(server, players[i], context, flags);
     }
 }

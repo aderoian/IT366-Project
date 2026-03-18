@@ -40,6 +40,7 @@ typedef struct Client_S {
     client_state_t state;
     mutex_t lock;
 
+    char playerName[32];
     client_network_t *network;
     player_t *player;
     world_t *world;
@@ -60,6 +61,6 @@ void client_disconnect(Client* client);
 
 int client_begin_singleplayer(Client* client);
 
-int client_send_to_server(Client *client, uint8_t pktId, void *pkt, uint32_t flags);
+int client_send_to_server(Client *client, void *pkt, uint32_t flags);
 
 #endif /* CLIENT_H */

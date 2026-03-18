@@ -3,6 +3,12 @@
 
 #include "common/types.h"
 
+#define PACKET_HEADER \
+net_int8_t packetID;  \
+size_t length;
+
+#define PACKET_HEADER_SIZE sizeof(net_int8_t) + sizeof(size_t)
+
 /**
  * @brief List of all packets.
  */
@@ -20,6 +26,7 @@ X(s2c_tower_create, S2C_TOWER_CREATE, TOWER_CREATE_FIELDS)
  */
 
 #define PLAYER_JOIN_REQUEST_FIELDS(F) \
+F(net_string_t, name, LIST_PRIMITIVE)
 
 #define PLAYER_JOIN_RESPONSE_FIELDS(F)  \
 F(net_uint8_t,  success, PRIMITIVE)     \
@@ -60,7 +67,7 @@ F(net_uint32_t, towerID, PRIMITIVE)
 
 #define PACKET_STRUCT(name, id, fields) \
 typedef struct name##_packet_s { \
-net_int8_t packetID; /* Always first field */ \
+PACKET_HEADER \
 fields(FIELD) \
 } name##_packet_t;
 

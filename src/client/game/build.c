@@ -49,7 +49,7 @@ void build_mode_update(void) {
 
         if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT)) {
             create_c2s_tower_build_request(&pkt, build_mode->position.x, build_mode->position.y, build_mode->towerDef->index);
-            client_send_to_server(&g_client, PACKET_C2S_TOWER_BUILD_REQUEST, &pkt, NET_UDP_FLAG_RELIABLE);
+            client_send_to_server(&g_client, &pkt, NET_UDP_FLAG_RELIABLE);
             build_mode_exit();
         }
     }

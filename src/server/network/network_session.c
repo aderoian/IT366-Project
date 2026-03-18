@@ -22,13 +22,13 @@ void network_session_destroy(network_session_t *session) {
     session->peer->data = NULL;
 }
 
-void network_session_send(network_session_t *session, const uint8_t packetID, void *context, const uint32_t flags) {
+void network_session_send(network_session_t *session, void *context, const uint32_t flags) {
     if (!session || !session->peer) {
         log_error("Invalid session or peer.");
         return;
     }
 
-    network_send(session->peer, packetID, context, flags);
+    network_send(session->peer, context, flags);
 }
 
 void network_session_sync(network_session_t *session) {

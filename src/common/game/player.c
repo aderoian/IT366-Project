@@ -113,7 +113,7 @@ GFC_Vector2D player_input_apply(player_t *player, const GFC_Vector2D position, c
 
         c2s_player_input_snapshot_packet_t pkt;
         create_c2s_player_input_snapshot(&pkt, &snapshot.cmd);
-        client_send_to_server(&g_client, PACKET_C2S_PLAYER_INPUT_SNAPSHOT, &pkt, 0);
+        client_send_to_server(&g_client, &pkt, 0);
     }
 
     return newPos;
@@ -224,7 +224,7 @@ void player_update(const entity_manager_t *entityManager, Entity *ent, float del
 
         s2c_player_state_snapshot_packet_t pkt;
         create_s2c_player_state_snapshot(&pkt, player->lastProcessedInputTick, player->position.x, player->position.y);
-        server_send_packet(&g_server, player, PACKET_S2C_PLAYER_STATE_SNAPSHOT, &pkt, 0);
+        server_send_packet(&g_server, player, &pkt, 0);
     }
 }
 

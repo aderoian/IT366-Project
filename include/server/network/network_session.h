@@ -17,7 +17,7 @@ void network_session_create(network_session_t *session, net_udp_peer_t *peer, ui
 
 void network_session_destroy(network_session_t *session);
 
-void network_session_send(network_session_t *session, uint8_t packetID, void *context, uint32_t flags);
+void network_session_send(network_session_t *session, void *context, uint32_t flags);
 
 void network_session_sync(network_session_t *session);
 
