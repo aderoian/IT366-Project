@@ -22,7 +22,7 @@ static phys_SAPAxis c_sapXAxis;
 static phys_SAPAxis c_sapYAxis;
 
 void phys_init(const uint32_t initialSize) {
-	manager.active = gfc_allocate_array(sizeof(struct Entity_S*), initialSize);
+	manager.active = gfc_allocate_array(sizeof(struct entity_s*), initialSize);
 	manager.activeCount = 0;
 	manager.activeCapacity = initialSize;
 	phys_collision_initManager(initialSize);
@@ -38,12 +38,12 @@ void phys_free(void) {
 	phys_collision_freeManager();
 }
 
-void phys_addRigidbody(struct Entity_S *entity) {
+void phys_addRigidbody(struct entity_s *entity) {
 	if (!entity) return;
 	if (manager.activeCount >= manager.activeCapacity) {
 		// Resize active rigidbody array
 		uint32_t newCapacity = manager.activeCapacity * 2;
-		struct Entity_S** newActive = gfc_allocate_array(sizeof(struct Entity_S*), newCapacity);
+		struct entity_s** newActive = gfc_allocate_array(sizeof(struct entity_s*), newCapacity);
 		if (!newActive) return;
 		for (uint32_t i = 0; i < manager.activeCount; i++) {
 			newActive[i] = manager.active[i];
@@ -56,7 +56,7 @@ void phys_addRigidbody(struct Entity_S *entity) {
 
 	phys_collision_sweepAndPruneInsert(entity);
 }
-void phys_removeRigidbody(struct Entity_S *entity) {
+void phys_removeRigidbody(struct entity_s *entity) {
 	if (!entity) return;
 	uint32_t index = UINT32_MAX;
 	for (uint32_t i = 0; i < manager.activeCount; i++) {
@@ -72,11 +72,11 @@ void phys_removeRigidbody(struct Entity_S *entity) {
 	manager.active[index] = manager.active[--manager.activeCount];
 }
 
-void phys_addForce(Entity *ent, GFC_Vector2D force){
+void phys_addForce(entity_t *ent, GFC_Vector2D force){
 	gfc_vector2d_add(ent->forces, ent->forces, force);
 }
 
-void phys_addImpulse(Entity *ent, GFC_Vector2D impulse){
+void phys_addImpulse(entity_t *ent, GFC_Vector2D impulse){
 	GFC_Vector2D deltaV;
 	gfc_vector2d_scale(deltaV, impulse, ent->invMass);
 	gfc_vector2d_add(ent->velocity, ent->velocity, deltaV);
@@ -84,7 +84,7 @@ void phys_addImpulse(Entity *ent, GFC_Vector2D impulse){
 
 void phys_integrate(const phys_BodyManager *rb_manager, const float deltaTime) {
 	uint32_t i;
-	Entity *ent;
+	entity_t *ent;
 	GFC_Vector2D vel;
 	if (rb_manager == NULL) {
 		return;
@@ -155,7 +155,7 @@ void phys_collision_freeManager(void) {
 
 void phys_collision_updateBoundingShapes(const phys_BodyManager* rb_manager) {
 	uint32_t i;
-	Entity *ent;
+	entity_t *ent;
 	for (i = 0; i < rb_manager->activeCount; i++) {
 		ent = rb_manager->active[i];
 
@@ -177,7 +177,7 @@ void phys_collision_detectNarrowPhase(void) {
 	gfc_list_clear(collisionContactBuffer);
 
 	uint32_t i;
-	Entity *a, *b;
+	entity_t *a, *b;
 	phys_CollisionPair* pair;
 	phys_CollisionContact *contact;
 	GFC_Vector2D normal, contactPoint = {0};
@@ -208,7 +208,7 @@ void phys_collision_detectNarrowPhase(void) {
 }
 
 void phys_collision_resolveContact(const phys_CollisionContact *contact) {
-	Entity *a = contact->a, *b = contact->b;
+	entity_t *a = contact->a, *b = contact->b;
 	GFC_Vector2D tmp, rv, impulse, tangent;
 	float velAlongNormal, e, j, jt, mu, len;
 
@@ -257,7 +257,7 @@ void phys_collision_resolveContact(const phys_CollisionContact *contact) {
 }
 
 void phys_collision_resolveContactPosition(const phys_CollisionContact *contact) {
-	Entity *a = contact->a, *b = contact->b;
+	entity_t *a = contact->a, *b = contact->b;
 	GFC_Vector2D correction = {0}, tmp = {0};
 
 	// Positional correction
@@ -369,12 +369,12 @@ void phys_collision_sweepAndPruneCloseAxis(phys_SAPAxis* axis) {
 	if (axis->isMin) free(axis->isMin);
 }
 
-void phys_collision_sweepAndPruneInsert(struct Entity_S *entity) {
+void phys_collision_sweepAndPruneInsert(struct entity_s *entity) {
 	phys_collision_sweepAndPruneInsertAxis(&c_sapXAxis, entity, SAP_AXIS_X);
 	phys_collision_sweepAndPruneInsertAxis(&c_sapYAxis, entity, SAP_AXIS_Y);
 }
 
-void phys_collision_sweepAndPruneInsertAxis(phys_SAPAxis* axis, struct Entity_S *entity, uint32_t axisIndex) {
+void phys_collision_sweepAndPruneInsertAxis(phys_SAPAxis* axis, struct entity_s *entity, uint32_t axisIndex) {
 	uint32_t minIdx, maxIdx;
 	float minVal, maxVal;
 	if (!axis) return;
@@ -412,7 +412,7 @@ uint32_t phys_collision_sweepAndPruneFindIndex(phys_SAPAxis* axis, const float v
 	return low;
 }
 
-void phys_collision_sweepAndPruneInsertAt(phys_SAPAxis* axis, const uint32_t sap_index, struct Entity_S *entity, const float value, const uint8_t isMin, uint32_t axisIndex) {
+void phys_collision_sweepAndPruneInsertAt(phys_SAPAxis* axis, const uint32_t sap_index, struct entity_s *entity, const float value, const uint8_t isMin, uint32_t axisIndex) {
 	uint32_t i;
 	if (!axis) return;
 	if (axis->count >= axis->capacity)
@@ -434,12 +434,12 @@ void phys_collision_sweepAndPruneInsertAt(phys_SAPAxis* axis, const uint32_t sap
 	axis->count++;
 }
 
-void phys_collision_sweepAndPruneRemove(struct Entity_S *entity) {
+void phys_collision_sweepAndPruneRemove(struct entity_s *entity) {
 	phys_collision_sweepAndPruneRemoveAxis(&c_sapXAxis, entity, SAP_AXIS_X);
 	phys_collision_sweepAndPruneRemoveAxis(&c_sapYAxis, entity, SAP_AXIS_Y);
 }
 
-void phys_collision_sweepAndPruneRemoveAxis(phys_SAPAxis* axis, struct Entity_S *entity, uint32_t axisIndex) {
+void phys_collision_sweepAndPruneRemoveAxis(phys_SAPAxis* axis, struct entity_s *entity, uint32_t axisIndex) {
 	uint32_t minIdx, maxIdx;
 
 	// Get bounding shape min and max for the specified axis
@@ -469,7 +469,7 @@ void phys_collision_sweepAndPruneUpdate(phys_CollisionHandle handle, phys_AABBSh
 
 void phys_collision_sweepAndPruneSort(const phys_BodyManager* rb_manager) {
 	uint32_t i;
-	Entity *entity;
+	entity_t *entity;
 	for (i = 0; i < rb_manager->activeCount; i++) {
 		entity = rb_manager->active[i];
 
@@ -498,7 +498,7 @@ void phys_collision_sweepAndPruneSortEndpoint(const phys_SAPAxis* axis, uint32_t
 
 void phys_collision_sweepAndPrunSwapEndpoints(const phys_SAPAxis* axis, const uint32_t sap_indexA, const uint32_t sap_indexB, const uint32_t axisIndex) {
 	float tmpVal;
-	Entity *tmpIdx, *a, *b;
+	entity_t *tmpIdx, *a, *b;
 	uint8_t tmpIsMin;
 
 	// Swap endpoints
@@ -529,7 +529,7 @@ void phys_collision_sweepAndPrunSwapEndpoints(const phys_SAPAxis* axis, const ui
 
 void phys_collision_sweepAndPruneDetectAxisCollisions(phys_SAPAxis* axis, phys_BodyManager* rb_manager) {
 	uint32_t activeCount = 0, i, j;
-	Entity *a, *b, *active[1024];
+	entity_t *a, *b, *active[1024];
 	phys_CollisionPair collisionPair = {0};
 
 	for (i = 0; i < axis->count; i++) {

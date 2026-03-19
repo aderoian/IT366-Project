@@ -6,7 +6,7 @@
 typedef struct camera_s {
     GFC_Vector2D position;
     GFC_Vector2D size; // x -> width, y -> height
-    Entity* target;
+    entity_t* target;
 } camera_t;
 
 extern camera_t g_camera;
@@ -24,7 +24,7 @@ void camera_init(camera_t* camera);
  * @param camera Pointer to the camera
  * @param target Pointer to the target entity
  */
-void camera_set_target(camera_t* camera, Entity* target);
+void camera_set_target(camera_t* camera, entity_t* target);
 
 /**
  * @brief Update the camera position based on its target

@@ -9,6 +9,7 @@ void network_session_create(network_session_t *session, net_udp_peer_t *peer, co
     session->sessionID = sessionID;
     session->player = NULL;
     session->dirtyFlags = 0;
+    session->packetQueueSize = 0;
 
     peer->data = session;
 }
@@ -31,7 +32,33 @@ void network_session_send(network_session_t *session, void *context, const uint3
     network_send(session->peer, context, flags);
 }
 
-void network_session_sync(network_session_t *session) {
+void network_session_send_batch(network_session_t *session, void *context) {
+    if (!session || !session->peer) {
+        log_error("Invalid session or peer.");
+        return;
+    }
 
+    if (session->packetQueueSize >= MAX_PACKET_QUEUE_SIZE) {
+        log_error("Packet queue overflow for session ID: %u", session->sessionID);
+        return;
+    }
+
+    session->packetQueue[session->packetQueueSize++] = context;
+}
+
+void network_session_sync(network_session_t *session) {
+    if (!session || !session->peer) {
+        log_error("Invalid session or peer.");
+        return;
+    }
+
+    if (session->packetQueueSize == 0) {
+        return; // No packets to send
+    }
+
+    network_send_batch(session->peer, session->packetQueue, session->packetQueueSize);
+
+    // Clear the packet queue after sending
+    session->packetQueueSize = 0;
 }
 

@@ -10,7 +10,7 @@ void camera_init(camera_t* camera) {
     camera->target = NULL;
 }
 
-void camera_set_target(camera_t* camera, Entity* target) {
+void camera_set_target(camera_t* camera, entity_t* target) {
     camera->target = target;
 }
 

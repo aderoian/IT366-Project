@@ -20,6 +20,8 @@ typedef struct player_s {
     buf_spsc_ring_t *inputBuffer;
     uint64_t lastProcessedInputTick;
     uint8_t processedInput;
+
+
 } player_t;
 
 typedef struct player_input_actions_s {
@@ -35,7 +37,7 @@ player_t *player_create(uint32_t id, const char *name);
 
 void player_destroy(player_t *player);
 
-Entity *player_entity_spawn(const struct entity_manager_s *entityManager, player_t *player, GFC_Vector2D pos, const char * sprite);
+entity_t *player_entity_spawn(const struct entity_manager_s *entityManager, player_t *player, GFC_Vector2D pos, const char * sprite);
 
 /**
  * @brief Applies player input actions to the player's state and optionally syncs with the server.

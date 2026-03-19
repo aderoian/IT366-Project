@@ -32,5 +32,6 @@ void network_deinit(network_t *network);
 
 void network_tick(network_t *network);
 int network_send(net_udp_peer_t *peer, void *pkt, uint32_t flags);
+int network_send_batch(net_udp_peer_t *peer, void **pkts, uint32_t count);
 
 #endif /* COMMON_NETWORK_H */

@@ -1,14 +1,23 @@
-#include "common/game/world.h"
+#include "common/game/world/world.h"
+#include "common/game/world/chunk.h"
 
-world_t *world_create(int width, int height, const uint8_t local) {
+world_t *world_create(const int width, const int height, const uint8_t local) {
+    int i, j;
     world_t *world = malloc(sizeof(world_t));
     if (!world) {
         return NULL;
     }
 
-    if (width % TILE_SIZE != 0 || height % TILE_SIZE != 0) {
-        width = ((width + TILE_SIZE - 1) / TILE_SIZE) * TILE_SIZE;
-        height = ((height + TILE_SIZE - 1) / TILE_SIZE) * TILE_SIZE;
+    world->chunks = gfc_allocate_array(sizeof(chunk_t), width * height);
+    if (!world->chunks) {
+        free(world);
+        return NULL;
+    }
+
+    for (i = 0; i < width; i++) {
+        for (j = 0; j < height; j++) {
+            chunk_initialize(&world->chunks[i * height + j], i, j);
+        }
     }
 
     world->size.x = width; world->size.y = height;
@@ -18,8 +27,15 @@ world_t *world_create(int width, int height, const uint8_t local) {
 }
 
 void world_destroy(world_t *world) {
-    if (world) {
-        free(world);
+    int i, j;
+    if (!world) {
+        return;
+    }
+
+    for (i = 0; i < world->size.x; i++) {
+        for (j = 0; j < world->size.y; j++) {
+            chunk_destroy(&world->chunks[i * world->size.y + j]);
+        }
     }
 }
 

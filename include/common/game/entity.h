@@ -10,8 +10,9 @@
 
 typedef struct entity_manager_s entity_manager_t;
 
-typedef struct Entity_S {
+typedef struct entity_s {
     uint8_t _inUse;
+    uint64_t id;
     GFC_Vector2D position;
     GFC_Vector2D velocity;
     GFC_Vector2D forces;
@@ -27,21 +28,22 @@ typedef struct Entity_S {
     void *data;
 
     void *model; // Sprite or AnimatedSprite, depends on animated flag
-    void (*think)(const entity_manager_t *entityManager, struct Entity_S *ent);
-    void (*update)(const entity_manager_t *entityManager, struct Entity_S *ent, float deltaTime);
-    void (*draw)(const entity_manager_t *entityManager, struct Entity_S *ent);
-} Entity;
+    void (*think)(const entity_manager_t *entityManager, struct entity_s *ent);
+    void (*update)(const entity_manager_t *entityManager, struct entity_s *ent, float deltaTime);
+    void (*draw)(const entity_manager_t *entityManager, struct entity_s *ent);
+} entity_t;
 
-entity_manager_t *entity_init(size_t maxEnts);
+entity_manager_t *entity_init(uint32_t maxEnts);
 void entity_close(const entity_manager_t* manager);
 
-Entity *entity_new(const entity_manager_t* manager);
-Entity *entity_new_animated(const entity_manager_t* manager);
-void entity_free(const entity_manager_t *entityManager, Entity *ent);
-void entity_draw(const entity_manager_t *entityManager, Entity *ent);
+entity_t *entity_new(const entity_manager_t* manager);
+entity_t *entity_new_animated(const entity_manager_t* manager);
+void entity_set_id(const entity_manager_t *manager, entity_t *ent, uint64_t id);
+void entity_free(const entity_manager_t *entityManager, entity_t *ent);
+void entity_draw(const entity_manager_t *entityManager, entity_t *ent);
 
-void entity_draw_animated(const entity_manager_t *entityManager, Entity *ent);
-void entity_update_animated(const entity_manager_t *entityManager, Entity *ent, float deltaTime);
+void entity_draw_animated(const entity_manager_t *entityManager, entity_t *ent);
+void entity_update_animated(const entity_manager_t *entityManager, entity_t *ent, float deltaTime);
 
 void entity_think_all(const entity_manager_t *manager);
 void entity_update_all(const entity_manager_t *manager, float deltaTime);

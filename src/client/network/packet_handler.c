@@ -44,11 +44,25 @@ void handle_s2c_tower_create(const s2c_tower_create_packet_t *pkt, void *client)
         return;
     }
 
-    tower_state_t *tower = tower_place(g_client.entityManager, g_client.towerManager, def, gfc_vector2d(pkt->xPos, pkt->yPos), pkt->towerID);
+    entity_t *tower = tower_place(g_client.entityManager, g_client.towerManager, def, gfc_vector2d(pkt->xPos, pkt->yPos), pkt->towerID);
     if (!tower) {
         log_error("Failed to create tower from server packet");
         return;
     }
 
     log_info("Tower created with ID: %u at position (%f, %f)", pkt->towerID, pkt->xPos, pkt->yPos);
+}
+
+void handle_s2c_tower_event(const s2c_tower_event_packet_t *pkt, void *client) {
+        entity_t *entity = tower_get_by_id(g_client.towerManager, pkt->towerID);
+        if (!entity) {
+            log_error("Received tower event packet for non-existent tower ID: %u", pkt->towerID);
+            return;
+        }
+
+        switch (pkt->eventID) {
+            case TOWER_EVENT_SHOOT:
+                tower_shoot_all(g_client.entityManager, entity);
+            break;
+        }
 }

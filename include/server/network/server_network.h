@@ -18,5 +18,6 @@ void server_network_destroy(server_network_t *network);
 
 int server_network_start(server_network_t *network);
 void server_network_stop(server_network_t *network);
+void server_network_tick(server_network_t *network);
 
 #endif /* SERVER_NETWORK_H */

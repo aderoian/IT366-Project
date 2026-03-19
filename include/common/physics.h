@@ -7,15 +7,15 @@
 
 /** @brief A dense list of active bodies in the physics simulation */
 typedef struct phys_BodyManager_S {
-	struct Entity_S **active;
+	struct entity_s **active;
 	uint32_t activeCount;
 	uint32_t activeCapacity;
 } phys_BodyManager;
 
 /** @brief Represents a collision between 2 bodies. Stores the necessary information to resolve the collision.  */
 typedef struct phys_CollisionContact_s {
-	struct Entity_S *a;
-	struct Entity_S *b;
+	struct entity_s *a;
+	struct entity_s *b;
 	GFC_Vector2D contactPoint;
 	GFC_Vector2D contactNormal;
 	GFC_Vector2D aVelocity;
@@ -25,8 +25,8 @@ typedef struct phys_CollisionContact_s {
 
 /** @brief Represents 2 bodies that could potentially be colliding. Generated in broad-phase. */
 typedef struct phys_CollisionPair_S {
-	struct Entity_S *a;
-	struct Entity_S *b;
+	struct entity_s *a;
+	struct entity_s *b;
 } phys_CollisionPair;
 
 /** @brief Axis-Aligned Bounding Box shape defined by min and max points */
@@ -47,27 +47,27 @@ void phys_free(void);
  * @brief Adds a body to the physics simulation.
  * @param entity The entity containing the body to add.
  */
-void phys_addRigidbody(struct Entity_S *entity);
+void phys_addRigidbody(struct entity_s *entity);
 
 /**
  * @brief Removes a body from the physics simulation.
  * @param entity The entity containing the body to remove.
  */
-void phys_removeRigidbody(struct Entity_S *entity);
+void phys_removeRigidbody(struct entity_s *entity);
 
 /**
  * @brief Applies a force to the body of the given entity.
  * @param ent The entity whose body will receive the force.
  * @param force The force vector to apply.
  */
-void phys_addForce(struct Entity_S *ent, GFC_Vector2D force);
+void phys_addForce(struct entity_s *ent, GFC_Vector2D force);
 
 /**
  * @brief Applies an impulse to the body of the given entity.
  * @param ent The entity whose body will receive the impulse.
  * @param impulse The impulse vector to apply.
  */
-void phys_addImpulse(struct Entity_S *ent, GFC_Vector2D impulse);
+void phys_addImpulse(struct entity_s *ent, GFC_Vector2D impulse);
 
 /**
  * @brief Integrates the bodies managed by the given body manager over the specified time step.
@@ -167,7 +167,7 @@ typedef struct phys_SAPAxis_S {
 	/** Array of min and max endpoint values for each dynamic body */
 	float* endpoints;
 	/** Array of corresponding indices of the bodies to the endpoints */
-	struct Entity_S ** indices;
+	struct entity_s ** indices;
 	uint8_t* isMin;
 	uint32_t count;
 	uint32_t capacity;
@@ -208,7 +208,7 @@ void phys_collision_sweepAndPruneCloseAxis(phys_SAPAxis* axis);
  * @brief Inserts a body into the Sweep and Prune structure for broad-phase collision detection.
  * @param entity The entity containing the body to insert.
  */
-void phys_collision_sweepAndPruneInsert(struct Entity_S *entity);
+void phys_collision_sweepAndPruneInsert(struct entity_s *entity);
 
 /**
  * @brief Inserts the min and max endpoints of a body into a Sweep and Prune axis.
@@ -216,7 +216,7 @@ void phys_collision_sweepAndPruneInsert(struct Entity_S *entity);
  * @param entity The entity containing the body to insert.
  * @param axisIndex The axis index (0 for X, 1 for Y, 2 for Z).
  */
-void phys_collision_sweepAndPruneInsertAxis(phys_SAPAxis* axis, struct Entity_S *entity, uint32_t axisIndex);
+void phys_collision_sweepAndPruneInsertAxis(phys_SAPAxis* axis, struct entity_s *entity, uint32_t axisIndex);
 
 /**
  * @brief Finds the appropriate index to insert a value into a Sweep and Prune axis.
@@ -236,20 +236,20 @@ uint32_t phys_collision_sweepAndPruneFindIndex(phys_SAPAxis* axis, float value);
  * @param isMin Flag indicating whether the value is a minimum endpoint (1) or maximum endpoint (0).
  * @param axisIndex The axis index (0 for X, 1 for Y, 2 for Z).
  */
-void phys_collision_sweepAndPruneInsertAt(phys_SAPAxis* axis, uint32_t sap_index, struct Entity_S *entity, float value, uint8_t isMin, uint32_t axisIndex);
+void phys_collision_sweepAndPruneInsertAt(phys_SAPAxis* axis, uint32_t sap_index, struct entity_s *entity, float value, uint8_t isMin, uint32_t axisIndex);
 
 /**
  * @brief Removes a body from the Sweep and Prune structure for broad-phase collision detection.
  * @param entity The entity containing the body to remove.
  */
-void phys_collision_sweepAndPruneRemove(struct Entity_S *entity);
+void phys_collision_sweepAndPruneRemove(struct entity_s *entity);
 
 /** @brief Removes the min and max endpoints of a body from a Sweep and Prune axis.
  * @param axis The Sweep and Prune axis to remove from.
  * @param entity The entity containing the body to remove.
  * @param axisIndex The axis index (0 for X, 1 for Y, 2 for Z).
  */
-void phys_collision_sweepAndPruneRemoveAxis(phys_SAPAxis* axis, struct Entity_S *entity, uint32_t axisIndex);
+void phys_collision_sweepAndPruneRemoveAxis(phys_SAPAxis* axis, struct entity_s *entity, uint32_t axisIndex);
 
 /**
  * @brief Removes an endpoint from a Sweep and Prune axis at the specified index.

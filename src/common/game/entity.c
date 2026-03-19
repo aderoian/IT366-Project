@@ -7,21 +7,30 @@
 #include "common/logger.h"
 
 struct entity_manager_s {
-    Entity *ents;
-    size_t maxEnts;
+    entity_t *ents;
+    uint32_t *idToSlot;
+    uint32_t maxEnts;
 };
 
-entity_manager_t *entity_init(const size_t maxEnts) {
+entity_manager_t *entity_init(const uint32_t maxEnts) {
     entity_manager_t *manager = malloc(sizeof(entity_manager_t));
     if (!manager) {
         log_error("Failed to allocate memory for entity manager");
         return NULL;
     }
 
-    manager->ents = gfc_allocate_array(sizeof(Entity), maxEnts);
+    manager->ents = gfc_allocate_array(sizeof(entity_t), maxEnts);
     if (!manager->ents) {
         free(manager);
         log_error("Failed to allocate memory for entities");
+        return NULL;
+    }
+
+    manager->idToSlot = calloc(maxEnts, sizeof(uint32_t));
+    if (!manager->idToSlot) {
+        free(manager->ents);
+        free(manager);
+        log_error("Failed to allocate memory for ID to slot mapping");
         return NULL;
     }
 
@@ -33,9 +42,9 @@ void entity_close(const entity_manager_t *manager) {
     if (manager->ents) free(manager->ents);
 }
 
-Entity *entity_new(const entity_manager_t *manager) {
-    size_t i;
-    Entity* ent;
+entity_t *entity_new(const entity_manager_t *manager) {
+    uint32_t i;
+    entity_t* ent;
     if (!manager->ents) 
         return NULL;
 
@@ -44,9 +53,12 @@ Entity *entity_new(const entity_manager_t *manager) {
         if (ent->_inUse > 0) continue;
 
         ent->_inUse = 1;
+        ent->id = (ent->id & 0xFFFFFFFF00000000) | i; // Preserve generation
         ent->draw = entity_draw;
         ent->scale = gfc_vector2d(1, 1);
         ent->layers = 0xFFFF;
+
+        manager->idToSlot[(uint32_t)ent->id] = i; // Map ID to slot index
 
         return ent;
     }
@@ -54,8 +66,8 @@ Entity *entity_new(const entity_manager_t *manager) {
     return NULL;
 }
 
-Entity *entity_new_animated(const entity_manager_t *manager) {
-    Entity *ent = entity_new(manager);
+entity_t *entity_new_animated(const entity_manager_t *manager) {
+    entity_t *ent = entity_new(manager);
     if (!ent) return NULL;
 
     ent->flags |= ENT_FLAG_ANIMATED;
@@ -65,7 +77,21 @@ Entity *entity_new_animated(const entity_manager_t *manager) {
     return ent;
 }
 
-void entity_free(const entity_manager_t *entityManager, Entity* ent) {
+void entity_set_id(const entity_manager_t *manager, entity_t *ent, const uint64_t id) {
+    uint32_t i;
+    if (!ent) return;
+
+    for (i = 0; i < manager->maxEnts; i++) {
+        if (&manager->ents[i] == ent) {
+            manager->idToSlot[(uint32_t)id] = i; // Map new ID to slot index
+            ent->id = id;
+            return;
+        }
+    }
+}
+
+void entity_free(const entity_manager_t *entityManager, entity_t* ent) {
+    uint64_t generation;
     if (!ent) return;
 
     if (ent->flags & ENT_FLAG_ANIMATED) {
@@ -80,12 +106,14 @@ void entity_free(const entity_manager_t *entityManager, Entity* ent) {
 
     if (ent->data) free(ent->data);
 
-    memset(ent, 0, sizeof(Entity));
+    generation = ent->id + 0x000100000000; // Increment generation
+    memset(ent, 0, sizeof(entity_t));
+    ent->id = generation; // Update ID with new generation
 }
 
 void entity_think_all(const entity_manager_t *manager) {
     size_t i;
-    Entity *ent;
+    entity_t *ent;
     for (i = 0; i < manager->maxEnts; i++) {
         ent = &manager->ents[i];
         if (ent->_inUse == 0 || !ent->think) continue;
@@ -94,7 +122,7 @@ void entity_think_all(const entity_manager_t *manager) {
 }
 void entity_update_all(const entity_manager_t *manager, const float deltaTime) {
     size_t i;
-    Entity *ent;
+    entity_t *ent;
     for (i = 0; i < manager->maxEnts; i++) {
         ent = &manager->ents[i];
         if (ent->_inUse == 0 || !ent->update) continue;
@@ -102,7 +130,7 @@ void entity_update_all(const entity_manager_t *manager, const float deltaTime) {
     }
 }
 
-void entity_update_animated(const entity_manager_t *entityManager, Entity *ent, float deltaTime) {
+void entity_update_animated(const entity_manager_t *entityManager, entity_t *ent, float deltaTime) {
     if (!ent) return;
     if (!(ent->flags & ENT_FLAG_ANIMATED)) return;
 
@@ -113,7 +141,7 @@ void entity_update_animated(const entity_manager_t *entityManager, Entity *ent, 
     animation_state_update(animatedSprite->state, deltaTime);
 }
 
-void entity_draw(const entity_manager_t *entityManager, Entity *ent) {
+void entity_draw(const entity_manager_t *entityManager, entity_t *ent) {
     GFC_Vector2D position;
     if (!ent) return;
 
@@ -121,7 +149,7 @@ void entity_draw(const entity_manager_t *entityManager, Entity *ent) {
     gf2d_sprite_draw_image(ent->model, position);
 }
 
-void entity_draw_animated(const entity_manager_t *entityManager, Entity *ent) {
+void entity_draw_animated(const entity_manager_t *entityManager, entity_t *ent) {
     GFC_Vector2D position;
     if (!ent) return;
     if (!(ent->flags & ENT_FLAG_ANIMATED)) return;
@@ -145,8 +173,8 @@ void entity_draw_animated(const entity_manager_t *entityManager, Entity *ent) {
 }
 
 void entity_draw_all(const entity_manager_t *manager) {
-    size_t i;
-    Entity *ent;
+    uint32_t i;
+    entity_t *ent;
     for (i = 0; i < manager->maxEnts; i++) {
         ent = &manager->ents[i];
         if (ent->_inUse == 0 || !ent->draw) continue;

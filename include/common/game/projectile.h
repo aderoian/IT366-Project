@@ -4,7 +4,7 @@
 #include "gfc_vector.h"
 
 struct tower_state_s;
-struct Entity_S;
+struct entity_s;
 
 typedef struct projectile_state_s {
     float speed;
@@ -13,7 +13,7 @@ typedef struct projectile_state_s {
     GFC_Vector2D direction;
     GFC_Vector2D distanceTraveled;
     struct tower_state_s *sourceTower;
-    struct Entity_S *entity;
+    struct entity_s *entity;
 } projectile_state_t;
 
 int projectile_spawn(const entity_manager_t *entityManager, float speed, float damage, float range, GFC_Vector2D direction, const char *spriteModel, struct tower_state_s *sourceTower);

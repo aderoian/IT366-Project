@@ -6,9 +6,10 @@
 
 #include "client/client.h"
 #include "client/gf2d_sprite.h"
-#include "common/game/game.h"
 #include "common/game/projectile.h"
-#include "common/game/world.h"
+#include "common/game/world/world.h"
+#include "common/network/packet/definitions.h"
+#include "common/network/packet/io.h"
 #include "server/server.h"
 
 struct tower_def_manager_s {
@@ -27,8 +28,8 @@ struct tower_manager_s {
     tower_def_manager_t *towerDefManager;
 };
 
-void tower_entity_think(const entity_manager_t *entityManager, Entity *ent);
-void tower_entity_update(const entity_manager_t *entityManager, Entity *ent, float deltaTime);
+void tower_entity_think(const entity_manager_t *entityManager, entity_t *ent);
+void tower_entity_update(const entity_manager_t *entityManager, entity_t *ent, float deltaTime);
 
 tower_manager_t *tower_init(tower_def_manager_t *defManager, const uint32_t maxTowers) {
     uint32_t i;
@@ -211,7 +212,7 @@ const tower_def_t * tower_def_get_by_index(const tower_manager_t *towerManager, 
     return &towerManager->towerDefManager->towerDefs[index];
 }
 
-tower_state_t *tower_create_by_name(const entity_manager_t *entityManager, tower_manager_t *towerManager, const char* name, const GFC_Vector2D position) {
+entity_t *tower_create_by_name(const entity_manager_t *entityManager, tower_manager_t *towerManager, const char* name, const GFC_Vector2D position) {
     const tower_def_t *def = tower_def_get(towerManager, name);
     if (!def) {
         log_error("Tower definition not found for name: %s", name);
@@ -220,23 +221,21 @@ tower_state_t *tower_create_by_name(const entity_manager_t *entityManager, tower
     return tower_create_by_def(entityManager, towerManager, def, position);
 }
 
-tower_state_t *tower_create_by_def(const entity_manager_t *entityManager, tower_manager_t *towerManager,
+entity_t *tower_create_by_def(const entity_manager_t *entityManager, tower_manager_t *towerManager,
                                     const tower_def_t *def, const GFC_Vector2D position) {
-    tower_state_t *tower = tower_place(entityManager, towerManager, def, position, towerManager->nextTowerID++);
+    entity_t *tower = tower_place(entityManager, towerManager, def, position, towerManager->nextTowerID++);
     if (!tower) {
         log_error("Failed to create tower at position (%f, %f)", position.x, position.y);
         return NULL;
     }
 
-    tower->worldPos = world_pos_tile_snap(g_server.world, position);
-    tower->entity->position = tower->worldPos;
     return tower;
 }
 
-tower_state_t *tower_place(const entity_manager_t *entityManager, tower_manager_t *towerManager, const tower_def_t *def,
+entity_t *tower_place(const entity_manager_t *entityManager, tower_manager_t *towerManager, const tower_def_t *def,
                             const GFC_Vector2D position, const uint32_t id) {
     tower_state_t * tower;
-    Entity *ent;
+    entity_t *ent;
     if (towerManager->numFreeSlots == 0) {
         log_error("No free tower slots available");
         return NULL;
@@ -263,16 +262,18 @@ tower_state_t *tower_place(const entity_manager_t *entityManager, tower_manager_
     ent->data = tower;
     tower->entity = ent;
 
-    if (g_client.isLocal) {
+    if (g_game.role == GAME_ROLE_CLIENT) {
         tower->worldPos = world_pos_tile_snap(g_client.world, position);
-        ent->position = tower->worldPos;
         ent->model = gf2d_sprite_load_image(def->modelDef.baseSpritePath);
+    } else {
+        tower->worldPos = world_pos_tile_snap(g_server.world, position);
     }
+    ent->position = tower->worldPos;
 
-    return tower;
+    return ent;
 }
 
-tower_state_t * tower_get_by_id(tower_manager_t *towerManager, const uint32_t id) {
+entity_t * tower_get_by_id(tower_manager_t *towerManager, const uint32_t id) {
     uint32_t index;
     if (id >= towerManager->maxTowers) {
         return NULL; // Invalid ID
@@ -281,13 +282,16 @@ tower_state_t * tower_get_by_id(tower_manager_t *towerManager, const uint32_t id
     if (index == UINT32_MAX || index >= towerManager->maxTowers) {
         return NULL; // ID not in use or index out of bounds
     }
-    return &towerManager->towers[index];
+    return towerManager->towers[index].entity;
 }
 
-void tower_destroy(tower_manager_t *towerManager, tower_state_t *tower) {
+void tower_destroy(tower_manager_t *towerManager, entity_t *entity) {
     uint32_t index;
-    if (!tower) return;
+    tower_state_t *tower;
 
+    if (!entity || !entity->data) return;
+
+    tower = (tower_state_t *)entity->data;
     index = towerManager->towerIDs[tower->id];
     if (index == UINT32_MAX || index >= towerManager->maxTowers) {
         log_error("Attempted to destroy tower with invalid ID: %u", tower->id);
@@ -297,7 +301,7 @@ void tower_destroy(tower_manager_t *towerManager, tower_state_t *tower) {
     tower->id = UINT32_MAX;
 
     if (tower->entity) {
-        entity_free(towerManager, tower->entity);
+        entity_free(NULL, tower->entity);
         tower->entity = NULL;
     }
 }
@@ -314,8 +318,11 @@ void tower_type_from_string(const char *str, tower_type_t *outType) {
     }
 }
 
-int tower_try_shoot(tower_state_t *tower, const float deltaTime) {
-    if (!tower || tower->def->numWeapons <= 0) return 0;
+int tower_try_shoot(entity_t *entity, const float deltaTime) {
+    if (!entity || !entity->data) return 0;
+    tower_state_t *tower = (tower_state_t *)entity->data;
+
+    if (tower->def->numWeapons <= 0) return 0;
 
     if (tower->cooldown > 0) {
         tower->cooldown -= deltaTime;
@@ -330,10 +337,14 @@ int tower_try_shoot(tower_state_t *tower, const float deltaTime) {
     return 0; // Still cooling down
 }
 
-void tower_shoot(const entity_manager_t *entityManager, tower_state_t *tower, int weaponIndex) {
+void tower_shoot(const entity_manager_t *entityManager, entity_t *entity, int weaponIndex) {
+    tower_state_t *tower;
     const tower_weapon_def_t *weaponDef;
     int level;
-    if (!tower || weaponIndex < 0 || weaponIndex >= tower->def->numWeapons) return;
+    if (!entity || !entity->data) return;
+
+    tower = (tower_state_t *)entity->data;
+    if (weaponIndex < 0 || weaponIndex >= tower->def->numWeapons) return;
 
     level = tower->level;
     weaponDef = &tower->def->weaponDefs[weaponIndex];
@@ -348,15 +359,19 @@ void tower_shoot(const entity_manager_t *entityManager, tower_state_t *tower, in
     );
 }
 
-void tower_shoot_all(const entity_manager_t *entityManager, tower_state_t *tower) {
+void tower_shoot_all(const entity_manager_t *entityManager, entity_t *entity) {
     int i;
-    if (!tower || tower->def->numWeapons <= 0) return;
+    tower_state_t *tower;
+    if (!entity || !entity->data) return;
+
+    tower = (tower_state_t *)entity->data;
+    if (tower->def->numWeapons <= 0) return;
     for (i = 0; i < tower->def->numWeapons; i++) {
-        tower_shoot(entityManager, tower, i);
+        tower_shoot(entityManager, entity, i);
     }
 }
 
-void tower_entity_think(const entity_manager_t *entityManager, Entity *ent) {
+void tower_entity_think(const entity_manager_t *entityManager, entity_t *ent) {
     if (!ent) return;
     tower_state_t *tower = (tower_state_t *)ent->data;
     if (!tower) return;
@@ -364,12 +379,19 @@ void tower_entity_think(const entity_manager_t *entityManager, Entity *ent) {
     // TODO: Implement tower thinking behavior, such as targeting enemies, deciding when to shoot, etc.
 }
 
-void tower_entity_update(const entity_manager_t *entityManager, Entity *ent, float deltaTime) {
+void tower_entity_update(const entity_manager_t *entityManager, entity_t *ent, float deltaTime) {
     if (!ent || ! ent->data) return;
     tower_state_t *tower = (tower_state_t *)ent->data;
     if (!tower) return;
 
-    if (tower_try_shoot(tower, deltaTime)) {
-        tower_shoot_all(entityManager, tower);
+    if (g_game.role == GAME_ROLE_SERVER) {
+        if (tower_try_shoot(ent, deltaTime)) {
+
+            s2c_tower_event_packet_t pkt;
+            create_s2c_tower_event(&pkt, tower->id, TOWER_EVENT_SHOOT, *(uint64_t*) &ent->rotation);
+            server_broadcast_packet(&g_server, &pkt, 0);
+
+            tower_shoot_all(entityManager, ent);
+        }
     }
 }

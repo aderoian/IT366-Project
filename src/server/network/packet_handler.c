@@ -2,7 +2,7 @@
 #include "common/game/game.h"
 #include "common/game/player.h"
 #include "common/game/tower.h"
-#include "common/game/world.h"
+#include "../../../include/common/game/world/world.h"
 #include "common/network/packet/handler.h"
 #include "../../../include/server/network/server_network.h"
 #include "server/server.h"
@@ -28,7 +28,7 @@ void handle_c2s_player_input_snapshot(const c2s_player_input_snapshot_packet_t *
         return;
     }
 
-    player_input_process(player, &packet->inputCommand, g_server.local.deltaTime);
+    player_input_process(player, &packet->inputCommand, g_game.deltaTime);
 }
 
 void handle_c2s_player_join_request(const c2s_player_join_request_packet_t *pkt, void *peer) {
@@ -50,6 +50,7 @@ void handle_c2s_player_join_request(const c2s_player_join_request_packet_t *pkt,
 void handle_c2s_tower_build_request(const c2s_tower_build_request_packet_t *pkt, void *peer) {
     player_t *player;
     network_session_t *session;
+    entity_t *entity;
     tower_state_t *tower;
     s2c_tower_create_packet_t towerPkt;
     const tower_def_t *towerDef;
@@ -75,8 +76,9 @@ void handle_c2s_tower_build_request(const c2s_tower_build_request_packet_t *pkt,
         return;
     }
 
-    tower = tower_create_by_def(g_server.entityManager, g_server.towerManager, towerDef, (GFC_Vector2D){pkt->xPos, pkt->yPos});
-    if (tower) {
+    entity = tower_create_by_def(g_server.entityManager, g_server.towerManager, towerDef, (GFC_Vector2D){pkt->xPos, pkt->yPos});
+    tower = (tower_state_t *) entity->data;
+    if (entity) {
         log_info("Player ID %u built a tower at position (%f, %f) with definition index %u", player->id, pkt->xPos, pkt->yPos, pkt->towerDefIndex);
         create_s2c_tower_create(&towerPkt, pkt->xPos, pkt->yPos, pkt->towerDefIndex, tower->id);
         server_broadcast_packet(&g_server, &towerPkt, NET_UDP_FLAG_RELIABLE);

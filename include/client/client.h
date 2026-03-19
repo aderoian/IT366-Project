@@ -5,7 +5,7 @@
 #include "common/game/player.h"
 #include "client/client_network.h"
 #include "client/ui/overlay.h"
-#include "common/game/world.h"
+#include "../common/game/world/world.h"
 
 typedef enum client_state_e {
     CLIENT_IDLE = 0,
@@ -28,9 +28,6 @@ typedef struct client_render_state_s {
 } client_render_state_t;
 
 typedef struct Client_S {
-    game_t local;
-    uint8_t isLocal;
-
     struct def_manager_s *defManager;
     struct entity_manager_s *entityManager;
     struct item_def_manager_s *itemManager;

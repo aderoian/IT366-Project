@@ -13,7 +13,7 @@
 #include "common/game/item.h"
 #include "common/game/player.h"
 #include "common/game/tower.h"
-#include "common/game/world.h"
+#include "../../include/common/game/world/world.h"
 
 #include "server/game/player_manager.h"
 #include "../../include/server/network/server_network.h"
@@ -40,7 +40,6 @@ int server_main(void) {
     }
 
     if (_dedicatedServer) {
-        g_client.isLocal = 0;
         server_runCommandLoop();
     }
 
@@ -137,11 +136,10 @@ void *server_run(void *arg) {
     if (server->onStart) {
         server->onStart(server);
     }
-
-    game_t game_s = g_server.local;
     // Main server loop
-    game_s.tickNumber = 0;
-    g_server.local.deltaTime = 0.0f;
+    g_game.tickNumber = 0;
+    g_game.deltaTime = 0.0f;
+    g_game.role = GAME_ROLE_SERVER;
     server_tickProcessor(server);
     log_info("Server stopped!");
 
@@ -150,7 +148,7 @@ void *server_run(void *arg) {
 
 void server_tick(Server *server, float deltaTime) {
     size_t index;
-    g_server.local.tickNumber++;
+    g_game.tickNumber++;
 
     network_tick(&server->network->baseNetwork);
     entity_update_all(server->entityManager, deltaTime);
@@ -159,7 +157,7 @@ void server_tick(Server *server, float deltaTime) {
     server->currentUse = fmin(1.0, deltaTime / SERVER_TARGET_TICK_TIME_MS);
 
     // Update average TPS and use
-    index = g_server.local.tickNumber % 20;
+    index = g_game.tickNumber % 20;
     server->averageTps[index] = server->currentTps;
     server->averageUse[index] = server->currentUse;
 }
@@ -196,8 +194,8 @@ void server_tickProcessor(Server *server) {
 
         deltaSeconds = frameTimeMs / 1000.0;
 
-        g_server.local.deltaTime = (float) deltaSeconds;
-        server_tick(server, g_server.local.deltaTime);
+        g_game.deltaTime = (float) deltaSeconds;
+        server_tick(server, g_game.deltaTime);
 
         workTimeMs = (double) time_now_ms() - currentTimeMs;
         sleepTimeMs = targetTickMs - workTimeMs;
@@ -263,7 +261,7 @@ void server_destroy_player(struct player_s *player) {
     log_info("Destroyed player with ID %u", player->id);
 }
 
-Entity * server_spawn_player_entity(struct player_s *player, GFC_Vector2D pos) {
+entity_t * server_spawn_player_entity(struct player_s *player, GFC_Vector2D pos) {
     if (!player) {
         return NULL;
     }
@@ -286,6 +284,14 @@ void server_send_packet(Server* server, const player_t *player, void *context, c
     network_session_send(session, context, flags);
 }
 
+void server_send_packet_batch(Server* server, const player_t *player, void *context) {
+    if (!server || !player) {
+        return;
+    }
+
+    network_session_send_batch((network_session_t *) player->data, context);
+}
+
 void server_broadcast_packet(Server* server, void *context, const uint32_t flags) {
     size_t i, playerCount;
     const player_t **players;
@@ -296,5 +302,17 @@ void server_broadcast_packet(Server* server, void *context, const uint32_t flags
     players = player_manager_get_all(server->playerManager, &playerCount);
     for (i = 0; i < playerCount; ++i) {
         server_send_packet(server, players[i], context, flags);
+    }
+}
+void server_broadcast_packet_batch(Server* server, void *context) {
+    size_t i, playerCount;
+    const player_t **players;
+    if (!server) {
+        return;
+    }
+
+    players = player_manager_get_all(server->playerManager, &playerCount);
+    for (i = 0; i < playerCount; ++i) {
+        server_send_packet_batch(server, players[i], context);
     }
 }

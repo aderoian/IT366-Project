@@ -22,9 +22,9 @@ typedef struct player_snapshot_s {
     player_input_command_t cmd;
 } player_snapshot_t;
 
-void player_think(const entity_manager_t *entityManager, Entity *ent);
-void player_update(const entity_manager_t *entityManager, Entity *ent, float deltaTime);
-void player_draw(const entity_manager_t *entityManager, Entity *ent);
+void player_think(const entity_manager_t *entityManager, entity_t *ent);
+void player_update(const entity_manager_t *entityManager, entity_t *ent, float deltaTime);
+void player_draw(const entity_manager_t *entityManager, entity_t *ent);
 
 player_t *player_create(uint32_t id, const char *name) {
     player_t *player = (player_t *)gfc_allocate_array(sizeof(player_t), 1);
@@ -48,14 +48,14 @@ void player_destroy(player_t *player) {
     }
 }
 
-Entity * player_entity_spawn(const entity_manager_t *entityManager, player_t *player, GFC_Vector2D pos, const char *sprite) {
-    Entity *ent;
+entity_t * player_entity_spawn(const entity_manager_t *entityManager, player_t *player, GFC_Vector2D pos, const char *sprite) {
+    entity_t *ent;
     Sprite *spriteImage;
 
     ent = entity_new_animated(entityManager);
     ent->position = pos;
 
-    if (g_client.isLocal) {
+    if (g_game.role == GAME_ROLE_CLIENT) {
         if (!sprite) {
             return NULL;
         }
@@ -104,7 +104,7 @@ GFC_Vector2D player_input_apply(player_t *player, const GFC_Vector2D position, c
         player_snapshot_t snapshot = {
             .position = newPos,
             .cmd = {
-                .tickNumber = g_client.local.tickNumber,
+                .tickNumber = g_game.tickNumber,
                 .axisX = (int32_t)direction.x,
                 .axisY = (int32_t)direction.y
             }
@@ -168,7 +168,7 @@ void player_input_process_server(player_t *player, uint64_t tick, float xPos, fl
             while (idx != tail) {
                 peeked = (player_snapshot_t *)buf_spsc_ring_get(player->inputBuffer, idx);
                 inputDirection = gfc_vector2d((float)peeked->cmd.axisX, (float)peeked->cmd.axisY);
-                predPosition = player_move(predPosition, inputDirection, PLAYER_SPEED, g_server.local.deltaTime);
+                predPosition = player_move(predPosition, inputDirection, PLAYER_SPEED, g_game.deltaTime);
                 idx = buf_spsc_ring_next_index(player->inputBuffer, idx);
             }
         } else {
@@ -188,7 +188,7 @@ GFC_Vector2D player_move(GFC_Vector2D position, GFC_Vector2D direction, const fl
     return position;
 }
 
-void player_think(const entity_manager_t *entityManager, Entity *ent) {
+void player_think(const entity_manager_t *entityManager, entity_t *ent) {
     if (!ent || !ent->data) {
         return;
     }
@@ -196,7 +196,7 @@ void player_think(const entity_manager_t *entityManager, Entity *ent) {
     // Placeholder for future thinking logic (e.g., AI, state changes)
 }
 
-void player_update(const entity_manager_t *entityManager, Entity *ent, float deltaTime) {
+void player_update(const entity_manager_t *entityManager, entity_t *ent, float deltaTime) {
     GFC_Vector2D position, mousePosition;
     player_t *player;
     player_input_actions_t actions;
@@ -206,7 +206,7 @@ void player_update(const entity_manager_t *entityManager, Entity *ent, float del
 
     player = (player_t *)ent->data;
 
-    if (g_client.isLocal) {
+    if (g_game.role == GAME_ROLE_CLIENT) {
         entity_update_animated(entityManager, ent, deltaTime);
 
         actions.up = gfc_input_command_down("up");
@@ -228,7 +228,7 @@ void player_update(const entity_manager_t *entityManager, Entity *ent, float del
     }
 }
 
-void player_draw(const entity_manager_t *entityManager, Entity *ent) {
+void player_draw(const entity_manager_t *entityManager, entity_t *ent) {
     if (!ent || !ent->data) {
         return;
     }

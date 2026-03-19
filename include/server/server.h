@@ -5,6 +5,7 @@
 
 #include "common/game/entity.h"
 #include "common/game/game.h"
+#include "common/game/player.h"
 #include "common/thread/mutex.h"
 #include "common/thread/thread.h"
 
@@ -28,8 +29,6 @@ typedef enum ServerState_E {
 } ServerState;
 
 typedef struct Server_S {
-    game_t local;
-
     struct def_manager_s *defManager;
     struct entity_manager_s *entityManager;
     struct item_def_manager_s *itemManager;
@@ -59,9 +58,11 @@ void server_close(void);
 struct player_s *server_create_player(Server *server, struct network_session_s *session);
 void server_destroy_player(struct player_s *player);
 
-Entity *server_spawn_player_entity(struct player_s *player, GFC_Vector2D pos);
+entity_t *server_spawn_player_entity(struct player_s *player, GFC_Vector2D pos);
 
 void server_send_packet(Server* server, const struct player_s *player, void *context, uint32_t flags);
+void server_send_packet_batch(Server* server, const player_t *player, void *context);
 void server_broadcast_packet(Server* server, void *context, uint32_t flags);
+void server_broadcast_packet_batch(Server* server, void *context);
 
 #endif /* SERVER_H */

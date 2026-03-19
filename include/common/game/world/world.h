@@ -1,12 +1,19 @@
 #ifndef WORLD_H
 #define WORLD_H
+
 #include "gfc_vector.h"
 
 #define TILE_SIZE 32
+#define CHUNK_TILE_SIZE 16
+
+#define TILE_POS_SHIFT 5 // 2^5 = 32
+#define CHUNK_POS_SHIFT 9 // 2^9 = 512
 
 typedef struct world_s {
     GFC_Vector2I size;
     uint8_t local;
+
+    struct chunk_s *chunks;
 } world_t;
 
 world_t *world_create(int width, int height, uint8_t local);

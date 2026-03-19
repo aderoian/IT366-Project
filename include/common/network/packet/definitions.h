@@ -7,6 +7,8 @@
 net_int8_t packetID;  \
 size_t length;
 
+#define BATCH_PACKET_ID 255
+
 #define PACKET_HEADER_SIZE sizeof(net_int8_t) + sizeof(size_t)
 
 /**
@@ -19,7 +21,8 @@ X(c2s_player_input_snapshot, C2S_PLAYER_INPUT_SNAPSHOT, PLAYER_INPUT_SNAPSHOT_FI
 X(s2c_player_state_snapshot, S2C_PLAYER_STATE_SNAPSHOT, PLAYER_STATE_SNAPSHOT_FIELDS) \
 X(s2c_player_create, S2C_PLAYER_CREATE, PLAYER_CREATE_PARAMS_FIELDS) \
 X(c2s_tower_build_request, C2S_TOWER_BUILD_REQUEST, TOWER_BUILD_REQUEST_FIELDS) \
-X(s2c_tower_create, S2C_TOWER_CREATE, TOWER_CREATE_FIELDS)
+X(s2c_tower_create, S2C_TOWER_CREATE, TOWER_CREATE_FIELDS) \
+X(s2c_tower_event, S2C_TOWER_EVENT, TOWER_EVENT_FIELDS)
 
 /**
  * @brief Fields for each packet.
@@ -59,6 +62,11 @@ F(net_float_t, xPos, PRIMITIVE) \
 F(net_float_t, yPos, PRIMITIVE) \
 F(net_uint32_t, towerDefIndex, PRIMITIVE) \
 F(net_uint32_t, towerID, PRIMITIVE)
+
+#define TOWER_EVENT_FIELDS(F) \
+F(net_uint32_t, towerID, PRIMITIVE) \
+F(net_uint32_t, eventID, PRIMITIVE) \
+F(net_uint64_t, data, PRIMITIVE)
 
 /**
  * @brief Generated packet structures.

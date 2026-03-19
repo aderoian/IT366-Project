@@ -93,6 +93,18 @@ void server_network_stop(server_network_t *network) {
     baseNetwork->running = 0;
 }
 
+void server_network_tick(server_network_t *network) {
+    size_t i;
+    if (!network || !network->baseNetwork.running) {
+        return;
+    }
+
+    network_tick(&network->baseNetwork);
+    for (i = 0; i < network->currentSessionCount; ++i) {
+        network_session_sync(&network->sessions[i]);
+    }
+}
+
 void server_network_client_connect(struct network_s *network, const net_udp_event_t *context) {
     server_network_t *serverNetwork = network->networkAdapter;
     if (serverNetwork->currentSessionCount >= serverNetwork->maxSessions) {

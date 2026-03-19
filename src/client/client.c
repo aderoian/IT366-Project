@@ -83,9 +83,10 @@ int client_main(void) {
 
     log_info("Client running");
 
-    g_client.local.tickNumber = 0;
-    g_client.local.deltaTime = 0.0f;
-    g_client.isLocal = 1;
+    g_game.tickNumber = 0;
+    g_game.deltaTime = 0.0f;
+    g_game.role = GAME_ROLE_CLIENT;
+    g_game.isLocal = 1;
     client_tickLoop(&g_client);
 
     return 0;
@@ -191,18 +192,18 @@ void client_tickLoop(Client* client) {
         lastTime = currentTime;
 
         while (accumulator >= dt) {
-            g_client.local.tickNumber++;
-            g_client.local.deltaTime = (float) dt / 1000.0f;
+            g_game.tickNumber++;
+            g_game.deltaTime = (float) dt / 1000.0f;
 
             gfc_input_update();
             network_tick(&client->network->baseNetwork);
 
             window_handle_event_all();
-            window_update_all(g_client.local.deltaTime);
-            overlay_update(&g_client.overlay, g_client.local.deltaTime);
+            window_update_all(g_game.deltaTime);
+            overlay_update(&g_client.overlay, g_game.deltaTime);
 
             entity_think_all(g_client.entityManager);
-            entity_update_all(g_client.entityManager, g_client.local.deltaTime);
+            entity_update_all(g_client.entityManager, g_game.deltaTime);
 
             camera_update(&g_camera);
 

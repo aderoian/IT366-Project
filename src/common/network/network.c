@@ -84,6 +84,44 @@ int network_send(net_udp_peer_t *peer, void *pkt, const uint32_t flags) {
     return net_udp_peer_send(peer, 0, packet);
 }
 
+int network_send_batch(net_udp_peer_t *peer, void **pkts, const uint32_t count) {
+    size_t numBytes = 0, length = 0;
+    uint8_t *buffer;
+    buffer_offset_t offset = 0;
+    uint8_t pktId;
+    uint32_t i;
+    if (!peer || !pkts || count == 0) {
+        return -1;
+    }
+
+    // Calculate total buffer size needed for all packets
+    for (i = 0; i < count; i++) {
+        length = *((uint64_t *)pkts[i] + 1);
+        numBytes += length + PACKET_HEADER_SIZE;
+    }
+
+    buffer = malloc(numBytes + PACKET_HEADER_SIZE);
+    if (!buffer) {
+        log_error("Failed to allocate buffer for batch sending.");
+        return -1;
+    }
+
+    // Serialize each packet into the buffer
+    for (i = 0; i < count; i++) {
+        pktId = *((uint8_t *)pkts[i]);
+        packet_send_table[pktId](pkts[i], buffer, &offset);
+    }
+
+    net_udp_packet_t *packet = net_udp_packet_create(buffer, numBytes, 0);
+    if (!packet) {
+        net_udp_packet_destroy(packet);
+        log_error("Failed to create packet for sending.");
+        return -1;
+    }
+
+    return net_udp_peer_send(peer, 0, packet);
+}
+
 void network_handle_receive(network_t *network, const net_udp_event_t *context) {
     net_udp_packet_t *rawPacket;
     net_udp_peer_t *peer;

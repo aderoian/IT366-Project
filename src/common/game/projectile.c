@@ -8,13 +8,13 @@
 #include "client/gf2d_sprite.h"
 #include "common/game/game.h"
 
-void projectile_think(const entity_manager_t *entityManager, Entity *ent);
-void projectile_update(const entity_manager_t *entityManager, Entity *ent, float deltaTime);
+void projectile_think(const entity_manager_t *entityManager, entity_t *ent);
+void projectile_update(const entity_manager_t *entityManager, entity_t *ent, float deltaTime);
 
 int projectile_spawn(const entity_manager_t *entityManager, const float speed, const float damage, const float range,
                         const GFC_Vector2D direction, const char *spriteModel, struct tower_state_s *sourceTower) {
     projectile_state_t *projectile;
-    Entity *ent;
+    entity_t *ent;
 
     if (!sourceTower) {
         log_error("Source tower is NULL when trying to spawn projectile");
@@ -51,19 +51,19 @@ int projectile_spawn(const entity_manager_t *entityManager, const float speed, c
     ent->position = sourceTower->worldPos;
     ent->data = projectile;
 
-    if (g_client.isLocal) {
+    if (g_game.role == GAME_ROLE_CLIENT) {
         ent->model = gf2d_sprite_load_image(spriteModel);
     }
 
     return 0;
 }
 
-void projectile_think(const entity_manager_t *entityManager, Entity *ent) {
+void projectile_think(const entity_manager_t *entityManager, entity_t *ent) {
     // Currently, the projectile does not have any specific thinking behavior.
     // This function can be expanded in the future to handle things like homing behavior, collision detection, etc.
 }
 
-void projectile_update(const entity_manager_t *entityManager, Entity *ent, const float deltaTime) {
+void projectile_update(const entity_manager_t *entityManager, entity_t *ent, const float deltaTime) {
     GFC_Vector2D movement;
     if (!ent || !ent->data) {
         log_error("Invalid entity or missing projectile data in projectile_update");

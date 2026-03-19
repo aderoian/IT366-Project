@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+#include "entity.h"
 #include "gfc_vector.h"
 
 #define TOWER_MAX_LEVEL 5
@@ -10,6 +11,8 @@
 #define TOWER_WEAPON_FLAG_DIRECTIONAL 0x01 // Indicates the tower has a directional weapon
 #define TOWER_WEAPON_FLAG_PIERCING    0x02 // Indicates the tower's weapon slows enemies
 #define TOWER_WEAPON_FLAG_AREA_EFFECT 0x04 // Indicates the tower's weapon affects an area
+
+#define TOWER_EVENT_SHOOT 0x01 // Event ID for when a tower shoots
 
 struct def_manager_s;
 struct entity_manager_s;
@@ -55,7 +58,7 @@ typedef struct tower_state_s {
     int level;
     float cooldown;
     GFC_Vector2D worldPos;
-    struct Entity_S *entity;
+    struct entity_s *entity;
 } tower_state_t;
 
 typedef struct tower_def_manager_s tower_def_manager_t;
@@ -117,9 +120,9 @@ const tower_def_t *tower_def_get_by_index(const tower_manager_t *towerManager, i
  * @param towerManager A pointer to the tower manager to use for creating the tower state.
  * @param name The name of the tower definition to use for creating the tower state.
  * @param position The world position where the tower should be created.
- * @return A pointer to the newly created tower state, or NULL if the definition is not found or if there are no free slots.
+ * @return A pointer to the newly created tower state, or NULL if there are no free slots or if the definition is not found.
  */
-tower_state_t *tower_create_by_name(const struct entity_manager_s *entityManager, tower_manager_t *towerManager, const char* name, GFC_Vector2D position);
+entity_t *tower_create_by_name(const struct entity_manager_s *entityManager, tower_manager_t *towerManager, const char* name, GFC_Vector2D position);
 
 /**
  * @brief Creates a new tower state based on a provided tower definition and a specified position.
@@ -131,7 +134,7 @@ tower_state_t *tower_create_by_name(const struct entity_manager_s *entityManager
  * @param position The world position where the tower should be created.
  * @return A pointer to the newly created tower state, or NULL if there are no free slots.
  */
-tower_state_t *tower_create_by_def(const struct entity_manager_s *entityManager, tower_manager_t *towerManager, const tower_def_t *def, GFC_Vector2D position);
+entity_t *tower_create_by_def(const struct entity_manager_s *entityManager, tower_manager_t *towerManager, const tower_def_t *def, GFC_Vector2D position);
 
 /**
  * @brief Places a tower in the world at a specified position with a unique ID. This function initializes the tower state,
@@ -144,7 +147,7 @@ tower_state_t *tower_create_by_def(const struct entity_manager_s *entityManager,
  * @param id The unique ID to assign to the tower.
  * @return A pointer to the newly placed tower state, or NULL if there are no free slots or if entity creation fails.
  */
-tower_state_t *tower_place(const struct entity_manager_s *entityManager, tower_manager_t *towerManager, const tower_def_t *def, GFC_Vector2D position, uint32_t id);
+entity_t *tower_place(const struct entity_manager_s *entityManager, tower_manager_t *towerManager, const tower_def_t *def, GFC_Vector2D position, uint32_t id);
 
 /**
  * @brief Retrieves a tower state by its unique ID. This function looks up the tower manager's mapping of tower IDs to their corresponding states
@@ -154,16 +157,16 @@ tower_state_t *tower_place(const struct entity_manager_s *entityManager, tower_m
  * @param id The unique ID of the tower to retrieve.
  * @return A pointer to the tower state if found, or NULL if no tower with the specified ID exists.
  */
-tower_state_t *tower_get_by_id(tower_manager_t *towerManager, uint32_t id);
+entity_t *tower_get_by_id(tower_manager_t *towerManager, uint32_t id);
 
 /**
  * @brief Destroys a tower state, freeing any associated resources and marking its slot as free.
  * This function should be called when a tower is removed from the game to ensure proper cleanup.
  *
  * @param towerManager A pointer to the tower manager that manages the tower state.
- * @param tower A pointer to the tower state to be destroyed.
+ * @param entity A pointer to the tower state to destroy.
  */
-void tower_destroy(tower_manager_t *towerManager, tower_state_t *tower);
+void tower_destroy(tower_manager_t *towerManager, entity_t *entity);
 
 /**
  * @brief Converts a string representation of a tower type to its corresponding enum value. This function compares the input string
@@ -178,28 +181,30 @@ void tower_type_from_string(const char *str, tower_type_t *outType);
  * @brief Attempts to shoot with the tower's weapon. This function checks if the tower can shoot based on its cooldown
  * and updates the cooldown timer accordingly. If the tower can shoot, it returns a non-zero value; otherwise, it returns zero.
  *
- * @param tower A pointer to the tower state that is attempting to shoot.
+ * @param entity A pointer to the tower state that is attempting to shoot.
  * @param deltaTime The time elapsed since the last update, used to update the cooldown timer.
  * @return A non-zero value if the tower can shoot, or zero if it is still cooling down.
  */
-int tower_try_shoot(tower_state_t *tower, float deltaTime);
+int tower_try_shoot(entity_t *entity, float deltaTime);
 
 /**
  * @brief Executes the shooting action for a specific weapon index of the tower. This function spawns projectiles based on the weapon definition
  * and applies the appropriate properties such as damage, range, and direction.
  *
  * @param entityManager A pointer to the entity manager to use for spawning projectiles.
- * @param tower A pointer to the tower state that is shooting.
+ * @param entity A pointer to the tower state that is shooting.
  * @param weaponIndex The index of the weapon to use for shooting, based on the tower's weapon definitions.
  */
-void tower_shoot(const struct entity_manager_s *entityManager, tower_state_t *tower, int weaponIndex);
+void tower_shoot(const struct entity_manager_s *entityManager, entity_t *entity, int weaponIndex);
 
 /**
  * @brief Executes the shooting action for all weapons of the tower. This function iterates through all the tower's weapons and calls the shooting function for each one.
  *
  * @param entityManager A pointer to the entity manager to use for spawning projectiles.
- * @param tower A pointer to the tower state that is shooting.
+ * @param entity A pointer to the tower state that is shooting.
  */
-void tower_shoot_all(const struct entity_manager_s *entityManager, tower_state_t *tower);
+void tower_shoot_all(const struct entity_manager_s *entityManager, entity_t *entity);
+
+void tower_load_network_state(tower_state_t *tower, const void *data, size_t dataSize);
 
 #endif /* TOWER_H */
