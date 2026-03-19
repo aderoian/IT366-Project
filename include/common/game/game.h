@@ -12,6 +12,8 @@ typedef struct game_s {
     float deltaTime;
     uint8_t role; // 0 = none, 1 = server, 2 = client
     uint8_t isLocal; // 1 if this instance is running in the same process as the server (for client), 0 otherwise
+
+    struct world_s *world; // Pointer to the game world (server and client will have their own instances)
 } game_t;
 
 extern __thread game_t g_game;

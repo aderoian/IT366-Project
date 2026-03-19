@@ -9,6 +9,8 @@
 #define TILE_POS_SHIFT 5 // 2^5 = 32
 #define CHUNK_POS_SHIFT 9 // 2^9 = 512
 
+struct entity_s;
+
 typedef struct world_s {
     GFC_Vector2I size;
     uint8_t local;
@@ -25,5 +27,9 @@ GFC_Vector2D world_pos_tile_snap(const world_t *world, GFC_Vector2D worldPos);
 void world_update(world_t *world, float deltaTime);
 
 void world_draw(const world_t *world);
+
+int world_add_entity(world_t *world, struct entity_s *ent);
+int world_move_entity(world_t *world, struct entity_s *ent, GFC_Vector2D newPos);
+int world_remove_entity(world_t *world, struct entity_s *ent);
 
 #endif /* WORLD_H */

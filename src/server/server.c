@@ -85,7 +85,7 @@ int server_startup(Server *server) {
     server->itemManager = item_init(server->defManager, "def/items.json");
     server->towerManager = tower_init(tower_load_defs(server->defManager, "def/towers.json"), 128);
 
-    server->world = world_create(100, 100, 0);
+    g_game.world = world_create(100, 100, 0);
 
     log_info("Server started successfully.");
     return 1;
@@ -248,7 +248,9 @@ player_t *server_create_player(Server *server, network_session_t *session) {
     session->player = player;
     log_info("Created player with ID %u for session ID %u", player->id, session->sessionID);
 
-    server_spawn_player_entity(player, gfc_vector2d(0.0f, 0.0f)); // FIXME: Use actual spawn position
+    float half = g_game.world->size.x * CHUNK_TILE_SIZE * TILE_SIZE / 2.0f;
+    player->position = gfc_vector2d(half, half); // FIXME: Use actual spawn position
+    server_spawn_player_entity(player, player->position);
     return player;
 }
 

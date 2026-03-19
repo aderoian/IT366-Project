@@ -40,7 +40,6 @@ typedef struct Client_S {
     char playerName[32];
     client_network_t *network;
     player_t *player;
-    world_t *world;
 
     client_render_state_t renderState;
     float deltaTime;

@@ -7,6 +7,7 @@
 
 #include "client/gf2d_sprite.h"
 #include "common/game/game.h"
+#include "server/server.h"
 
 void projectile_think(const entity_manager_t *entityManager, entity_t *ent);
 void projectile_update(const entity_manager_t *entityManager, entity_t *ent, float deltaTime);
@@ -64,7 +65,7 @@ void projectile_think(const entity_manager_t *entityManager, entity_t *ent) {
 }
 
 void projectile_update(const entity_manager_t *entityManager, entity_t *ent, const float deltaTime) {
-    GFC_Vector2D movement;
+    GFC_Vector2D movement, pos;
     if (!ent || !ent->data) {
         log_error("Invalid entity or missing projectile data in projectile_update");
         return;
@@ -74,10 +75,19 @@ void projectile_update(const entity_manager_t *entityManager, entity_t *ent, con
 
     // Calculate movement based on speed and direction
     gfc_vector2d_scale(movement, projectile->direction, projectile->speed * deltaTime);
-    gfc_vector2d_add(ent->position, ent->position, movement);
-    gfc_vector2d_add(projectile->distanceTraveled, projectile->distanceTraveled, movement);
+    gfc_vector2d_add(pos, ent->position, movement);
+
+    if (g_game.role == GAME_ROLE_SERVER) {
+        if (!world_move_entity(g_game.world, ent, pos)) {
+            log_error("Failed to move projectile entity in world");
+            return;
+        }
+    }
+
+    ent->position = pos; // Update position after successful move
 
     // Check if the projectile has exceeded its range
+    gfc_vector2d_add(projectile->distanceTraveled, projectile->distanceTraveled, movement);
     if (gfc_vector2d_magnitude(projectile->distanceTraveled) >= projectile->range) {
         ent->think = entity_free;
     }

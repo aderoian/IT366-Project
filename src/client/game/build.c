@@ -45,7 +45,7 @@ void build_mode_update(void) {
     c2s_tower_build_request_packet_t pkt;
     if (build_mode) {
         camera_get_mouse_world_position(&g_camera, &build_mode->position);
-        build_mode->position = world_pos_tile_snap(g_client.world, build_mode->position);
+        build_mode->position = world_pos_tile_snap(g_game.world, build_mode->position);
 
         if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT)) {
             create_c2s_tower_build_request(&pkt, build_mode->position.x, build_mode->position.y, build_mode->towerDef->index);

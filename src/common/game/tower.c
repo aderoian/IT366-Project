@@ -263,11 +263,11 @@ entity_t *tower_place(const entity_manager_t *entityManager, tower_manager_t *to
     tower->entity = ent;
 
     if (g_game.role == GAME_ROLE_CLIENT) {
-        tower->worldPos = world_pos_tile_snap(g_client.world, position);
         ent->model = gf2d_sprite_load_image(def->modelDef.baseSpritePath);
-    } else {
-        tower->worldPos = world_pos_tile_snap(g_server.world, position);
     }
+
+    tower->worldPos = world_pos_tile_snap(g_game.world, position);
+    world_add_entity(g_game.world, ent);
     ent->position = tower->worldPos;
 
     return ent;

@@ -19,9 +19,10 @@ void handle_s2c_player_join_response(const s2c_player_join_response_packet_t *pk
         log_info("Joined server successfully with Player ID: %u", pkt->playerID);
 
         g_client.player = player_create(pkt->playerID, "Player"); // FIXME: Use actual player name (needs array serialization)
-        player_entity_spawn(g_client.entityManager, g_client.player, gfc_vector2d(pkt->spawnX, pkt->spawnY), "images/pointer.png");
+        g_client.player->position = gfc_vector2d(pkt->spawnX, pkt->spawnY);
+        player_entity_spawn(g_client.entityManager, g_client.player, g_client.player->position, "images/pointer.png");
         g_client.state = CLIENT_PLAYING;
-        g_client.world = world_create(pkt->worldW, pkt->worldL, 0);
+        g_game.world = world_create(pkt->worldW, pkt->worldL, 0);
 
         build_mode_enter(tower_def_get(g_client.towerManager, "Basic Tower"));
     } else {

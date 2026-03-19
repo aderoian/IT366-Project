@@ -75,6 +75,7 @@ entity_t * player_entity_spawn(const entity_manager_t *entityManager, player_t *
         camera_set_target(&g_camera, ent);
     }
 
+    world_add_entity(g_game.world, ent);
     ent->data = player;
 
     ent->think = player_think;

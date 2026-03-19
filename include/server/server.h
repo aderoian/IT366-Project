@@ -40,7 +40,6 @@ typedef struct Server_S {
 
     struct server_network_s *network;
     struct player_manager_s *playerManager;
-    struct world_s *world;
 
     double currentTps;
     double currentUse;

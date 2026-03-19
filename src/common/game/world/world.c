@@ -1,4 +1,6 @@
 #include "common/game/world/world.h"
+
+#include "common/game/entity.h"
 #include "common/game/world/chunk.h"
 
 world_t *world_create(const int width, const int height, const uint8_t local) {
@@ -60,4 +62,61 @@ void world_draw(const world_t *world) {
     if (!world || !world->local) {
         return;
     }
+}
+
+int world_add_entity(world_t *world, entity_t *ent) {
+    if (!world || !ent) {
+        return 0;
+    }
+
+    int chunkX = (int)(ent->position.x) >> CHUNK_POS_SHIFT;
+    int chunkY = (int)(ent->position.y) >> CHUNK_POS_SHIFT;
+
+    if (chunkX >= 0 && chunkX < world->size.x && chunkY >= 0 && chunkY < world->size.y) {
+        chunk_add_entity(&world->chunks[chunkX * world->size.y + chunkY], ent);
+        return 1;
+    }
+
+    return 0; // Entity position is out of world bounds
+}
+
+int world_move_entity(world_t *world, entity_t *ent, const GFC_Vector2D newPos) {
+    if (!world || !ent) {
+        return 0;
+    }
+
+    int newChunkX = (int)(newPos.x) >> CHUNK_POS_SHIFT;
+    int newChunkY = (int)(newPos.y) >> CHUNK_POS_SHIFT;
+    int oldChunkX = (int)(ent->position.x) >> CHUNK_POS_SHIFT;
+    int oldChunkY = (int)(ent->position.y) >> CHUNK_POS_SHIFT;
+
+    if (newChunkX != oldChunkX || newChunkY != oldChunkY) {
+        if (newChunkX >= 0 && newChunkX < world->size.x && newChunkY >= 0 && newChunkY < world->size.y) {
+            chunk_add_entity(&world->chunks[newChunkX * world->size.y + newChunkY], ent);
+        } else {
+            return 0; // New position is out of world bounds
+        }
+
+        if (oldChunkX >= 0 && oldChunkX < world->size.x && oldChunkY >= 0 && oldChunkY < world->size.y) {
+            chunk_remove_entity(&world->chunks[oldChunkX * world->size.y + oldChunkY], ent);
+        }
+    }
+
+    return 1;
+}
+
+int world_remove_entity(world_t *world, entity_t *ent) {
+    if (!world || !ent) {
+        return 0;
+    }
+
+    int chunkX = (int)(ent->position.x) >> CHUNK_POS_SHIFT;
+    int chunkY = (int)(ent->position.y) >> CHUNK_POS_SHIFT;
+
+    if (chunkX >= 0 && chunkX < world->size.x && chunkY >= 0 && chunkY < world->size.y) {
+        chunk_remove_entity(&world->chunks[chunkX * world->size.y + chunkY], ent);
+        return 1;
+    }
+
+    return 0; // Entity position is out of world bounds
 }
