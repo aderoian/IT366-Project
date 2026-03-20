@@ -85,7 +85,7 @@ int server_startup(Server *server) {
     server->itemManager = item_init(server->defManager, "def/items.json");
     server->towerManager = tower_init(tower_load_defs(server->defManager, "def/towers.json"), 128);
 
-    g_game.world = world_create(100, 100, 0);
+    g_game.world = world_create(5, 5, 0);
 
     log_info("Server started successfully.");
     return 1;

@@ -3,11 +3,8 @@
 
 #include "gfc_vector.h"
 
-#define TILE_SIZE 32
+#define TILE_SIZE 48
 #define CHUNK_TILE_SIZE 16
-
-#define TILE_POS_SHIFT 5 // 2^5 = 32
-#define CHUNK_POS_SHIFT 9 // 2^9 = 512
 
 struct entity_s;
 
@@ -16,9 +13,13 @@ typedef struct world_s {
     uint8_t local;
 
     struct chunk_s *chunks;
+
+    SDL_Texture *chunkTexture; // Client-side texture for rendering chunks
 } world_t;
 
 world_t *world_create(int width, int height, uint8_t local);
+
+void world_create_chunk_texture(world_t *world);
 
 void world_destroy(world_t *world);
 
@@ -31,5 +32,7 @@ void world_draw(const world_t *world);
 int world_add_entity(world_t *world, struct entity_s *ent);
 int world_move_entity(world_t *world, struct entity_s *ent, GFC_Vector2D newPos);
 int world_remove_entity(world_t *world, struct entity_s *ent);
+
+#define pos_to_chunk_coord(pos) ((int)(((int) (pos)) / (CHUNK_TILE_SIZE * TILE_SIZE)))
 
 #endif /* WORLD_H */

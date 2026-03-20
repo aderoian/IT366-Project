@@ -25,6 +25,4 @@ void chunk_add_entity(chunk_t *chunk, void *entity);
 
 void chunk_remove_entity(chunk_t *chunk, const void *entity);
 
-#define world_to_chunk_pos(pos) (GFC_Vector2I){((int) pos.x) << CHUNK_POS_SHIFT, ((int) pos.y) << CHUNK_POS_SHIFT}
-
 #endif /* CHUNK_H */

@@ -1,6 +1,11 @@
 #include "common/game/world/world.h"
 
+#include "client/camera.h"
+#include "client/gf2d_graphics.h"
+#include "client/gf2d_sprite.h"
+#include "common/logger.h"
 #include "common/game/entity.h"
+#include "common/game/game.h"
 #include "common/game/world/chunk.h"
 
 world_t *world_create(const int width, const int height, const uint8_t local) {
@@ -25,7 +30,42 @@ world_t *world_create(const int width, const int height, const uint8_t local) {
     world->size.x = width; world->size.y = height;
     world->local = local;
 
+    if (g_game.role == GAME_ROLE_CLIENT) {
+        world_create_chunk_texture(world);
+    }
+
     return world;
+}
+
+void world_create_chunk_texture(world_t *world) {
+    if (!world) {
+        return;
+    }
+
+    // Create a simple checkerboard texture for chunks
+    int textureSize = CHUNK_TILE_SIZE * TILE_SIZE;
+    SDL_Surface *surface = gf2d_graphics_create_surface(textureSize, textureSize);
+    if (!surface) {
+        log_error("Failed to create chunk surface: %s", SDL_GetError());
+        return;
+    }
+
+    //SDL_LockSurface(surface);
+    Sprite *tileSprite = gf2d_sprite_load_all("images/map/map-grass.png", -1, -1, -1, true);
+    for (int y = 0; y < textureSize; y+=TILE_SIZE) {
+        for (int x = 0; x < textureSize; x+=TILE_SIZE) {
+            gf2d_sprite_draw_to_surface(tileSprite, gfc_vector2d((float)x, (float)y), NULL, NULL, 0, surface);
+        }
+    }
+   // SDL_UnlockSurface(surface);
+    gf2d_sprite_free(tileSprite);
+
+    world->chunkTexture = SDL_CreateTextureFromSurface(gf2d_graphics_get_renderer(), surface);
+    SDL_FreeSurface(surface);
+
+    if (!world->chunkTexture) {
+        log_error("Failed to create chunk texture: %s", SDL_GetError());
+    }
 }
 
 void world_destroy(world_t *world) {
@@ -59,8 +99,26 @@ void world_update(world_t *world, float deltaTime) {
 }
 
 void world_draw(const world_t *world) {
-    if (!world || !world->local) {
+    if (!world) {
         return;
+    }
+
+    int startChunkX = pos_to_chunk_coord(g_camera.position.x);
+    int startChunkY = pos_to_chunk_coord(g_camera.position.y);
+    int endChunkX = pos_to_chunk_coord(g_camera.position.x + gf2d_graphics_get_resolution().x);
+    int endChunkY = pos_to_chunk_coord(g_camera.position.y + gf2d_graphics_get_resolution().y);
+
+    // Draw chunks
+    for (int y = startChunkY; y <= endChunkY; y++) {
+        for (int x = startChunkX; x <= endChunkX; x++) {
+            SDL_Rect destRect = {
+                .x = x * CHUNK_TILE_SIZE * TILE_SIZE - g_camera.position.x,
+                .y = y * CHUNK_TILE_SIZE * TILE_SIZE - g_camera.position.y,
+                .w = CHUNK_TILE_SIZE * TILE_SIZE,
+                .h = CHUNK_TILE_SIZE * TILE_SIZE
+            };
+            SDL_RenderCopy(gf2d_graphics_get_renderer(), world->chunkTexture, NULL, &destRect);
+        }
     }
 }
 
@@ -69,8 +127,8 @@ int world_add_entity(world_t *world, entity_t *ent) {
         return 0;
     }
 
-    int chunkX = (int)(ent->position.x) >> CHUNK_POS_SHIFT;
-    int chunkY = (int)(ent->position.y) >> CHUNK_POS_SHIFT;
+    int chunkX = pos_to_chunk_coord(ent->position.x);
+    int chunkY = pos_to_chunk_coord(ent->position.y);
 
     if (chunkX >= 0 && chunkX < world->size.x && chunkY >= 0 && chunkY < world->size.y) {
         chunk_add_entity(&world->chunks[chunkX * world->size.y + chunkY], ent);
@@ -85,10 +143,10 @@ int world_move_entity(world_t *world, entity_t *ent, const GFC_Vector2D newPos) 
         return 0;
     }
 
-    int newChunkX = (int)(newPos.x) >> CHUNK_POS_SHIFT;
-    int newChunkY = (int)(newPos.y) >> CHUNK_POS_SHIFT;
-    int oldChunkX = (int)(ent->position.x) >> CHUNK_POS_SHIFT;
-    int oldChunkY = (int)(ent->position.y) >> CHUNK_POS_SHIFT;
+    int oldChunkX = pos_to_chunk_coord(ent->position.x);
+    int oldChunkY = pos_to_chunk_coord(ent->position.y);
+    int newChunkX = pos_to_chunk_coord(newPos.x);
+    int newChunkY = pos_to_chunk_coord(newPos.y);
 
     if (newChunkX != oldChunkX || newChunkY != oldChunkY) {
         if (newChunkX >= 0 && newChunkX < world->size.x && newChunkY >= 0 && newChunkY < world->size.y) {
@@ -110,8 +168,8 @@ int world_remove_entity(world_t *world, entity_t *ent) {
         return 0;
     }
 
-    int chunkX = (int)(ent->position.x) >> CHUNK_POS_SHIFT;
-    int chunkY = (int)(ent->position.y) >> CHUNK_POS_SHIFT;
+    int chunkX = pos_to_chunk_coord(ent->position.x);
+    int chunkY = pos_to_chunk_coord(ent->position.y);
 
     if (chunkX >= 0 && chunkX < world->size.x && chunkY >= 0 && chunkY < world->size.y) {
         chunk_remove_entity(&world->chunks[chunkX * world->size.y + chunkY], ent);

@@ -225,7 +225,8 @@ void client_tickLoop(Client* client) {
 void client_render(Client* client, uint64_t alpha) {
     gf2d_graphics_clear_screen();
 
-    gf2d_sprite_draw_image(client->renderState.background, gfc_vector2d(0, 0));
+    //gf2d_sprite_draw_image(client->renderState.background, gfc_vector2d(0, 0));
+    if (g_game.world) world_draw(g_game.world);
     entity_draw_all(g_client.entityManager);
     overlay_draw(&g_client.overlay);
     build_mode_render();
