@@ -28,6 +28,7 @@ void build_mode_exit(void) {
 }
 
 void build_mode_change(const tower_def_t *towerDef) {
+    char spritePath[256];
     if (build_mode) {
         if (build_mode->previewSprite) {
             gf2d_sprite_free(build_mode->previewSprite);
@@ -36,7 +37,8 @@ void build_mode_change(const tower_def_t *towerDef) {
 
         build_mode->towerDef = towerDef;
         if (towerDef) {
-            build_mode->previewSprite = gf2d_sprite_load_image(towerDef->modelDef.baseSpritePath);
+            snprintf(spritePath, sizeof(spritePath), towerDef->spritePath, 1);
+            build_mode->previewSprite = gf2d_sprite_load_image(spritePath);
         }
     }
 }

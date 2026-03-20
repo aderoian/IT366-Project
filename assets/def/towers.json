@@ -1,8 +1,8 @@
 {
   "towers": [
     {
-      "name": "Basic Tower",
-      "description": "A simple tower that shoots at enemies.",
+      "name": "Arrow Tower",
+      "description": "A basic tower that shoots arrows at enemies. Effective against both ground and air units.",
       "type": "combat",
       "maxHealth": [100, 120, 140, 160, 180],
       "cost": [
@@ -18,7 +18,7 @@
           "range": [200, 240, 280, 320, 360],
           "fireRate": [1.0, 0.9, 0.8, 0.7, 0.6],
           "bulletSpeed": [200, 220, 240, 260, 280],
-          "projectileSprite": "images/tower/projectile/projectile_1.png",
+          "projectileSprite": "images/tower/arrow/arrow_tower_projectile.svg",
           "directional": false,
           "piercing": false,
           "areaEffect": false,
@@ -28,8 +28,8 @@
       ],
       "production": [],
       "model": {
-        "base": "images/tower/base/base_1.png",
-        "head": "images/tower/head/tower_1.png"
+        "base": "images/tower/arrow/arrow_tower_t%d_base.svg",
+        "head": "images/tower/arrow/arrow_tower_t%d_head.svg"
       }
     }
   ]

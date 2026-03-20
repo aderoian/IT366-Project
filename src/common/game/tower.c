@@ -263,7 +263,9 @@ entity_t *tower_place(const entity_manager_t *entityManager, tower_manager_t *to
     tower->entity = ent;
 
     if (g_game.role == GAME_ROLE_CLIENT) {
-        ent->model = gf2d_sprite_load_image(def->modelDef.baseSpritePath);
+        char spritePath[256];
+        snprintf(spritePath, sizeof(spritePath), def->spritePath, tower->level + 1);
+        ent->model = gf2d_sprite_load_image(spritePath);
     }
 
     tower->worldPos = world_pos_tile_snap(g_game.world, position);

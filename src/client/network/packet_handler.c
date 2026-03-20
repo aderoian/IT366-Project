@@ -24,7 +24,7 @@ void handle_s2c_player_join_response(const s2c_player_join_response_packet_t *pk
         g_client.state = CLIENT_PLAYING;
         g_game.world = world_create(pkt->worldW, pkt->worldL, 0);
 
-        build_mode_enter(tower_def_get(g_client.towerManager, "Basic Tower"));
+        build_mode_enter(tower_def_get(g_client.towerManager, "Arrow Tower"));
     } else {
         log_info("Failed to join server.");
     }
