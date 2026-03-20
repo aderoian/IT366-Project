@@ -7,18 +7,17 @@
 #include "gfc_vector.h"
 #include "gfc_text.h"
 
-typedef struct Sprite_S
-{
+typedef struct Sprite_S {
     int ref_count;
     GFC_TextLine filepath;
     SDL_Texture *texture;
     SDL_Surface *surface;
     Uint32 frames_per_line;
-    Uint32 frame_w,frame_h;
-}Sprite;
+    Uint32 frame_w, frame_h;
+} Sprite;
 
 /**
- * @brief initializes the sprite manager 
+ * @brief initializes the sprite manager
  * @param max the maximum number of sprites the system will handle at once
  */
 void gf2d_sprite_init(Uint32 max);
@@ -35,7 +34,7 @@ Sprite *gf2d_sprite_load_image(const char *filename);
  * @param image the sprite image to draw
  * @param position the x and y position to draw the image at (top left corner)
  */
-void gf2d_sprite_draw_image(Sprite *image,GFC_Vector2D position);
+void gf2d_sprite_draw_image(Sprite *image, GFC_Vector2D position);
 
 /**
  * @brief loads a sprite from file using the sprite system
@@ -50,7 +49,7 @@ Sprite *gf2d_sprite_load_all(
     Sint32 frameWidth,
     Sint32 frameHeigh,
     Sint32 framesPerLine,
-    Bool    keepSurface
+    Bool keepSurface
 );
 
 /**
@@ -67,14 +66,14 @@ Sprite *gf2d_sprite_load_all(
  * @param frame which frame to draw
  */
 void gf2d_sprite_render(
-    Sprite * sprite,
+    Sprite *sprite,
     GFC_Vector2D position,
-    GFC_Vector2D * scale,
-    GFC_Vector2D * center,
-    float    * rotation,
-    GFC_Vector2D * flip,
-    GFC_Color    * color,
-    GFC_Vector4D * clip,
+    GFC_Vector2D *scale,
+    GFC_Vector2D *center,
+    float *rotation,
+    GFC_Vector2D *flip,
+    GFC_Color *color,
+    GFC_Vector4D *clip,
     Uint32 frame);
 
 /**
@@ -89,13 +88,13 @@ void gf2d_sprite_render(
  * @param frame which frame to draw
  */
 void gf2d_sprite_draw(
-    Sprite * sprite,
+    Sprite *sprite,
     GFC_Vector2D position,
-    GFC_Vector2D * scale,
-    GFC_Vector2D * center,
-    float    * rotation,
-    GFC_Vector2D * flip,
-    GFC_Color    * colorShift,
+    GFC_Vector2D *scale,
+    GFC_Vector2D *center,
+    float *rotation,
+    GFC_Vector2D *flip,
+    GFC_Color *colorShift,
     Uint32 frame);
 
 /**
@@ -130,8 +129,8 @@ void gf2d_sprite_clear_all();
 void gf2d_sprite_draw_to_surface(
     Sprite *sprite,
     GFC_Vector2D position,
-    GFC_Vector2D * scale,
-    GFC_Vector2D * scaleCenter,
+    GFC_Vector2D *scale,
+    GFC_Vector2D *scaleCenter,
     Uint32 frame,
     SDL_Surface *surface
 );
@@ -142,6 +141,50 @@ void gf2d_sprite_draw_to_surface(
  * @return NULL on error or out of memory, a blank sprite otherwise
  */
 Sprite *gf2d_sprite_new();
+
+/**
+ * @brief create a sprite from an SDL_Surface
+ * @param surface pointer to SDL_Surface image data
+ * @param frame_width how wide an individual frame is on the sprite sheet.  if <= 0 this is assumed to be the image size
+ * @param frame_height how high an individual frame is on the sprite sheet.  if <= 0 this is assumed to be the image size
+ * @param frames_per_line how many frames across are on the sprite sheet
+ * @return NULL on error (check logs) or a pointer to a sprite that can be draw to the 2d overlay
+ */
+Sprite *gf2d_sprite_from_surface(SDL_Surface *surface, int frame_width, int frame_height, Uint32 frames_per_line);
+
+/**
+ * @brief draw a sprite to the screen
+ * @param sprite the sprite to draw
+ * @param position here on the screen to draw it
+ * @param scale scale the sprite (1,1) for no scale
+ * @param center the center point for scaling and rotating (0,0) for top left
+ * @param rotation the angle in radians to rotate
+ * @param flip set to 1 if you want to flip in the horizontal,vertical axis (0,0) is no flip
+ * @param colorShift color mod gfc_color(1,1,1,1) for no change
+ * @param clip if you want to crop the image (pixels from left, pixels from top, pixels from right, pixels from bottom)
+ * @param frame which frame to draw
+ */
+void gf2d_sprite_draw_full(
+    Sprite *sprite,
+    GFC_Vector2D position,
+    GFC_Vector2D scale,
+    GFC_Vector2D center,
+    float rotation,
+    GFC_Vector2D flip,
+    GFC_Color colorShift,
+    GFC_Vector4D clip,
+    Uint32 frame);
+
+/**
+ * @brief draw a sprite to the screen
+ * @param sprite the sprite to draw
+ * @param position here on the screen to draw it
+ * @param frame which frame to draw
+ */
+void gf2d_sprite_draw_simple(
+    Sprite *sprite,
+    GFC_Vector2D position,
+    Uint32 frame);
 
 
 #endif
