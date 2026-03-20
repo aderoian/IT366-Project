@@ -71,6 +71,8 @@ void window_show(window_t *window);
  */
 void window_hide(window_t *window);
 
+int window_visible(void);
+
 /**
  * @brief Draws a window and its contents.
  *

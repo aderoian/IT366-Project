@@ -44,12 +44,19 @@ void build_mode_change(const tower_def_t *towerDef) {
 }
 
 void build_mode_update(void) {
+    uint32_t mouseState;
     c2s_tower_build_request_packet_t pkt;
     if (build_mode) {
+        mouseState = SDL_GetMouseState(NULL, NULL);
+        if (mouseState & SDL_BUTTON(SDL_BUTTON_RIGHT)) {
+            build_mode_exit();
+            return;
+        }
+
         camera_get_mouse_world_position(&g_camera, &build_mode->position);
         build_mode->position = world_pos_tile_snap(g_game.world, build_mode->position);
 
-        if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT)) {
+        if (mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)) {
             create_c2s_tower_build_request(&pkt, build_mode->position.x, build_mode->position.y, build_mode->towerDef->index);
             client_send_to_server(&g_client, &pkt, NET_UDP_FLAG_RELIABLE);
             build_mode_exit();

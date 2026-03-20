@@ -5,6 +5,10 @@
 
 #include "client/ui/overlay.h"
 
+#include "gfc_input.h"
+#include "client/client.h"
+#include "client/game/build.h"
+#include "client/ui/window.h"
 #include "common/def.h"
 
 #define OVERLAY_TYPE(name, cap_name, type) OVERLAY_TYPE_##type,
@@ -128,6 +132,34 @@ void overlay_update(overlay_t *overlay, const float deltaTime) {
         if (overlay->elements[i]._inuse && overlay->elements[i].visible && overlay->elements[i].update) {
             overlay->elements[i].update(&overlay->elements[i], deltaTime);
         }
+    }
+
+
+    // Checks for building
+    if (window_visible() || build_mode_is_active()) {
+        return;
+    }
+
+    if (gfc_input_key_pressed("1")) {
+        build_mode_enter(tower_def_get_by_index(g_client.towerManager, 0));
+    } else if (gfc_input_key_pressed("2")) {
+        build_mode_enter(tower_def_get_by_index(g_client.towerManager, 1));
+    } else if (gfc_input_key_pressed("3")) {
+        build_mode_enter(tower_def_get_by_index(g_client.towerManager, 2));
+    } else if (gfc_input_key_pressed("4")) {
+        build_mode_enter(tower_def_get_by_index(g_client.towerManager, 3));
+    } else if (gfc_input_key_pressed("5")) {
+        build_mode_enter(tower_def_get_by_index(g_client.towerManager, 4));
+    } else if (gfc_input_key_pressed("6")) {
+        build_mode_enter(tower_def_get_by_index(g_client.towerManager, 5));
+    } else if (gfc_input_key_pressed("7")) {
+        build_mode_enter(tower_def_get_by_index(g_client.towerManager, 6));
+    } else if (gfc_input_key_pressed("8")) {
+        build_mode_enter(tower_def_get_by_index(g_client.towerManager, 7));
+    } else if (gfc_input_key_pressed("9")) {
+        build_mode_enter(tower_def_get_by_index(g_client.towerManager, 8));
+    } else if (gfc_input_key_pressed("0")) {
+        build_mode_enter(tower_def_get_by_index(g_client.towerManager, 9));
     }
 }
 

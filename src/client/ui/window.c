@@ -142,6 +142,10 @@ void window_hide(window_t *window) {
     }
 }
 
+int window_visible(void) {
+    return g_windowManager.active != NULL;
+}
+
 void window_draw(window_t *window) {
     if (window->visible && window->draw) {
         window->draw(window);
