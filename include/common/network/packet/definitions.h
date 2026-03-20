@@ -22,7 +22,8 @@ X(s2c_player_state_snapshot, S2C_PLAYER_STATE_SNAPSHOT, PLAYER_STATE_SNAPSHOT_FI
 X(s2c_player_create, S2C_PLAYER_CREATE, PLAYER_CREATE_PARAMS_FIELDS) \
 X(c2s_tower_build_request, C2S_TOWER_BUILD_REQUEST, TOWER_BUILD_REQUEST_FIELDS) \
 X(s2c_tower_create, S2C_TOWER_CREATE, TOWER_CREATE_FIELDS) \
-X(s2c_tower_event, S2C_TOWER_EVENT, TOWER_EVENT_FIELDS)
+X(s2c_tower_event, S2C_TOWER_EVENT, TOWER_EVENT_FIELDS) \
+X(s2c_inventory_update, S2C_INVENTORY_UPDATE, INVENTORY_UPDATE_FIELDS)
 
 /**
  * @brief Fields for each packet.
@@ -67,6 +68,10 @@ F(net_uint32_t, towerID, PRIMITIVE)
 F(net_uint32_t, towerID, PRIMITIVE) \
 F(net_uint32_t, eventID, PRIMITIVE) \
 F(net_uint64_t, data, PRIMITIVE)
+
+#define INVENTORY_UPDATE_FIELDS(F) \
+F(net_uint32_t, playerID, PRIMITIVE) \
+F(net_inventory_transaction_t, transaction, CUSTOM)
 
 /**
  * @brief Generated packet structures.

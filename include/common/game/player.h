@@ -3,6 +3,7 @@
 
 #include "entity.h"
 #include "gfc_vector.h"
+#include "inventory.h"
 #include "common/types.h"
 #include "common/buffer/ring.h"
 
@@ -16,12 +17,11 @@ typedef struct player_s {
     void *data;
 
     GFC_Vector2D position;
+    inventory_t inventory;
 
     buf_spsc_ring_t *inputBuffer;
     uint64_t lastProcessedInputTick;
     uint8_t processedInput;
-
-
 } player_t;
 
 typedef struct player_input_actions_s {
@@ -65,5 +65,7 @@ void player_input_process(player_t *player, const player_input_command_t *cmd, f
 void player_input_process_server(player_t *player, uint64_t tick, float xPos, float yPos);
 
 GFC_Vector2D player_move(GFC_Vector2D position, GFC_Vector2D direction, float speed, float deltaTime);
+
+int player_inventory_transaction(player_t *player, const inventory_transaction_t *transaction);
 
 #endif /* COMMON_PLAYER_H */

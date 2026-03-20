@@ -1,8 +1,13 @@
 #include "server/network/network_session.h"
 
 #include "common/logger.h"
+#include "common/game/inventory.h"
 #include "common/network/network.h"
+#include "common/network/packet/definitions.h"
+#include "common/network/packet/io.h"
 #include "server/server.h"
+
+void send_inv_transaction(network_session_t *session, inventory_transaction_t *transaction);
 
 void network_session_create(network_session_t *session, net_udp_peer_t *peer, const uint32_t sessionID) {
     session->peer = peer;
@@ -10,6 +15,8 @@ void network_session_create(network_session_t *session, net_udp_peer_t *peer, co
     session->player = NULL;
     session->dirtyFlags = 0;
     session->packetQueueSize = 0;
+
+    memset(session->pendingTransactions, 0, sizeof(session->pendingTransactions));
 
     peer->data = session;
 }
@@ -52,6 +59,17 @@ void network_session_sync(network_session_t *session) {
         return;
     }
 
+    if (session->dirtyFlags & SESSION_DIRTY_INVENTORY) {
+        for (uint32_t i = 0; i < MAX_INV_TRANSACTIONS; i++) {
+            if (session->pendingTransactions[i]) {
+                send_inv_transaction(session, session->pendingTransactions[i]);
+                inventory_transaction_destroy(session->pendingTransactions[i]);
+                session->pendingTransactions[i] = NULL;
+            }
+        }
+        session->dirtyFlags &= ~SESSION_DIRTY_INVENTORY;
+    }
+
     if (session->packetQueueSize == 0) {
         return; // No packets to send
     }
@@ -62,3 +80,45 @@ void network_session_sync(network_session_t *session) {
     session->packetQueueSize = 0;
 }
 
+void network_session_add_transaction(network_session_t *session, const inventory_transaction_t *transaction) {
+    if (!session || !transaction) {
+        log_error("Invalid session or transaction.");
+        return;
+    }
+
+    for (uint32_t i = 0; i < MAX_INV_TRANSACTIONS; i++) {
+        if (session->pendingTransactions[i] == NULL) {
+            session->pendingTransactions[i] = transaction;
+            session->dirtyFlags |= SESSION_DIRTY_INVENTORY;
+            return;
+        }
+    }
+
+    log_error("Inventory transaction queue overflow for session ID: %u", session->sessionID);
+}
+
+void send_inv_transaction(network_session_t *session, inventory_transaction_t *transaction) {
+    if (!session || !transaction) {
+        log_error("Invalid session or transaction.");
+        return;
+    }
+
+    net_item_t items[transaction->numItems];
+    for (size_t i = 0; i < transaction->numItems; ++i) {
+        items[i].itemID = transaction->items->def->index;
+        items[i].quantity = transaction->items->quantity;
+    }
+
+    net_inventory_transaction_t netTransaction = {
+        .playerID = session->player->id,
+        .isAddition = transaction->isAddition,
+        .numItems = transaction->numItems,
+        .itemList = {
+            .count = transaction->numItems,
+            .elements = items
+        }
+    };
+    s2c_inventory_update_packet_t pkt;
+    create_s2c_inventory_update(&pkt, session->player->id, &netTransaction);
+    network_session_send(session, &pkt, NET_UDP_FLAG_RELIABLE);
+}

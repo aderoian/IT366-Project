@@ -56,12 +56,25 @@ X(net_float_t,  PRIMITIVE, float )    \
 X(net_double_t, PRIMITIVE, double)    \
 X(net_string_t, LIST_PRIMITIVE,      net_uint8_t)      \
 \
-X(player_input_command_t, CUSTOM, PLAYER_INPUT_COMMAND_FIELDS)
+X(player_input_command_t, CUSTOM, PLAYER_INPUT_COMMAND_FIELDS) \
+X(net_item_t, CUSTOM, ITEM_FIELDS) \
+X(net_item_list_t, LIST_CUSTOM, net_item_t) \
+X(net_inventory_transaction_t, CUSTOM, INVENTORY_TRANSACTION_FIELDS) \
 
 #define PLAYER_INPUT_COMMAND_FIELDS(F)     \
 F(net_uint64_t, PRIMITIVE, tickNumber) \
 F(net_int32_t,  PRIMITIVE, axisX)          \
 F(net_int32_t,  PRIMITIVE, axisY)
+
+#define ITEM_FIELDS(F) \
+F(net_uint32_t, PRIMITIVE, itemID) \
+F(net_uint32_t, PRIMITIVE, quantity)
+
+#define INVENTORY_TRANSACTION_FIELDS(F) \
+F(net_uint32_t, PRIMITIVE, playerID) \
+F(net_uint8_t,  PRIMITIVE, isAddition) \
+F(net_uint32_t, PRIMITIVE, numItems) \
+F(net_item_list_t, LIST_CUSTOM, itemList) \
 
 /**
  * @internal Below are macros to generate type definitions based on the PACKET_TYPE_LIST.

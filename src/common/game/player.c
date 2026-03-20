@@ -13,6 +13,7 @@
 #include "client/gf2d_sprite.h"
 
 #include "server/server.h"
+#include "server/network/network_session.h"
 
 #define MAX_DIVERSION 1.5f
 #define MAX_TELEPORT_DISTANCE 5.0f
@@ -187,6 +188,21 @@ GFC_Vector2D player_move(GFC_Vector2D position, GFC_Vector2D direction, const fl
     gfc_vector2d_scale(moveDelta, direction, speed * deltaTime);
     gfc_vector2d_add(position, position, moveDelta);
     return position;
+}
+
+int player_inventory_transaction(player_t *player, const inventory_transaction_t *transaction) {
+    if (!player || !transaction) {
+        return 0;
+    }
+
+    if (!inventory_transaction_try(&player->inventory, transaction)) {
+        return 0;
+    }
+
+    inventory_transaction_apply(&player->inventory, transaction);
+    network_session_add_transaction(player->data, transaction);
+
+    return 1;
 }
 
 void player_think(const entity_manager_t *entityManager, entity_t *ent) {

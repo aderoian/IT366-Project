@@ -2,7 +2,6 @@
 #include "common/network/packet/handler.h"
 
 #include "client/client.h"
-#include "client/game/build.h"
 #include "common/game/tower.h"
 
 void handle_s2c_player_join_response(const s2c_player_join_response_packet_t *pkt, void *client) {
@@ -23,8 +22,6 @@ void handle_s2c_player_join_response(const s2c_player_join_response_packet_t *pk
         player_entity_spawn(g_client.entityManager, g_client.player, g_client.player->position, "images/pointer.png");
         g_client.state = CLIENT_PLAYING;
         g_game.world = world_create(pkt->worldW, pkt->worldL, 0);
-
-        build_mode_enter(tower_def_get(g_client.towerManager, "Arrow Tower"));
     } else {
         log_info("Failed to join server.");
     }
@@ -55,15 +52,25 @@ void handle_s2c_tower_create(const s2c_tower_create_packet_t *pkt, void *client)
 }
 
 void handle_s2c_tower_event(const s2c_tower_event_packet_t *pkt, void *client) {
-        entity_t *entity = tower_get_by_id(g_client.towerManager, pkt->towerID);
-        if (!entity) {
-            log_error("Received tower event packet for non-existent tower ID: %u", pkt->towerID);
-            return;
-        }
+    entity_t *entity = tower_get_by_id(g_client.towerManager, pkt->towerID);
+    if (!entity) {
+        log_error("Received tower event packet for non-existent tower ID: %u", pkt->towerID);
+        return;
+    }
 
-        switch (pkt->eventID) {
-            case TOWER_EVENT_SHOOT:
-                tower_shoot_all(g_client.entityManager, entity);
+    switch (pkt->eventID) {
+        case TOWER_EVENT_SHOOT:
+            tower_shoot_all(g_client.entityManager, entity);
             break;
-        }
+    }
+}
+
+void handle_s2c_inventory_update(const s2c_inventory_update_packet_t *pkt, void *client) {
+    if (!pkt) {
+        return;
+    }
+
+    for (size_t i = 0; i < pkt->transaction.numItems; ++i) {
+        const net_item_t *item = &pkt->transaction.itemList.elements[i];
+    }
 }

@@ -109,10 +109,14 @@ name *value) {                   \
 #define GEN_SERIALIZE_FIELD(type, field_type, field) SERIALIZE_##field_type##_FIELD(type, field_type, field)
 #define SERIALIZE_PRIMITIVE_FIELD(type, field_type, field) serialize_##type(buffer, offset, value->field);
 #define SERIALIZE_CUSTOM_FIELD(type, field_type, field) serialize_##type(buffer, offset, &value->field);
+#define SERIALIZE_LIST_PRIMITIVE_FIELD(type, field_type, field) serialize_##type(buffer, offset, &value->field);
+#define SERIALIZE_LIST_CUSTOM_FIELD(type, field_type, field) serialize_##type(buffer, offset, &value->field);
 
 #define GEN_DESERIALIZE_FIELD(type, field_type, field) DESERIALIZE_##field_type##_FIELD(type, field_type, field)
 #define DESERIALIZE_PRIMITIVE_FIELD(type, field_type, field) deserialize_##type(buffer, offset, &value->field);
 #define DESERIALIZE_CUSTOM_FIELD(type, field_type, field) deserialize_##type(buffer, offset, &value->field);
+#define DESERIALIZE_LIST_PRIMITIVE_FIELD(type, field_type, field) deserialize_##type(buffer, offset, &value->field);
+#define DESERIALIZE_LIST_CUSTOM_FIELD(type, field_type, field) deserialize_##type(buffer, offset, &value->field);
 
 #define GEN_SERIALIZE(name, kind, payload) GEN_SERIALIZE_##kind(name, payload)
 #define GEN_SERIALIZE_PRIMITIVE(name, def) SERIALIZE_PRIMITIVE(name, def)
@@ -135,8 +139,12 @@ PACKET_TYPE_LIST(GEN_DESERIALIZE)
 #undef GEN_DESERIALIZE_FIELD
 #undef SERIALIZE_PRIMITIVE_FIELD
 #undef SERIALIZE_CUSTOM_FIELD
+#undef SERIALIZE_LIST_PRIMITIVE_FIELD
+#undef SERIALIZE_LIST_CUSTOM_FIELD
 #undef DESERIALIZE_PRIMITIVE_FIELD
 #undef DESERIALIZE_CUSTOM_FIELD
+#undef DESERIALIZE_LIST_PRIMITIVE_FIELD
+#undef DESERIALIZE_LIST_CUSTOM_FIELD
 
 #undef SERIALIZE_PRIMITIVE
 #undef DESERIALIZE_PRIMITIVE

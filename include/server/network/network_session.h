@@ -4,6 +4,7 @@
 #include "common/network/udp.h"
 
 #define MAX_PACKET_QUEUE_SIZE 1024
+#define MAX_INV_TRANSACTIONS 16
 
 #define SESSION_DIRTY_INVENTORY (1 << 0)
 #define SESSION_DIRTY_PACKET_QUEUE (1 << 1)
@@ -17,6 +18,7 @@ typedef struct network_session_s {
 
     void *packetQueue[MAX_PACKET_QUEUE_SIZE];
     uint32_t packetQueueSize;
+    const struct inventory_transaction_s *pendingTransactions[MAX_INV_TRANSACTIONS];
 } network_session_t;
 
 void network_session_create(network_session_t *session, net_udp_peer_t *peer, uint32_t sessionID);
@@ -27,5 +29,7 @@ void network_session_send(network_session_t *session, void *context, uint32_t fl
 void network_session_send_batch(network_session_t *session, void *context);
 
 void network_session_sync(network_session_t *session);
+
+void network_session_add_transaction(network_session_t *session, const struct inventory_transaction_s *transaction);
 
 #endif /* SERVER_NETWORK_SESSION_H */

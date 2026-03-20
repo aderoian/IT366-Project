@@ -90,11 +90,45 @@ int item_get_count(const item_def_manager_t *manager) {
     return manager->numItemDefs;
 }
 
-uint8_t item_compare(const item_def_t *a, const item_def_t *b) {
+item_t * item_create(const item_def_t *def, uint32_t quantity) {
+    item_t *newItem = gfc_allocate_array(sizeof(item_t), 1);
+    if (!newItem) {
+        return NULL;
+    }
+
+    newItem->def = def;
+    newItem->quantity = quantity;
+    return newItem;
+}
+
+void item_destroy(item_t *item) {
+    if (item) {
+        free(item);
+    }
+}
+
+item_t * item_clone(const item_t *item) {
+    if (!item) {
+        return NULL;
+    }
+    return item_create(item->def, item->quantity);
+}
+
+void * item_clone_to(const item_t *item, void *dest) {
+    if (!item || !dest) {
+        return NULL;
+    }
+    item_t *newItem = dest;
+    newItem->def = item->def;
+    newItem->quantity = item->quantity;
+    return newItem;
+}
+
+uint8_t item_compare(const item_t *a, const item_t *b) {
     if (!a || !b) {
         return 0; // Consider NULL items as not equal
     }
-    return a->index == b->index;
+    return a->def == b->def;
 }
 
 #define ITEM_TYPE_STRING(name, enumVal) \

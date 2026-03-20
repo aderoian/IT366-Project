@@ -150,7 +150,7 @@ void server_tick(Server *server, float deltaTime) {
     size_t index;
     g_game.tickNumber++;
 
-    network_tick(&server->network->baseNetwork);
+    server_network_tick(server->network);
     entity_update_all(server->entityManager, deltaTime);
 
     server->currentTps = fmin(SERVER_TARGET_TICKRATE, 1000.0 / deltaTime);
@@ -247,6 +247,8 @@ player_t *server_create_player(Server *server, network_session_t *session) {
     player->data = session;
     session->player = player;
     log_info("Created player with ID %u for session ID %u", player->id, session->sessionID);
+
+    inventory_init(&player->inventory, 3);
 
     float half = g_game.world->size.x * CHUNK_TILE_SIZE * TILE_SIZE / 2.0f;
     player->position = gfc_vector2d(half, half); // FIXME: Use actual spawn position

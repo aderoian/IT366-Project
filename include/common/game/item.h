@@ -2,6 +2,7 @@
 #define COMMON_ITEM_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 #define ITEM_TYPES(X) \
 X(material, MATERIAL) \
@@ -23,6 +24,11 @@ typedef struct item_def_s {
     char sprite[64];
 } item_def_t;
 
+typedef struct item_s {
+    const item_def_t *def;
+    uint32_t quantity;
+} item_t;
+
 typedef struct item_def_manager_s item_def_manager_t;
 
 item_def_manager_t *item_init(const struct def_manager_s *defManager, const char *defFile);
@@ -35,7 +41,15 @@ const item_def_t *item_def_get_by_index(const item_def_manager_t *manager, size_
 
 int item_get_count(const item_def_manager_t *manager);
 
-uint8_t item_compare(const item_def_t *a, const item_def_t *b);
+item_t *item_create(const item_def_t *def, uint32_t quantity);
+
+void item_destroy(item_t *item);
+
+item_t *item_clone(const item_t *item);
+
+void *item_clone_to(const item_t *item, void *dest);
+
+uint8_t item_compare(const item_t *a, const item_t *b);
 
 item_type_t item_type_from_string(const char *str);
 
