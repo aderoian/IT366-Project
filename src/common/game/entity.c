@@ -104,6 +104,7 @@ void entity_free(const entity_manager_t *entityManager, entity_t* ent) {
         if (ent->model) gf2d_sprite_free(ent->model);
     }
 
+    if (ent->destroy) ent->destroy(entityManager, ent);
     if (ent->data) free(ent->data);
 
     generation = ent->id + 0x000100000000; // Increment generation

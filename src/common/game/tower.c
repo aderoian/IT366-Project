@@ -4,6 +4,7 @@
 
 #include "common/game/tower.h"
 
+#include "client/camera.h"
 #include "client/client.h"
 #include "client/gf2d_sprite.h"
 #include "common/game/projectile.h"
@@ -30,6 +31,8 @@ struct tower_manager_s {
 
 void tower_entity_think(const entity_manager_t *entityManager, entity_t *ent);
 void tower_entity_update(const entity_manager_t *entityManager, entity_t *ent, float deltaTime);
+void tower_entity_draw(const entity_manager_t *entityManager, entity_t *ent);
+void tower_entity_destroy(const entity_manager_t *entityManager, entity_t *ent);
 
 tower_manager_t *tower_init(tower_def_manager_t *defManager, const uint32_t maxTowers) {
     uint32_t i;
@@ -69,7 +72,7 @@ void tower_close(const tower_manager_t *towerManager) {
 tower_def_manager_t * tower_load_defs(const struct def_manager_s *defManager, char *filePath) {
     tower_def_manager_t *towerDefManager;
     def_data_t *data, *towerJson, *towersArray;
-    def_data_t *valueArray, *weaponJson, *weaponDefJson, *modelDefJson;
+    def_data_t *costArray, *valueArray, *weaponJson, *weaponDefJson, *modelDefJson;
     tower_def_t *def;
     tower_weapon_def_t *weaponDef;
     const char * str;
@@ -118,6 +121,8 @@ tower_def_manager_t * tower_load_defs(const struct def_manager_s *defManager, ch
             continue;
         }
         tower_type_from_string(str, &def->type);
+
+        sj_object_get_float(towerJson, "size", &def->size);
 
         valueArray = def_data_get_array(towerJson, "maxHealth");
         for (j = 0; j < TOWER_MAX_LEVEL; j++) {
@@ -173,23 +178,40 @@ tower_def_manager_t * tower_load_defs(const struct def_manager_s *defManager, ch
 
         modelDefJson = def_data_get_obj(towerJson, "model");
         str = def_data_get_string(modelDefJson, "base");
-        if (!str || strlen(str) >= sizeof(def->spritePath)) {
-            log_error("Invalid or missing spritePath for tower definition at index %u", i);
-            continue;
-        }
-
-        strncpy(def->spritePath, str, sizeof(def->spritePath) - 1);
-        def->spritePath[sizeof(def->spritePath) - 1] = '\0';
-
-        str = def_data_get_string(modelDefJson, "head");
         if (!str || strlen(str) >= sizeof(def->modelDef.baseSpritePath)) {
-            log_error("Invalid or missing modelDef.baseSpritePath for tower definition at index %u", i);
+            log_error("Invalid or missing spritePath for tower definition at index %u", i);
             continue;
         }
 
         strncpy(def->modelDef.baseSpritePath, str, sizeof(def->modelDef.baseSpritePath) - 1);
         def->modelDef.baseSpritePath[sizeof(def->modelDef.baseSpritePath) - 1] = '\0';
+
+        str = def_data_get_string(modelDefJson, "head");
+        if (!str || strlen(str) >= sizeof(def->modelDef.weaponSpritePath)) {
+            log_error("Invalid or missing modelDef.baseSpritePath for tower definition at index %u", i);
+            continue;
+        }
+
+        strncpy(def->modelDef.weaponSpritePath, str, sizeof(def->modelDef.weaponSpritePath) - 1);
+        def->modelDef.weaponSpritePath[sizeof(def->modelDef.weaponSpritePath) - 1] = '\0';
         def->index = i;
+
+        costArray = def_data_get_array(towerJson, "cost");
+        for (j = 0; j < TOWER_MAX_LEVEL; j++) {
+            valueArray = def_data_array_get_nth(costArray, j);
+            if (g_game.role == GAME_ROLE_SERVER) {
+                def->cost[j][0].def = item_def_get(g_server.itemManager, "wood"); //TODO: don't hardcode this
+                def->cost[j][1].def = item_def_get(g_server.itemManager, "stone"); //TODO: don't hardcode this
+                def->cost[j][2].def = item_def_get(g_server.itemManager, "gold"); //TODO: don't hardcode this
+            } else {
+                def->cost[j][0].def = item_def_get(g_client.itemManager, "wood"); //TODO: don't hardcode this
+                def->cost[j][1].def = item_def_get(g_client.itemManager, "stone"); //TODO: don't hardcode this
+                def->cost[j][2].def = item_def_get(g_client.itemManager, "gold"); //TODO: don't hardcode this
+            }
+            sj_get_uint32_value(def_data_array_get_nth(valueArray, 0), &def->cost[j][0].quantity);
+            sj_get_uint32_value(def_data_array_get_nth(valueArray, 1), &def->cost[j][1].quantity);
+            sj_get_uint32_value(def_data_array_get_nth(valueArray, 2), &def->cost[j][2].quantity);
+        }
     }
 
     return towerDefManager;
@@ -259,13 +281,17 @@ entity_t *tower_place(const entity_manager_t *entityManager, tower_manager_t *to
 
     ent->think = tower_entity_think;
     ent->update = tower_entity_update;
+    ent->draw = tower_entity_draw;
+    ent->destroy = tower_entity_destroy;
     ent->data = tower;
     tower->entity = ent;
 
     if (g_game.role == GAME_ROLE_CLIENT) {
         char spritePath[256];
-        snprintf(spritePath, sizeof(spritePath), def->spritePath, tower->level + 1);
-        ent->model = gf2d_sprite_load_image(spritePath);
+        snprintf(spritePath, sizeof(spritePath), def->modelDef.baseSpritePath, tower->level + 1);
+        tower->baseSprite = gf2d_sprite_load_image(spritePath);
+        snprintf(spritePath, sizeof(spritePath), def->modelDef.weaponSpritePath, tower->level + 1);
+        tower->weaponSprite = gf2d_sprite_load_image(spritePath);
     }
 
     tower->worldPos = world_pos_tile_snap(g_game.world, position);
@@ -373,6 +399,29 @@ void tower_shoot_all(const entity_manager_t *entityManager, entity_t *entity) {
     }
 }
 
+void tower_entity_draw_full(float size, GFC_Vector2D pos, Sprite *baseSprite, Sprite *weaponSprite) {
+    GFC_Vector2D drawPos, headPos, centerPos;
+    gfc_vector2d_sub(drawPos, pos, g_camera.position);
+    gf2d_sprite_draw_image(baseSprite, drawPos);
+
+    headPos.x = drawPos.x + (size * TILE_SIZE / 2) - ((float)weaponSprite->frame_w / 2);
+    headPos.y = drawPos.y + (size * TILE_SIZE / 2) - ((float)weaponSprite->frame_h / 2);
+    gf2d_sprite_draw_image(weaponSprite, headPos);
+}
+
+inventory_transaction_t * tower_get_cost_transaction(const tower_def_t *def, int level) {
+    inventory_transaction_t *transaction = inventory_transaction_create(3, 0);
+    if (!transaction) {
+        return NULL;
+    }
+
+    transaction->items[0] = def->cost[level][0];
+    transaction->items[1] = def->cost[level][1];
+    transaction->items[2] = def->cost[level][2];
+
+    return transaction;
+}
+
 void tower_entity_think(const entity_manager_t *entityManager, entity_t *ent) {
     if (!ent) return;
     tower_state_t *tower = (tower_state_t *)ent->data;
@@ -384,7 +433,6 @@ void tower_entity_think(const entity_manager_t *entityManager, entity_t *ent) {
 void tower_entity_update(const entity_manager_t *entityManager, entity_t *ent, float deltaTime) {
     if (!ent || ! ent->data) return;
     tower_state_t *tower = (tower_state_t *)ent->data;
-    if (!tower) return;
 
     if (g_game.role == GAME_ROLE_SERVER) {
         if (tower_try_shoot(ent, deltaTime)) {
@@ -395,5 +443,25 @@ void tower_entity_update(const entity_manager_t *entityManager, entity_t *ent, f
 
             tower_shoot_all(entityManager, ent);
         }
+    }
+}
+
+void tower_entity_draw(const entity_manager_t *entityManager, entity_t *ent) {
+    if (!ent || !ent->data) return;
+    tower_state_t *tower = (tower_state_t *)ent->data;
+    tower_entity_draw_full(tower->def->size, ent->position, tower->baseSprite, tower->weaponSprite);
+}
+
+void tower_entity_destroy(const entity_manager_t *entityManager, entity_t *ent) {
+    if (!ent || !ent->data) return;
+    tower_state_t *tower = (tower_state_t *)ent->data;
+
+    if (tower->baseSprite) {
+        gf2d_sprite_free(tower->baseSprite);
+        tower->baseSprite = NULL;
+    }
+    if (tower->weaponSprite) {
+        gf2d_sprite_free(tower->weaponSprite);
+        tower->weaponSprite = NULL;
     }
 }

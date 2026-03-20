@@ -8,6 +8,9 @@ uint8_t __DEBUG = 0;
 
 uint8_t _dedicatedServer;
 
+// development flags
+uint8_t __INF_RESOURCES = 0;
+
 void parse_arguments(int argc,char *argv[]);
 
 int main(int argc, char * argv[]) {
@@ -37,6 +40,9 @@ void parse_arguments(int argc,char *argv[]) {
         }
         if (strcmp(argv[a],"--server") == 0) {
             _dedicatedServer = 1;
+        }
+        if (strcmp(argv[a],"--inf-resources") == 0) {
+            __INF_RESOURCES = 1;
         }
     }
 }

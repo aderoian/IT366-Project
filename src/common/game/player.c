@@ -11,12 +11,15 @@
 #include "client/camera.h"
 #include "client/client.h"
 #include "client/gf2d_sprite.h"
+#include "common/game/tower.h"
 
 #include "server/server.h"
 #include "server/network/network_session.h"
 
 #define MAX_DIVERSION 1.5f
 #define MAX_TELEPORT_DISTANCE 5.0f
+
+extern uint8_t __INF_RESOURCES;
 
 typedef struct player_snapshot_s {
     GFC_Vector2D position;
@@ -195,7 +198,7 @@ int player_inventory_transaction(player_t *player, const inventory_transaction_t
         return 0;
     }
 
-    if (!inventory_transaction_try(&player->inventory, transaction)) {
+    if (!inventory_transaction_try(&player->inventory, transaction) && !__INF_RESOURCES) {
         return 0;
     }
 
@@ -203,6 +206,33 @@ int player_inventory_transaction(player_t *player, const inventory_transaction_t
     network_session_add_transaction(player->data, transaction);
 
     return 1;
+}
+
+int player_try_build_tower(player_t *player, const struct tower_def_s *towerDef, const GFC_Vector2D position) {
+    inventory_transaction_t *transaction;
+    entity_t *entity;
+    tower_state_t *tower;
+    s2c_tower_create_packet_t towerPkt;
+    if (!player || !towerDef) {
+        return 0;
+    }
+
+    transaction = tower_get_cost_transaction(towerDef, 0);
+    log_info("transaction with %d items for building tower with definition index %u", transaction->numItems, towerDef->index);
+    if (!player_inventory_transaction(player, transaction)) {
+        log_info("Player ID %u cannot afford to build tower with definition index %u", player->id, towerDef->index);
+        return 0;
+    }
+
+    entity = tower_create_by_def(g_server.entityManager, g_server.towerManager, towerDef, position);
+    tower = (tower_state_t *) entity->data;
+    if (entity) {
+        create_s2c_tower_create(&towerPkt, position.x, position.y, towerDef->index, tower->id);
+        server_broadcast_packet(&g_server, &towerPkt, NET_UDP_FLAG_RELIABLE);
+        return 1;
+    }
+
+    return 0;
 }
 
 void player_think(const entity_manager_t *entityManager, entity_t *ent) {

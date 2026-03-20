@@ -5,6 +5,9 @@
 
 #include "entity.h"
 #include "gfc_vector.h"
+#include "inventory.h"
+#include "item.h"
+#include "client/gf2d_sprite.h"
 
 #define TOWER_MAX_LEVEL 5
 
@@ -44,10 +47,11 @@ typedef struct tower_def_s {
     char name[32];
     char description[256];
     tower_type_t type;
-    char spritePath[64];
+    float size;
     float maxHealth[TOWER_MAX_LEVEL];
     int numWeapons;
     const tower_weapon_def_t *weaponDefs;
+    item_t cost[TOWER_MAX_LEVEL][3];
     tower_model_def_t modelDef;
 } tower_def_t;
 
@@ -59,6 +63,8 @@ typedef struct tower_state_s {
     float cooldown;
     GFC_Vector2D worldPos;
     struct entity_s *entity;
+    Sprite *baseSprite;
+    Sprite *weaponSprite;
 } tower_state_t;
 
 typedef struct tower_def_manager_s tower_def_manager_t;
@@ -205,6 +211,8 @@ void tower_shoot(const struct entity_manager_s *entityManager, entity_t *entity,
  */
 void tower_shoot_all(const struct entity_manager_s *entityManager, entity_t *entity);
 
-void tower_load_network_state(tower_state_t *tower, const void *data, size_t dataSize);
+void tower_entity_draw_full(float size, GFC_Vector2D pos, Sprite *baseSprite, Sprite *weaponSprite);
+
+inventory_transaction_t *tower_get_cost_transaction(const tower_def_t *def, int level);
 
 #endif /* TOWER_H */

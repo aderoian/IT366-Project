@@ -4,9 +4,10 @@
       "name": "Arrow Tower",
       "description": "A basic tower that shoots arrows at enemies. Effective against both ground and air units.",
       "type": "combat",
+      "size": 2.0,
       "maxHealth": [100, 120, 140, 160, 180],
       "cost": [
-        [0, 0, 0],
+        [50, 0, 0],
         [50, 0, 0],
         [100, 0, 0],
         [150, 0, 0],

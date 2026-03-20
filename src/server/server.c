@@ -151,6 +151,7 @@ void server_tick(Server *server, float deltaTime) {
     g_game.tickNumber++;
 
     server_network_tick(server->network);
+    entity_think_all(server->entityManager);
     entity_update_all(server->entityManager, deltaTime);
 
     server->currentTps = fmin(SERVER_TARGET_TICKRATE, 1000.0 / deltaTime);

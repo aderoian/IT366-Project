@@ -11,6 +11,8 @@
 
 #define PLAYER_SPEED 200.0f
 
+struct tower_def_s;
+
 typedef struct player_s {
     uint32_t id;
     char name[32];
@@ -67,5 +69,7 @@ void player_input_process_server(player_t *player, uint64_t tick, float xPos, fl
 GFC_Vector2D player_move(GFC_Vector2D position, GFC_Vector2D direction, float speed, float deltaTime);
 
 int player_inventory_transaction(player_t *player, const inventory_transaction_t *transaction);
+
+int player_try_build_tower(player_t *player, const struct tower_def_s *towerDef, GFC_Vector2D position);
 
 #endif /* COMMON_PLAYER_H */

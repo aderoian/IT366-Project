@@ -50,9 +50,6 @@ void handle_c2s_player_join_request(const c2s_player_join_request_packet_t *pkt,
 void handle_c2s_tower_build_request(const c2s_tower_build_request_packet_t *pkt, void *peer) {
     player_t *player;
     network_session_t *session;
-    entity_t *entity;
-    tower_state_t *tower;
-    s2c_tower_create_packet_t towerPkt;
     const tower_def_t *towerDef;
     if (!pkt || !peer) {
         return;
@@ -76,13 +73,9 @@ void handle_c2s_tower_build_request(const c2s_tower_build_request_packet_t *pkt,
         return;
     }
 
-    entity = tower_create_by_def(g_server.entityManager, g_server.towerManager, towerDef, (GFC_Vector2D){pkt->xPos, pkt->yPos});
-    tower = (tower_state_t *) entity->data;
-    if (entity) {
-        log_info("Player ID %u built a tower at position (%f, %f) with definition index %u", player->id, pkt->xPos, pkt->yPos, pkt->towerDefIndex);
-        create_s2c_tower_create(&towerPkt, pkt->xPos, pkt->yPos, pkt->towerDefIndex, tower->id);
-        server_broadcast_packet(&g_server, &towerPkt, NET_UDP_FLAG_RELIABLE);
+    if (!player_try_build_tower(player, towerDef, gfc_vector2d(pkt->xPos, pkt->yPos))) {
+        log_info("Player ID %u failed to build tower at position (%f, %f) with definition index %u", player->id, pkt->xPos, pkt->yPos, pkt->towerDefIndex);
     } else {
-        log_error("Failed to create tower for player ID %u at position (%f, %f) with definition index %u", player->id, pkt->xPos, pkt->yPos, pkt->towerDefIndex);
+        log_info("Player ID %u successfully built tower at position (%f, %f) with definition index %u", player->id, pkt->xPos, pkt->yPos, pkt->towerDefIndex);
     }
 }

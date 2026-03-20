@@ -10,7 +10,8 @@
 typedef struct build_mode_s {
     const tower_def_t *towerDef;
     GFC_Vector2D position;
-    Sprite* previewSprite;
+    Sprite* previewSpriteHead;
+    Sprite* previewSpriteBase;
 } build_mode_t;
 
 /**

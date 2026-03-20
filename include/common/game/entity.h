@@ -31,6 +31,7 @@ typedef struct entity_s {
     void (*think)(const entity_manager_t *entityManager, struct entity_s *ent);
     void (*update)(const entity_manager_t *entityManager, struct entity_s *ent, float deltaTime);
     void (*draw)(const entity_manager_t *entityManager, struct entity_s *ent);
+    void (*destroy)(const entity_manager_t *entityManager, struct entity_s *ent);
 } entity_t;
 
 entity_manager_t *entity_init(uint32_t maxEnts);

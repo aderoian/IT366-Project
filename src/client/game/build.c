@@ -19,8 +19,11 @@ void build_mode_enter(const tower_def_t *towerDef) {
 
 void build_mode_exit(void) {
     if (build_mode) {
-        if (build_mode->previewSprite) {
-            gf2d_sprite_free(build_mode->previewSprite);
+        if (build_mode->previewSpriteHead) {
+            gf2d_sprite_free(build_mode->previewSpriteHead);
+        }
+        if (build_mode->previewSpriteBase) {
+            gf2d_sprite_free(build_mode->previewSpriteBase);
         }
         free(build_mode);
         build_mode = NULL;
@@ -30,15 +33,21 @@ void build_mode_exit(void) {
 void build_mode_change(const tower_def_t *towerDef) {
     char spritePath[256];
     if (build_mode) {
-        if (build_mode->previewSprite) {
-            gf2d_sprite_free(build_mode->previewSprite);
-            build_mode->previewSprite = NULL;
+        if (build_mode->previewSpriteHead) {
+            gf2d_sprite_free(build_mode->previewSpriteHead);
+            build_mode->previewSpriteHead = NULL;
+        }
+        if (build_mode->previewSpriteBase) {
+            gf2d_sprite_free(build_mode->previewSpriteBase);
+            build_mode->previewSpriteBase = NULL;
         }
 
         build_mode->towerDef = towerDef;
         if (towerDef) {
-            snprintf(spritePath, sizeof(spritePath), towerDef->spritePath, 1);
-            build_mode->previewSprite = gf2d_sprite_load_image(spritePath);
+            snprintf(spritePath, sizeof(spritePath), towerDef->modelDef.baseSpritePath, 1);
+            build_mode->previewSpriteBase = gf2d_sprite_load_image(spritePath);
+            snprintf(spritePath, sizeof(spritePath), towerDef->modelDef.weaponSpritePath, 1);
+            build_mode->previewSpriteHead = gf2d_sprite_load_image(spritePath);
         }
     }
 }
@@ -65,10 +74,8 @@ void build_mode_update(void) {
 }
 
 void build_mode_render(void) {
-    GFC_Vector2D renderPos;
     if (build_mode && build_mode->towerDef) {
-        gfc_vector2d_sub(renderPos, build_mode->position, g_camera.position);
-        gf2d_sprite_draw(build_mode->previewSprite, renderPos, NULL, NULL, NULL, NULL, NULL, 0);
+        tower_entity_draw_full(build_mode->towerDef->size, build_mode->position, build_mode->previewSpriteBase, build_mode->previewSpriteHead);
     }
 }
 
