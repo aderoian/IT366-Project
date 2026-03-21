@@ -97,6 +97,16 @@ void gf2d_sprite_draw(
     GFC_Color *colorShift,
     Uint32 frame);
 
+void gf2d_sprite_draw_centered(
+    Sprite *sprite,
+    GFC_Vector2D position,
+    GFC_Vector2D *scale,
+    GFC_Vector2D *center,
+    float *rotation,
+    GFC_Vector2D *flip,
+    GFC_Color *color,
+    Uint32 frame);
+
 /**
  * @brief free a sprite back to the sprite manager
  * Stays in memory until the space is needed

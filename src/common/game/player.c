@@ -56,7 +56,7 @@ entity_t * player_entity_spawn(const entity_manager_t *entityManager, player_t *
     entity_t *ent;
     Sprite *spriteImage;
 
-    ent = entity_new_animated(entityManager);
+    ent = entity_new(entityManager);
     ent->position = pos;
 
     if (g_game.role == GAME_ROLE_CLIENT) {
@@ -64,11 +64,8 @@ entity_t * player_entity_spawn(const entity_manager_t *entityManager, player_t *
             return NULL;
         }
 
-        spriteImage = gf2d_sprite_load_all("images/pointer.png",32,32,16,0);
-
-        animation_createAnimation("idle", 0, 15, 0.1f, ANIMATION_TYPE_LOOP);
-        ent->model = animation_sprite_createSprite(spriteImage, "idle");
-        animation_state_setAnimationByName(((AnimatedSprite *)ent->model)->state, (AnimatedSprite *)ent->model, "idle");
+        ent->model = gf2d_sprite_load_image("images/player/player_base.svg");
+        player->heldItem = gf2d_sprite_load_image("images/player/player_pickaxe.svg");
 
         if (!ent->model) {
             log_error("failed to load entity sprite: '%s'", sprite);
@@ -253,8 +250,6 @@ void player_update(const entity_manager_t *entityManager, entity_t *ent, float d
     player = (player_t *)ent->data;
 
     if (g_game.role == GAME_ROLE_CLIENT) {
-        entity_update_animated(entityManager, ent, deltaTime);
-
         actions.up = gfc_input_command_down("up");
         actions.down = gfc_input_command_down("down");
         actions.left = gfc_input_command_down("left");
@@ -262,7 +257,7 @@ void player_update(const entity_manager_t *entityManager, entity_t *ent, float d
 
         position = player->position;
         camera_get_mouse_world_position(&g_camera, &mousePosition);
-        actions.rotation = atan2f(mousePosition.y - position.y, mousePosition.x - position.x) * 180.0f / M_PI;
+        ent->rotation = atan2f(mousePosition.y - position.y, mousePosition.x - position.x) * 180.0f / M_PI + 90.0f;
 
         player->position = player_input_apply(player, player->position, &actions, deltaTime, 1);
     } else if (player->processedInput) {
@@ -275,10 +270,23 @@ void player_update(const entity_manager_t *entityManager, entity_t *ent, float d
 }
 
 void player_draw(const entity_manager_t *entityManager, entity_t *ent) {
+    GFC_Vector2D position, centerPos, heldItemOffset, itemCenterPos;
+    Sprite *playerSprite, *heldItemSprite;
     if (!ent || !ent->data) {
         return;
     }
 
     ent->position = ((player_t *)ent->data)->position;
-    entity_draw_animated(entityManager, ent);
+    gfc_vector2d_sub(position, ent->position, g_camera.position);
+
+    playerSprite = ent->model;
+    heldItemSprite = ((player_t *)ent->data)->heldItem;
+    centerPos = gfc_vector2d(playerSprite->frame_w * 0.5f, playerSprite->frame_h * 0.5f);
+    heldItemOffset = gfc_vector2d(heldItemSprite->frame_w * 0.5f, heldItemSprite->frame_h);
+
+    if (((player_t *)ent->data)->heldItem) {
+        gf2d_sprite_draw(heldItemSprite, position, NULL, &heldItemOffset, &ent->rotation, NULL, NULL, 0);
+    }
+
+    gf2d_sprite_draw(ent->model, position,NULL, &centerPos, NULL, NULL, NULL, 0);
 }

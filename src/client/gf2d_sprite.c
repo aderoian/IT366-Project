@@ -255,6 +255,33 @@ void gf2d_sprite_draw(
         frame);
 }
 
+void gf2d_sprite_draw_centered(
+    Sprite *sprite,
+    GFC_Vector2D position,
+    GFC_Vector2D *scale,
+    GFC_Vector2D *center,
+    float *rotation,
+    GFC_Vector2D *flip,
+    GFC_Color *color,
+    Uint32 frame) {
+
+    GFC_Vector2D centerOffset = {sprite->frame_w / 2.0f, sprite->frame_h / 2.0f};
+    if (center) {
+        gfc_vector2d_add(centerOffset, centerOffset, (*center));
+    }
+
+    gf2d_sprite_render(
+        sprite,
+        position,
+        scale,
+        &centerOffset,
+        rotation,
+        flip,
+        color,
+        NULL,
+        frame);
+}
+
 void gf2d_sprite_render(
     Sprite *sprite,
     GFC_Vector2D position,

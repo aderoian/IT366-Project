@@ -4,6 +4,7 @@
 #include "entity.h"
 #include "gfc_vector.h"
 #include "inventory.h"
+#include "client/gf2d_sprite.h"
 #include "common/buffer/ring.h"
 #include "common/network/packet/definitions.h"
 
@@ -24,6 +25,8 @@ typedef struct player_s {
     buf_spsc_ring_t *inputBuffer;
     uint64_t lastProcessedInputTick;
     uint8_t processedInput;
+
+    Sprite *heldItem;
 } player_t;
 
 typedef struct player_input_actions_s {
