@@ -2,9 +2,13 @@
 
 #include "client/camera.h"
 #include "client/client.h"
+#include "client/gf2d_draw.h"
+#include "common/game/collision.h"
 #include "common/network/udp.h"
 #include "common/network/packet/definitions.h"
 #include "common/network/packet/io.h"
+
+extern uint8_t __DEBUG;
 
 static build_mode_t *build_mode = NULL;
 
@@ -66,6 +70,11 @@ void build_mode_update(void) {
         build_mode->position = world_pos_tile_snap(g_game.world, build_mode->position);
 
         if (mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)) {
+            GFC_Rect towerRect = gfc_rect(build_mode->position.x + 2.5, build_mode->position.y + 2.5, (build_mode->towerDef->size * TILE_SIZE) - 5, (build_mode->towerDef->size * TILE_SIZE) - 5);
+            if (!collision_check_world_bounding(g_game.world, towerRect)) {
+                return; // Can't build here, something is in the way
+            }
+
             create_c2s_tower_build_request(&pkt, build_mode->position.x, build_mode->position.y, build_mode->towerDef->index);
             client_send_to_server(&g_client, &pkt, NET_UDP_FLAG_RELIABLE);
             build_mode_exit();
@@ -76,6 +85,10 @@ void build_mode_update(void) {
 void build_mode_render(void) {
     if (build_mode && build_mode->towerDef) {
         tower_entity_draw_full(build_mode->towerDef->size, build_mode->position, build_mode->previewSpriteBase, build_mode->previewSpriteHead);
+        if (__DEBUG) {
+            GFC_Rect towerRect = gfc_rect(build_mode->position.x + 2.5 - g_camera.position.x, build_mode->position.y + 2.5 - g_camera.position.y, (build_mode->towerDef->size * TILE_SIZE) - 5, (build_mode->towerDef->size * TILE_SIZE) - 5);
+            gf2d_draw_rect(towerRect, GFC_COLOR_DARKBLUE);
+        }
     }
 }
 

@@ -198,7 +198,7 @@ GFC_Vector2D player_move(player_t *player, world_t *world, GFC_Vector2D position
         return gfc_vector2d(fmaxf(0, fminf(newPosition.x, world->size.x * CHUNK_TILE_SIZE * TILE_SIZE - 1)), fmaxf(0, fminf(newPosition.y, world->size.y * CHUNK_TILE_SIZE * TILE_SIZE - 1)));
     }
 
-    while (!collision_can_move(world, player->entity, newPosition)) {
+    while (!collision_check_world(world, player->entity, newPosition)) {
         gfc_vector2d_scale(moveDelta, moveDelta, 0.5f);
         gfc_vector2d_add(newPosition, position, moveDelta);
 
