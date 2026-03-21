@@ -52,7 +52,7 @@ int client_main(void) {
     window_init(32, 256, 256);
     overlay_init(g_client.defManager, &g_client.overlay, 32, "def/overlay.json");
     g_client.entityManager = entity_init(1024);
-    phys_init(1024);
+    //phys_init(1024);
     g_game.itemDefManager = item_init(g_client.defManager, "def/items.json");
     g_client.towerManager = tower_init(tower_load_defs(g_client.defManager, "def/towers.json"), 32);
 

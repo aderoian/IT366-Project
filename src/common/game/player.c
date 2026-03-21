@@ -11,6 +11,7 @@
 #include "client/camera.h"
 #include "client/client.h"
 #include "client/gf2d_sprite.h"
+#include "common/game/collision.h"
 #include "common/game/tower.h"
 
 #include "server/server.h"
@@ -76,8 +77,12 @@ entity_t * player_entity_spawn(const entity_manager_t *entityManager, player_t *
         camera_set_target(&g_camera, ent);
     }
 
+    ent->layers = ENT_LAYER_PLAYER;
+    ent->boundingBox = gfc_rect(-36, -36, 72, 72);
+
     world_add_entity(g_game.world, ent);
     ent->data = player;
+    player->entity = ent;
 
     ent->think = player_think;
     ent->update = player_update;
@@ -89,6 +94,7 @@ entity_t * player_entity_spawn(const entity_manager_t *entityManager, player_t *
 GFC_Vector2D player_input_apply(player_t *player, const GFC_Vector2D position, const player_input_actions_t *actions, const float deltaTime, const uint8_t sync) {
     GFC_Vector2D newPos;
     if (!player || !actions) {
+        exit(1);
         return position;
     }
 
@@ -100,7 +106,7 @@ GFC_Vector2D player_input_apply(player_t *player, const GFC_Vector2D position, c
         return position; // No movement input, skip processing
     }
 
-    newPos = player_move(position, direction, PLAYER_SPEED, deltaTime);
+    newPos = player_move(player, g_game.world, position, direction, PLAYER_SPEED, deltaTime);
 
     if (sync) {
         player_snapshot_t snapshot = {
@@ -128,7 +134,7 @@ void player_input_process(player_t *player, const player_input_command_t *cmd, c
     }
 
     direction = gfc_vector2d((float)cmd->axisX, (float)cmd->axisY);
-    player->position = player_move(player->position, direction, PLAYER_SPEED, deltaTime);
+    player->position = player_move(player, g_game.world, player->position, direction, PLAYER_SPEED, deltaTime);
     player->lastProcessedInputTick = cmd->tickNumber;
     player->processedInput = 1;
 }
@@ -170,7 +176,7 @@ void player_input_process_server(player_t *player, uint64_t tick, float xPos, fl
             while (idx != tail) {
                 peeked = (player_snapshot_t *)buf_spsc_ring_get(player->inputBuffer, idx);
                 inputDirection = gfc_vector2d((float)peeked->cmd.axisX, (float)peeked->cmd.axisY);
-                predPosition = player_move(predPosition, inputDirection, PLAYER_SPEED, g_game.deltaTime);
+                predPosition = player_move(player, g_game.world, predPosition, inputDirection, PLAYER_SPEED, g_game.deltaTime);
                 idx = buf_spsc_ring_next_index(player->inputBuffer, idx);
             }
         } else {
@@ -182,12 +188,22 @@ void player_input_process_server(player_t *player, uint64_t tick, float xPos, fl
     }
 }
 
-GFC_Vector2D player_move(GFC_Vector2D position, GFC_Vector2D direction, const float speed, const float deltaTime) {
-    GFC_Vector2D moveDelta;
+GFC_Vector2D player_move(player_t *player, world_t *world, GFC_Vector2D position, GFC_Vector2D direction, const float speed, const float deltaTime) {
+    GFC_Vector2D moveDelta, newPosition;
     gfc_vector2d_normalize(&direction);
     gfc_vector2d_scale(moveDelta, direction, speed * deltaTime);
-    gfc_vector2d_add(position, position, moveDelta);
-    return position;
+    gfc_vector2d_add(newPosition, position, moveDelta);
+
+    while (!collision_can_move(world, player->entity, newPosition)) {
+        gfc_vector2d_scale(moveDelta, moveDelta, 0.5f);
+        gfc_vector2d_add(newPosition, position, moveDelta);
+
+        if (gfc_vector2d_magnitude(moveDelta) < 0.01f) {
+            return position; // Movement is too small, likely stuck, so give up
+        }
+    }
+
+    return newPosition;
 }
 
 int player_inventory_transaction(player_t *player, const inventory_transaction_t *transaction) {

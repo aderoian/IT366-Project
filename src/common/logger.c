@@ -4,6 +4,7 @@
 
 #include "common/logger.h"
 
+#include "common/game/game.h"
 #include "common/thread/thread.h"
 
 // Forward declarations
@@ -102,6 +103,20 @@ void log_internal(const LogLevel level, const char* file, const int line, const 
     va_start(args, fmt);
     vsnprintf(msg.text, LOG_MSG_MAX, fmt, args);
     va_end(args);
+
+    if (g_game.role == GAME_ROLE_SERVER) {
+        // Prepend [SERVER] to log messages on the server
+        char prefixedText[LOG_MSG_MAX];
+        snprintf(prefixedText, LOG_MSG_MAX, "[SERVER] %s", msg.text);
+        strncpy(msg.text, prefixedText, LOG_MSG_MAX - 1);
+        msg.text[LOG_MSG_MAX - 1] = '\0';
+    } else if (g_game.role == GAME_ROLE_CLIENT) {
+        // Prepend [CLIENT] to log messages on the client
+        char prefixedText[LOG_MSG_MAX];
+        snprintf(prefixedText, LOG_MSG_MAX, "[CLIENT] %s", msg.text);
+        strncpy(msg.text, prefixedText, LOG_MSG_MAX - 1);
+        msg.text[LOG_MSG_MAX - 1] = '\0';
+    }
 
     logger_queue_push(&g_log_queue, &msg);
 }

@@ -17,12 +17,12 @@ void handle_s2c_player_join_response(const s2c_player_join_response_packet_t *pk
 
         log_info("Joined server successfully with Player ID: %u", pkt->playerID);
 
+        g_game.world = world_create(pkt->worldW, pkt->worldL, 0);
         g_client.player = player_create(pkt->playerID, "Player"); // FIXME: Use actual player name (needs array serialization)
         g_client.player->position = gfc_vector2d(pkt->spawnX, pkt->spawnY);
         inventory_init(&g_client.player->inventory, 32);
         player_entity_spawn(g_client.entityManager, g_client.player, g_client.player->position, "images/pointer.png");
         g_client.state = CLIENT_PLAYING;
-        g_game.world = world_create(pkt->worldW, pkt->worldL, 0);
     } else {
         log_info("Failed to join server.");
     }

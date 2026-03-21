@@ -3,10 +3,17 @@
 
 #include <stdint.h>
 
+#include "gfc_shape.h"
 #include "gfc_vector.h"
 #include "common/physics.h"
 
 #define ENT_FLAG_ANIMATED    0x0001
+#define ENT_FLAG_COLLIDE_SOLID      0x0002
+
+#define ENT_LAYER_DEFAULT 0x0001
+#define ENT_LAYER_PLAYER  0x0002
+#define ENT_LAYER_TOWER   0x0004
+#define ENT_LAYER_PROJECTILE 0x0008
 
 typedef struct entity_manager_s entity_manager_t;
 
@@ -16,9 +23,7 @@ typedef struct entity_s {
     GFC_Vector2D position;
     GFC_Vector2D velocity;
     GFC_Vector2D forces;
-    phys_AABBShape localBounds; // min and max
-    phys_AABBShape worldBounds;
-    phys_CollisionHandle sapIndex;
+    GFC_Rect boundingBox;
     uint16_t layers;
     float rotation;
     float mass;

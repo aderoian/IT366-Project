@@ -4,7 +4,10 @@
 #include "client/gf2d_sprite.h"
 
 #include "client/camera.h"
+#include "client/gf2d_draw.h"
 #include "common/logger.h"
+
+extern uint8_t __DEBUG;
 
 struct entity_manager_s {
     entity_t *ents;
@@ -180,5 +183,14 @@ void entity_draw_all(const entity_manager_t *manager) {
         ent = &manager->ents[i];
         if (ent->_inUse == 0 || !ent->draw) continue;
         ent->draw(manager, ent);
+
+        if (__DEBUG) {
+            GFC_Vector2D position;
+            gfc_vector2d_sub(position, ent->position, g_camera.position);
+            gf2d_draw_rect(
+                gfc_rect(position.x + ent->boundingBox.x, position.y + ent->boundingBox.x, ent->boundingBox.w, ent->boundingBox.h),
+                GFC_COLOR_DARKBLUE
+            );
+        }
     }
 }

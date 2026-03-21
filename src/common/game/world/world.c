@@ -92,6 +92,14 @@ GFC_Vector2D world_pos_tile_snap(const world_t *world, const GFC_Vector2D worldP
     return tilePos;
 }
 
+chunk_t * world_get_chunk(const world_t *world, const int x, const int y) {
+    if (!world || x < 0 || x >= world->size.x || y < 0 || y >= world->size.y) {
+        return NULL;
+    }
+
+    return &world->chunks[x * world->size.y + y];
+}
+
 void world_update(world_t *world, float deltaTime) {
     if (!world) {
         return;
@@ -131,6 +139,7 @@ int world_add_entity(world_t *world, entity_t *ent) {
     int chunkY = pos_to_chunk_coord(ent->position.y);
 
     if (chunkX >= 0 && chunkX < world->size.x && chunkY >= 0 && chunkY < world->size.y) {
+        log_info("Adding entity to world at position (%f, %f) in chunk (%d, %d)", ent->position.x, ent->position.y, chunkX, chunkY);
         chunk_add_entity(&world->chunks[chunkX * world->size.y + chunkY], ent);
         return 1;
     }

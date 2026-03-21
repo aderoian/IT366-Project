@@ -295,8 +295,11 @@ entity_t *tower_place(const entity_manager_t *entityManager, tower_manager_t *to
     }
 
     tower->worldPos = world_pos_tile_snap(g_game.world, position);
-    world_add_entity(g_game.world, ent);
     ent->position = tower->worldPos;
+    world_add_entity(g_game.world, ent);
+
+    ent->layers = ENT_LAYER_TOWER | ENT_LAYER_PLAYER;
+    ent->boundingBox = gfc_rect(0, 0, def->size * TILE_SIZE, def->size * TILE_SIZE);
 
     return ent;
 }

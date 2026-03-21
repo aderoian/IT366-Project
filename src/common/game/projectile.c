@@ -48,6 +48,9 @@ int projectile_spawn(const entity_manager_t *entityManager, const float speed, c
     ent->think = projectile_think;
     ent->update = projectile_update;
 
+    ent->layers = ENT_LAYER_PROJECTILE;
+    ent->boundingBox = gfc_rect(-8, -8, 16, 16); // Example bounding box size for projectile, can be adjusted based on sprite
+
     // Position the entity at the source tower's location
     ent->position = sourceTower->worldPos;
     ent->data = projectile;
