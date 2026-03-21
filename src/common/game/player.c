@@ -237,6 +237,7 @@ int player_try_build_tower(player_t *player, const struct tower_def_s *towerDef,
     if (towerDef->type == TOWER_TYPE_STASH) {
         if (g_game.state.phase == GAME_PHASE_EXPLORING) {
             g_game.state.phase = GAME_PHASE_BUILDING;
+            g_game.state.stashPosition = position;
             s2c_game_state_snapshot_packet_t snapshot;
             create_s2c_game_state_snapshot(&snapshot, &g_game.state);
             server_broadcast_packet(&g_server, &snapshot, NET_UDP_FLAG_RELIABLE);

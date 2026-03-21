@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include "gfc_vector.h"
+
 #define GAME_ROLE_NONE 0
 #define GAME_ROLE_SERVER 1
 #define GAME_ROLE_CLIENT 2
@@ -20,6 +22,7 @@ typedef struct game_state_t {
     game_phase_t phase;
     uint64_t waveNumber;
     float cycleTime;
+    GFC_Vector2D stashPosition;
 } game_state_t;
 
 typedef struct game_s {

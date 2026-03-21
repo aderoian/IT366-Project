@@ -1,0 +1,19 @@
+{
+  "enemies": [
+    {
+      "name": "Example",
+      "type": "ground",
+      "maxHealth": [100, 120, 140, 160, 180],
+      "speed": [50, 60, 70, 80, 90],
+      "damage": [10, 12, 14, 16, 18],
+      "attackCooldown": [1.0, 0.9, 0.8, 0.7, 0.6],
+      "range": [2, 2, 2, 2, 2],
+      "reward": [10, 12, 14, 16, 18],
+      "model": {
+        "body": "images/enemy/example/example_enemy_t%d_head.svg",
+        "hands": "images/enemy/example/example_enemy_t%_hands.svg",
+        "boundingBox": [0, 0, 32, 32]
+      }
+    }
+  ]
+}
