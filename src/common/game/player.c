@@ -218,7 +218,6 @@ int player_try_build_tower(player_t *player, const struct tower_def_s *towerDef,
     }
 
     transaction = tower_get_cost_transaction(towerDef, 0);
-    log_info("transaction with %d items for building tower with definition index %u", transaction->numItems, towerDef->index);
     if (!player_inventory_transaction(player, transaction)) {
         log_info("Player ID %u cannot afford to build tower with definition index %u", player->id, towerDef->index);
         return 0;
