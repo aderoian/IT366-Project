@@ -200,13 +200,13 @@ tower_def_manager_t * tower_load_defs(const struct def_manager_s *defManager, ch
         for (j = 0; j < TOWER_MAX_LEVEL; j++) {
             valueArray = def_data_array_get_nth(costArray, j);
             if (g_game.role == GAME_ROLE_SERVER) {
-                def->cost[j][0].def = item_def_get(g_server.itemManager, "wood"); //TODO: don't hardcode this
-                def->cost[j][1].def = item_def_get(g_server.itemManager, "stone"); //TODO: don't hardcode this
-                def->cost[j][2].def = item_def_get(g_server.itemManager, "gold"); //TODO: don't hardcode this
+                def->cost[j][0].def = item_def_get(g_game.itemDefManager, "wood"); //TODO: don't hardcode this
+                def->cost[j][1].def = item_def_get(g_game.itemDefManager, "stone"); //TODO: don't hardcode this
+                def->cost[j][2].def = item_def_get(g_game.itemDefManager, "gold"); //TODO: don't hardcode this
             } else {
-                def->cost[j][0].def = item_def_get(g_client.itemManager, "wood"); //TODO: don't hardcode this
-                def->cost[j][1].def = item_def_get(g_client.itemManager, "stone"); //TODO: don't hardcode this
-                def->cost[j][2].def = item_def_get(g_client.itemManager, "gold"); //TODO: don't hardcode this
+                def->cost[j][0].def = item_def_get(g_game.itemDefManager, "wood"); //TODO: don't hardcode this
+                def->cost[j][1].def = item_def_get(g_game.itemDefManager, "stone"); //TODO: don't hardcode this
+                def->cost[j][2].def = item_def_get(g_game.itemDefManager, "gold"); //TODO: don't hardcode this
             }
             sj_get_uint32_value(def_data_array_get_nth(valueArray, 0), &def->cost[j][0].quantity);
             sj_get_uint32_value(def_data_array_get_nth(valueArray, 1), &def->cost[j][1].quantity);

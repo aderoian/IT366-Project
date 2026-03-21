@@ -1,86 +1,471 @@
 #include "common/network/packet/io.h"
 
-#define FIELD(type, name, field_type) field_type##_FIELD(type, name)
-#define PRIMITIVE_FIELD(type, name) serialize_##type(buf, off, pkt->name);
-#define CUSTOM_FIELD(type, name) serialize_##type(buf, off, &pkt->name);
-#define LIST_PRIMITIVE_FIELD(type, name) serialize_##type(buf, off, &pkt->name);
-#define LIST_CUSTOM_FIELD(type, name) serialize_##type(buf, off, &pkt->name);
-#define PACKET_SERIALIZE(name, id, fields) \
-void serialize_##name(buffer_t buf, buffer_offset_t* off, const name##_packet_t* pkt) { \
-PRIMITIVE_FIELD(net_uint8_t, packetID) \
-PRIMITIVE_FIELD(net_uint64_t, length) \
-fields(FIELD) \
+#include <stdlib.h>
+#include <string.h>
+
+#include "common/game/game.h"
+
+void write_uint8(buffer_t buffer, buffer_offset_t *offset, const uint8_t value) {
+    buffer[(*offset)++] = value;
 }
 
-PACKET_LIST(PACKET_SERIALIZE)
-
-#undef PRIMITIVE_FIELD
-#undef CUSTOM_FIELD
-#undef LIST_PRIMITIVE_FIELD
-#undef LIST_CUSTOM_FIELD
-#undef PACKET_SERIALIZE
-
-#define PRIMITIVE_FIELD(type, name) deserialize_##type(buf, off, &pkt->name);
-#define CUSTOM_FIELD(type, name) deserialize_##type(buf, off, &pkt->name);
-#define LIST_PRIMITIVE_FIELD(type, name) deserialize_##type(buf, off, &pkt->name);
-#define LIST_CUSTOM_FIELD(type, name) deserialize_##type(buf, off, &pkt->name);
-#define PACKET_DESERIALIZE(name, id, fields) \
-void deserialize_##name(buffer_t buf, buffer_offset_t* off, name##_packet_t* pkt) { \
-PRIMITIVE_FIELD(net_uint8_t, packetID) \
-PRIMITIVE_FIELD(net_uint64_t, length) \
-fields(FIELD) \
+void write_uint16(buffer_t buffer, buffer_offset_t *offset, const uint16_t value) {
+    for (int i = 1; i >= 0; i--) {
+        buffer[(*offset)++] = (value >> (i * 8)) & 0xFF;
+    }
 }
 
-PACKET_LIST(PACKET_DESERIALIZE)
-
-#undef FIELD
-#undef PACKET_DESERIALIZE
-#undef PRIMITIVE_FIELD
-#undef CUSTOM_FIELD
-#undef LIST_PRIMITIVE_FIELD
-#undef LIST_CUSTOM_FIELD
-
-#define FIELD(type, name, field_type) field_type##_FIELD(type, name)
-#define PRIMITIVE_FIELD(type, name) ,type name
-#define CUSTOM_FIELD(type, name) ,type *name
-#define LIST_PRIMITIVE_FIELD(type, name) ,type *name
-#define LIST_CUSTOM_FIELD(type, name) ,type *name
-
-#define INIT_FIELD(type, name, field_type) field_type##_INIT_FIELD(type, name)
-#define PRIMITIVE_INIT_FIELD(type, name) pkt->name = name; \
-    pkt->length += sizeof(name);
-#define CUSTOM_INIT_FIELD(type, name) pkt->name = *name; \
-    pkt->length += sizeof(*name);
-
-#define LIST_PRIMITIVE_INIT_FIELD(type, name) \
-    pkt->name.elements = malloc(sizeof(*((type *)0)->elements) * name->count); \
-    pkt->name.count = name->count; \
-    for (size_t i = 0; i < name->count; ++i) { \
-        pkt->name.elements[i] = name->elements[i]; \
-    } \
-    pkt->length += sizeof(uint64_t) + sizeof(*((type *)0)->elements) * name->count;
-
-#define LIST_CUSTOM_INIT_FIELD(type, name) \
-pkt->name.elements = malloc(sizeof(*((type *)0)->elements) * name->count); \
-pkt->name.count = name->count; \
-for (size_t i = 0; i < name->count; ++i) { \
-pkt->name.elements[i] = name->elements[i]; \
-} \
-pkt->length += sizeof(uint64_t) + sizeof(*((type *)0)->elements) * name->count;
-
-#define PACKET_CREATE(name, id, fields) \
-void create_##name(name##_packet_t* pkt fields(FIELD)) { \
-    pkt->packetID = PACKET_##id; \
-    pkt->length = 0; \
-    fields(INIT_FIELD) \
+void write_uint32(buffer_t buffer, buffer_offset_t *offset, uint32_t value) {
+    for (int i = 3; i >= 0; i--) {
+        buffer[(*offset)++] = (value >> (i * 8)) & 0xFF;
+    }
 }
 
-PACKET_LIST(PACKET_CREATE)
+void write_uint64(buffer_t buffer, buffer_offset_t *offset, uint64_t value) {
+    for (int i = 7; i >= 0; i--) {
+        buffer[(*offset)++] = (value >> (i * 8)) & 0xFF;
+    }
+}
 
-#undef FIELD
-#undef PRIMITIVE_FIELD
-#undef CUSTOM_FIELD
-#undef INIT_FIELD
-#undef PRIMITIVE_INIT_FIELD
-#undef CUSTOM_INIT_FIELD
-#undef PACKET_CREATE
+void write_int8(buffer_t buffer, buffer_offset_t *offset, int64_t value) {
+    buffer[(*offset)++] = (uint8_t)(value & 0xFF);
+}
+
+void write_int16(buffer_t buffer, buffer_offset_t *offset, int16_t value) {
+    for (int i = 1; i >= 0; i--) {
+        buffer[(*offset)++] = (uint8_t)((value >> (i * 8)) & 0xFF);
+    }
+}
+
+void write_int32(buffer_t buffer, buffer_offset_t *offset, int32_t value) {
+    for (int i = 3; i >= 0; i--) {
+        buffer[(*offset)++] = (uint8_t)((value >> (i * 8)) & 0xFF);
+    }
+}
+
+void write_int64(buffer_t buffer, buffer_offset_t *offset, int64_t value) {
+    for (int i = 7; i >= 0; i--) {
+        buffer[(*offset)++] = (uint8_t)((value >> (i * 8)) & 0xFF);
+    }
+}
+
+void write_float(buffer_t buffer, buffer_offset_t *offset, float value) {
+    union {
+        float f;
+        uint32_t u;
+    } v;
+
+    v.f = value;
+    write_uint32(buffer, offset, v.u);
+}
+
+void write_double(buffer_t buffer, buffer_offset_t *offset, double value) {
+    union {
+        double d;
+        uint64_t u;
+    } v;
+
+    v.d = value;
+    write_uint64(buffer, offset, v.u);
+}
+
+void write_string(buffer_t buffer, buffer_offset_t *offset, const char *str, uint16_t maxLen) {
+    size_t len = strnlen(str, maxLen);
+    write_uint16(buffer, offset, (uint16_t)len);
+    memcpy(buffer + *offset, str, len);
+    *offset += len;
+}
+
+uint8_t read_uint8(buffer_t buffer, buffer_offset_t *offset) {
+    return buffer[(*offset)++];
+}
+
+uint16_t read_uint16(buffer_t buffer, buffer_offset_t *offset) {
+    uint16_t value = 0;
+    for (int i = 1; i >= 0; i--) {
+        value |= ((uint16_t)buffer[(*offset)++] << (i * 8));
+    }
+    return value;
+}
+
+uint32_t read_uint32(buffer_t buffer, buffer_offset_t *offset) {
+    uint32_t value = 0;
+    for (int i = 3; i >= 0; i--) {
+        value |= ((uint32_t)buffer[(*offset)++] << (i * 8));
+    }
+    return value;
+}
+
+uint64_t read_uint64(const buffer_t buffer, buffer_offset_t *offset) {
+    uint64_t value = 0;
+    for (int i = 7; i >= 0; i--) {
+        value |= ((uint64_t)buffer[(*offset)++] << (i * 8));
+    }
+    return value;
+}
+
+int8_t read_int8(buffer_t buffer, buffer_offset_t *offset) {
+    return (int8_t)buffer[(*offset)++];
+}
+
+int16_t read_int16(buffer_t buffer, buffer_offset_t *offset) {
+    int16_t value = 0;
+    for (int i = 1; i >= 0; i--) {
+        value |= ((uint16_t)buffer[(*offset)++] << (i * 8));
+    }
+    return value;
+}
+
+int32_t read_int32(buffer_t buffer, buffer_offset_t *offset) {
+    int32_t value = 0;
+    for (int i = 3; i >= 0; i--) {
+        value |= ((uint32_t)buffer[(*offset)++] << (i * 8));
+    }
+    return value;
+}
+
+int64_t read_int64(buffer_t buffer, buffer_offset_t *offset) {
+    int64_t value = 0;
+    for (int i = 7; i >= 0; i--) {
+        value |= ((uint64_t)buffer[(*offset)++] << (i * 8));
+    }
+    return value;
+}
+
+float read_float(buffer_t buffer, buffer_offset_t *offset) {
+    union {
+        float f;
+        uint32_t u;
+    } v;
+
+    v.u = read_uint32(buffer, offset);
+    return v.f;
+}
+
+double read_double(buffer_t buffer, buffer_offset_t *offset) {
+    union {
+        double d;
+        uint64_t u;
+    } v;
+
+    v.u = read_uint64(buffer, offset);
+    return v.d;
+}
+
+char *read_string(buffer_t buffer, buffer_offset_t *offset, uint16_t *outCount, const uint16_t maxLen) {
+    uint16_t len = read_uint16(buffer, offset);
+    if (len > maxLen) {
+        len = maxLen - 1; // Prevent overflow
+    }
+
+    char *str = malloc(len + 1);
+    if (!str) {
+        if (outCount) {
+            *outCount = 0;
+        }
+        return NULL; // Allocation failed
+    }
+
+    memcpy(str, buffer + *offset, len);
+    str[len] = '\0'; // Null-terminate the string
+    *offset += len;
+
+    if (outCount) {
+        *outCount = len;
+    }
+    return str;
+}
+
+void write_player_input_command(buffer_t buffer, buffer_offset_t *offset, const player_input_command_t *cmd) {
+    write_uint64(buffer, offset, cmd->tickNumber);
+    write_uint32(buffer, offset, cmd->axisX);
+    write_uint32(buffer, offset, cmd->axisY);
+}
+
+void write_item(buffer_t buffer, buffer_offset_t *offset, const item_t *item) {
+    write_uint32(buffer, offset, item->def->index);
+    write_uint32(buffer, offset, item->quantity);
+}
+
+void write_item_array(buffer_t buffer, buffer_offset_t *offset, const item_t *items, size_t count) {
+    write_uint16(buffer, offset, (uint16_t)count);
+    for (size_t i = 0; i < count; i++) {
+        write_item(buffer, offset, &items[i]);
+    }
+}
+
+void write_inventory_transaction(buffer_t buffer, buffer_offset_t *offset, const inventory_transaction_t *transaction) {
+    write_uint8(buffer, offset, transaction->isAddition);
+    write_item_array(buffer, offset, transaction->items, transaction->numItems);
+}
+
+void read_player_input_command(buffer_t buffer, buffer_offset_t *offset, player_input_command_t *cmd) {
+    cmd->tickNumber = read_uint64(buffer, offset);
+    cmd->axisX = read_int32(buffer, offset);
+    cmd->axisY = read_int32(buffer, offset);
+}
+
+void read_item(buffer_t buffer, buffer_offset_t *offset, item_t *item) {
+    item->def = item_def_get_by_index(g_game.itemDefManager, read_uint32(buffer, offset));
+    item->quantity = read_uint32(buffer, offset);;
+}
+
+item_t *read_item_array(buffer_t buffer, buffer_offset_t *offset, uint16_t *outCount, uint16_t maxCount) {
+    item_t *items;
+    uint16_t numItems = read_uint16(buffer, offset);
+    if (numItems > maxCount) {
+        numItems = maxCount; // Prevent overflow
+    }
+
+    items = malloc(sizeof(item_t) * numItems);
+    if (!items) {
+        if (outCount) {
+            *outCount = 0;
+        }
+        return NULL; // Allocation failed
+    }
+
+    for (uint16_t i = 0; i < numItems; i++) {
+        read_item(buffer, offset, &items[i]);
+    }
+
+    if (outCount) {
+        *outCount = numItems;
+    }
+    return items;
+}
+
+void read_inventory_transaction(buffer_t buffer, buffer_offset_t *offset, inventory_transaction_t *transaction) {
+    uint16_t numItems;
+    transaction->isAddition = read_uint8(buffer, offset);
+    transaction->items = read_item_array(buffer, offset, &numItems, MAX_ITEMS_LENGTH);
+    transaction->numItems = numItems;
+    transaction->capacity = transaction->numItems; // Set capacity to match the number of items read
+}
+
+void write_c2s_player_join_request(buffer_t buf, buffer_offset_t *off,
+                                   const c2s_player_join_request_packet_t *pkt) {
+    write_uint8(buf, off, pkt->packetID);
+    write_uint64(buf, off, pkt->length);
+    write_string(buf, off, pkt->name, MAX_STRING_LENGTH);
+}
+
+void write_s2c_player_join_response(buffer_t buf, buffer_offset_t *off,
+                                        const s2c_player_join_response_packet_t *pkt) {
+    write_uint8(buf, off, pkt->packetID);
+    write_uint64(buf, off, pkt->length);
+    write_uint8(buf, off, pkt->success);
+    write_uint32(buf, off, pkt->playerID);
+    write_int32(buf, off, pkt->worldL);
+    write_int32(buf, off, pkt->worldW);
+    write_float(buf, off, pkt->spawnX);
+    write_float(buf, off, pkt->spawnY);
+}
+
+void write_c2s_player_input_snapshot(buffer_t buf, buffer_offset_t *off,
+                                         const c2s_player_input_snapshot_packet_t *pkt) {
+    write_uint8(buf, off, pkt->packetID);
+    write_uint64(buf, off, pkt->length);
+    write_player_input_command(buf, off, &pkt->inputCommand);
+}
+
+void write_s2c_player_state_snapshot(buffer_t buf, buffer_offset_t *off,
+                                         const s2c_player_state_snapshot_packet_t *pkt) {
+    write_uint8(buf, off, pkt->packetID);
+    write_uint64(buf, off, pkt->length);
+    write_uint64(buf, off, pkt->tickNumber);
+    write_float(buf, off, pkt->xPos);
+    write_float(buf, off, pkt->yPos);
+}
+
+void write_s2c_player_create(buffer_t buf, buffer_offset_t *off, const s2c_player_create_packet_t *pkt) {
+    write_uint8(buf, off, pkt->packetID);
+    write_uint64(buf, off, pkt->length);
+    write_uint32(buf, off, pkt->playerID);
+    write_float(buf, off, pkt->spawnX);
+    write_float(buf, off, pkt->spawnY);
+}
+
+void write_c2s_tower_build_request(buffer_t buf, buffer_offset_t *off,
+                                       const c2s_tower_build_request_packet_t *pkt) {
+    write_uint8(buf, off, pkt->packetID);
+    write_uint64(buf, off, pkt->length);
+    write_float(buf, off, pkt->xPos);
+    write_float(buf, off, pkt->yPos);
+    write_uint32(buf, off, pkt->towerDefIndex);
+}
+
+void write_s2c_tower_create(buffer_t buf, buffer_offset_t *off, const s2c_tower_create_packet_t *pkt) {
+    write_uint8(buf, off, pkt->packetID);
+    write_uint64(buf, off, pkt->length);
+    write_float(buf, off, pkt->xPos);
+    write_float(buf, off, pkt->yPos);
+    write_uint32(buf, off, pkt->towerDefIndex);
+    write_uint32(buf, off, pkt->towerID);
+}
+
+void write_s2c_tower_event(buffer_t buf, buffer_offset_t *off, const s2c_tower_event_packet_t *pkt) {
+    write_uint8(buf, off, pkt->packetID);
+    write_uint64(buf, off, pkt->length);
+    write_uint32(buf, off, pkt->towerID);
+    write_uint32(buf, off, pkt->eventID);
+    write_uint64(buf, off, pkt->data);
+}
+
+void write_s2c_inventory_update(buffer_t buf, buffer_offset_t *off, const s2c_inventory_update_packet_t *pkt) {
+    write_uint8(buf, off, pkt->packetID);
+    write_uint64(buf, off, pkt->length);
+    write_uint32(buf, off, pkt->playerID);
+    write_inventory_transaction(buf, off, &pkt->transaction);
+}
+
+void read_c2s_player_join_request(buffer_t buf, buffer_offset_t *off, c2s_player_join_request_packet_t *pkt) {
+    pkt->packetID = read_uint8(buf, off);
+    pkt->length = read_uint64(buf, off);
+    pkt->name = read_string(buf, off, NULL, MAX_STRING_LENGTH);
+}
+
+void read_s2c_player_join_response(buffer_t buf, buffer_offset_t *off, s2c_player_join_response_packet_t *pkt) {
+    pkt->packetID = read_uint8(buf, off);
+    pkt->length = read_uint64(buf, off);
+    pkt->success = read_uint8(buf, off);
+    pkt->playerID = read_uint32(buf, off);
+    pkt->worldL = read_int32(buf, off);
+    pkt->worldW = read_int32(buf, off);
+    pkt->spawnX = read_float(buf, off);
+    pkt->spawnY = read_float(buf, off);
+}
+
+void read_c2s_player_input_snapshot(buffer_t buf, buffer_offset_t *off,
+                                           c2s_player_input_snapshot_packet_t *pkt) {
+    pkt->packetID = read_uint8(buf, off);
+    pkt->length = read_uint64(buf, off);
+    read_player_input_command(buf, off, &pkt->inputCommand);
+}
+
+void read_s2c_player_state_snapshot(buffer_t buf, buffer_offset_t *off,
+                                           s2c_player_state_snapshot_packet_t *pkt) {
+    pkt->packetID = read_uint8(buf, off);
+    pkt->length = read_uint64(buf, off);
+    pkt->tickNumber = read_uint64(buf, off);
+    pkt->xPos = read_float(buf, off);
+    pkt->yPos = read_float(buf, off);
+}
+
+void read_s2c_player_create(buffer_t buf, buffer_offset_t *off, s2c_player_create_packet_t *pkt) {
+    pkt->packetID = read_uint8(buf, off);
+    pkt->length = read_uint64(buf, off);
+    pkt->playerID = read_uint32(buf, off);
+    pkt->spawnX = read_float(buf, off);
+    pkt->spawnY = read_float(buf, off);
+}
+
+void read_c2s_tower_build_request(buffer_t buf, buffer_offset_t *off, c2s_tower_build_request_packet_t *pkt) {
+    pkt->packetID = read_uint8(buf, off);
+    pkt->length = read_uint64(buf, off);
+    pkt->xPos = read_float(buf, off);
+    pkt->yPos = read_float(buf, off);
+    pkt->towerDefIndex = read_uint32(buf, off);
+}
+
+void read_s2c_tower_create(buffer_t buf, buffer_offset_t *off, s2c_tower_create_packet_t *pkt) {
+    pkt->packetID = read_uint8(buf, off);
+    pkt->length = read_uint64(buf, off);
+    pkt->xPos = read_float(buf, off);
+    pkt->yPos = read_float(buf, off);
+    pkt->towerDefIndex = read_uint32(buf, off);
+    pkt->towerID = read_uint32(buf, off);
+}
+
+void read_s2c_tower_event(buffer_t buf, buffer_offset_t *off, s2c_tower_event_packet_t *pkt) {
+    pkt->packetID = read_uint8(buf, off);
+    pkt->length = read_uint64(buf, off);
+    pkt->towerID = read_uint32(buf, off);
+    pkt->eventID = read_uint32(buf, off);
+    pkt->data = read_uint64(buf, off);
+}
+
+void read_s2c_inventory_update(buffer_t buf, buffer_offset_t *off, s2c_inventory_update_packet_t *pkt) {
+    pkt->packetID = read_uint8(buf, off);
+    pkt->length = read_uint64(buf, off);
+    pkt->playerID = read_uint32(buf, off);
+    read_inventory_transaction(buf, off, &pkt->transaction);
+}
+
+void create_c2s_player_join_request(c2s_player_join_request_packet_t *pkt, char *name) {
+    pkt->packetID = PACKET_C2S_PLAYER_JOIN_REQUEST;
+    pkt->length = sizeof(uint16_t) + strnlen(name, MAX_STRING_LENGTH);
+    pkt->name = name;
+}
+
+void create_s2c_player_join_response(s2c_player_join_response_packet_t *pkt, uint8_t success, uint32_t playerID,
+                                     int32_t worldL, int32_t worldW, float spawnX, float spawnY) {
+    pkt->packetID = PACKET_S2C_PLAYER_JOIN_RESPONSE;
+    pkt->length = sizeof(success) + sizeof(playerID) + sizeof(worldL) + sizeof(worldW) + sizeof(spawnX) + sizeof(spawnY);
+    pkt->success = success;
+    pkt->playerID = playerID;
+    pkt->worldL = worldL;
+    pkt->worldW = worldW;
+    pkt->spawnX = spawnX;
+    pkt->spawnY = spawnY;
+}
+
+void create_c2s_player_input_snapshot(c2s_player_input_snapshot_packet_t *pkt, player_input_command_t *inputCommand) {
+    pkt->packetID = PACKET_C2S_PLAYER_INPUT_SNAPSHOT;
+    pkt->length = sizeof(*inputCommand);
+    pkt->inputCommand = *inputCommand;
+}
+
+void create_s2c_player_state_snapshot(s2c_player_state_snapshot_packet_t *pkt, uint64_t tickNumber,
+                                      float xPos, float yPos) {
+    pkt->packetID = PACKET_S2C_PLAYER_STATE_SNAPSHOT;
+    pkt->length = sizeof(tickNumber) + sizeof(xPos) + sizeof(yPos);
+    pkt->tickNumber = tickNumber;
+    pkt->xPos = xPos;
+    pkt->yPos = yPos;
+}
+
+void create_s2c_player_create(s2c_player_create_packet_t *pkt, uint32_t playerID, float spawnX,
+                              float spawnY) {
+    pkt->packetID = PACKET_S2C_PLAYER_CREATE;
+    pkt->length = sizeof(playerID) + sizeof(spawnX) + sizeof(spawnY);
+    pkt->playerID = playerID;
+    pkt->spawnX = spawnX;
+    pkt->spawnY = spawnY;
+}
+
+void create_c2s_tower_build_request(c2s_tower_build_request_packet_t *pkt, float xPos, float yPos,
+                                    uint32_t towerDefIndex) {
+    pkt->packetID = PACKET_C2S_TOWER_BUILD_REQUEST;
+    pkt->length = sizeof(xPos) + sizeof(yPos) + sizeof(towerDefIndex);
+    pkt->xPos = xPos;
+    pkt->yPos = yPos;
+    pkt->towerDefIndex = towerDefIndex;
+}
+
+void create_s2c_tower_create(s2c_tower_create_packet_t *pkt, float xPos, float yPos,
+                             uint32_t towerDefIndex, uint32_t towerID) {
+    pkt->packetID = PACKET_S2C_TOWER_CREATE;
+    pkt->length = sizeof(xPos) + sizeof(yPos) + sizeof(towerDefIndex) + sizeof(towerID);
+    pkt->xPos = xPos;
+    pkt->yPos = yPos;
+    pkt->towerDefIndex = towerDefIndex;
+    pkt->towerID = towerID;
+}
+
+void create_s2c_tower_event(s2c_tower_event_packet_t *pkt, uint32_t towerID, uint32_t eventID,
+                            uint64_t data) {
+    pkt->packetID = PACKET_S2C_TOWER_EVENT;
+    pkt->length = sizeof(towerID) + sizeof(eventID) + sizeof(data);
+    pkt->towerID = towerID;
+    pkt->eventID = eventID;
+    pkt->data = data;
+}
+
+void create_s2c_inventory_update(s2c_inventory_update_packet_t *pkt, uint32_t playerID,
+                                 inventory_transaction_t *transaction) {
+    pkt->packetID = PACKET_S2C_INVENTORY_UPDATE;
+    pkt->length = sizeof(playerID) + sizeof(transaction->isAddition) + sizeof(uint16_t) + ((sizeof(uint32_t) + sizeof(uint32_t)) * transaction->numItems);
+    pkt->playerID = playerID;
+    pkt->transaction = *transaction;
+}

@@ -82,7 +82,7 @@ int server_startup(Server *server) {
 
     server->defManager = def_init(32);
     server->entityManager = entity_init(1024);
-    server->itemManager = item_init(server->defManager, "def/items.json");
+    g_game.itemDefManager = item_init(server->defManager, "def/items.json");
     server->towerManager = tower_init(tower_load_defs(server->defManager, "def/towers.json"), 128);
 
     g_game.world = world_create(5, 5, 0);

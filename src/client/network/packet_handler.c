@@ -70,7 +70,5 @@ void handle_s2c_inventory_update(const s2c_inventory_update_packet_t *pkt, void 
         return;
     }
 
-    for (size_t i = 0; i < pkt->transaction.numItems; ++i) {
-        const net_item_t *item = &pkt->transaction.itemList.elements[i];
-    }
+    log_info("Received inventory update for player ID: %u with %d items", pkt->playerID, pkt->transaction.numItems);
 }

@@ -4,8 +4,8 @@
 #include "entity.h"
 #include "gfc_vector.h"
 #include "inventory.h"
-#include "common/types.h"
 #include "common/buffer/ring.h"
+#include "common/network/packet/definitions.h"
 
 #define INPUT_BUFFER_CAPACITY 256
 

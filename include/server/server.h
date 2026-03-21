@@ -31,7 +31,6 @@ typedef enum ServerState_E {
 typedef struct Server_S {
     struct def_manager_s *defManager;
     struct entity_manager_s *entityManager;
-    struct item_def_manager_s *itemManager;
     struct tower_manager_s *towerManager;
 
     ServerState state;

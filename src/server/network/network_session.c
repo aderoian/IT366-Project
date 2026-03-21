@@ -103,22 +103,7 @@ void send_inv_transaction(network_session_t *session, inventory_transaction_t *t
         return;
     }
 
-    net_item_t items[transaction->numItems];
-    for (size_t i = 0; i < transaction->numItems; ++i) {
-        items[i].itemID = transaction->items->def->index;
-        items[i].quantity = transaction->items->quantity;
-    }
-
-    net_inventory_transaction_t netTransaction = {
-        .playerID = session->player->id,
-        .isAddition = transaction->isAddition,
-        .numItems = transaction->numItems,
-        .itemList = {
-            .count = transaction->numItems,
-            .elements = items
-        }
-    };
     s2c_inventory_update_packet_t pkt;
-    create_s2c_inventory_update(&pkt, session->player->id, &netTransaction);
+    create_s2c_inventory_update(&pkt, session->player->id, transaction);
     network_session_send(session, &pkt, NET_UDP_FLAG_RELIABLE);
 }

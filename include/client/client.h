@@ -30,7 +30,6 @@ typedef struct client_render_state_s {
 typedef struct Client_S {
     struct def_manager_s *defManager;
     struct entity_manager_s *entityManager;
-    struct item_def_manager_s *itemManager;
     struct tower_manager_s *towerManager;
 
     client_mode_t mode;

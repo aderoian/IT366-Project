@@ -1,29 +1,61 @@
 #ifndef NETWORK_PACKET_HANDLER_H
 #define NETWORK_PACKET_HANDLER_H
 
-#include "common/types.h"
 #include "common/network/packet/io.h"
 
-#define PACKET_HANDLER(name, id, fields) \
-void handle_##name(const name##_packet_t*, void*);
+void handle_c2s_player_join_request(const c2s_player_join_request_packet_t *, void *);
 
-PACKET_LIST(PACKET_HANDLER)
+void handle_s2c_player_join_response(const s2c_player_join_response_packet_t *, void *);
 
-#undef PACKET_HANDLER
+void handle_c2s_player_input_snapshot(const c2s_player_input_snapshot_packet_t *, void *);
 
-#define PACKET_RECEIVE(name, id, fields) \
-void receive_##name(buffer_t buf, buffer_offset_t* off, void* c);
+void handle_s2c_player_state_snapshot(const s2c_player_state_snapshot_packet_t *, void *);
 
-PACKET_LIST(PACKET_RECEIVE)
+void handle_s2c_player_create(const s2c_player_create_packet_t *, void *);
 
-#undef PACKET_RECEIVE
+void handle_c2s_tower_build_request(const c2s_tower_build_request_packet_t *, void *);
 
-#define PACKET_SEND(name, id, fields) \
-void prepare_send_##name(void *, buffer_t, buffer_offset_t*);
+void handle_s2c_tower_create(const s2c_tower_create_packet_t *, void *);
 
-PACKET_LIST(PACKET_SEND)
+void handle_s2c_tower_event(const s2c_tower_event_packet_t *, void *);
 
-#undef PACKET_SEND
+void handle_s2c_inventory_update(const s2c_inventory_update_packet_t *, void *);
+
+void receive_c2s_player_join_request(buffer_t buf, buffer_offset_t *off, void *c);
+
+void receive_s2c_player_join_response(buffer_t buf, buffer_offset_t *off, void *c);
+
+void receive_c2s_player_input_snapshot(buffer_t buf, buffer_offset_t *off, void *c);
+
+void receive_s2c_player_state_snapshot(buffer_t buf, buffer_offset_t *off, void *c);
+
+void receive_s2c_player_create(buffer_t buf, buffer_offset_t *off, void *c);
+
+void receive_c2s_tower_build_request(buffer_t buf, buffer_offset_t *off, void *c);
+
+void receive_s2c_tower_create(buffer_t buf, buffer_offset_t *off, void *c);
+
+void receive_s2c_tower_event(buffer_t buf, buffer_offset_t *off, void *c);
+
+void receive_s2c_inventory_update(buffer_t buf, buffer_offset_t *off, void *c);
+
+void prepare_send_c2s_player_join_request(buffer_t buf, buffer_offset_t *off, void *c);
+
+void prepare_send_s2c_player_join_response(buffer_t buf, buffer_offset_t *off, void *c);
+
+void prepare_send_c2s_player_input_snapshot(buffer_t buf, buffer_offset_t *off, void *c);
+
+void prepare_send_s2c_player_state_snapshot(buffer_t buf, buffer_offset_t *off, void *c);
+
+void prepare_send_s2c_player_create(buffer_t buf, buffer_offset_t *off, void *c);
+
+void prepare_send_c2s_tower_build_request(buffer_t buf, buffer_offset_t *off, void *c);
+
+void prepare_send_s2c_tower_create(buffer_t buf, buffer_offset_t *off, void *c);
+
+void prepare_send_s2c_tower_event(buffer_t buf, buffer_offset_t *off, void *c);
+
+void prepare_send_s2c_inventory_update(buffer_t buf, buffer_offset_t *off, void *c);
 
 typedef void (*packet_receive_fn)(
     buffer_t buffer,
@@ -34,9 +66,9 @@ typedef void (*packet_receive_fn)(
 extern packet_receive_fn packet_dispatch_table[PACKET_COUNT];
 
 typedef void (*packet_send_fn) (
-    void *context,
     buffer_t buffer,
-    buffer_offset_t *offset
+    buffer_offset_t *offset,
+    void *context
 );
 
 extern packet_send_fn packet_send_table[PACKET_COUNT];

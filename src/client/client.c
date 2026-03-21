@@ -53,7 +53,7 @@ int client_main(void) {
     overlay_init(g_client.defManager, &g_client.overlay, 32, "def/overlay.json");
     g_client.entityManager = entity_init(1024);
     phys_init(1024);
-    g_client.itemManager = item_init(g_client.defManager, "def/items.json");
+    g_game.itemDefManager = item_init(g_client.defManager, "def/items.json");
     g_client.towerManager = tower_init(tower_load_defs(g_client.defManager, "def/towers.json"), 32);
 
     camera_init(&g_camera);
@@ -124,13 +124,8 @@ void client_on_local_server_start(Server *server) {
     strncpy(g_client.playerName, "LocalPlayer", sizeof(g_client.playerName) - 1);
     g_client.playerName[sizeof(g_client.playerName) - 1] = '\0';
 
-    net_string_t name = {
-        .count = strlen(g_client.playerName),
-        .elements = (net_uint8_t *) g_client.playerName
-    };
-
     c2s_player_join_request_packet_t pkt;
-    create_c2s_player_join_request(&pkt, &name);
+    create_c2s_player_join_request(&pkt, g_client.playerName);
     client_send_to_server(&g_client, &pkt, ENET_PACKET_FLAG_RELIABLE);
 }
 

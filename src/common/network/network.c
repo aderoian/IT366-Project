@@ -7,6 +7,8 @@
 #include "common/network/packet/handler.h"
 #include "common/network/network.h"
 
+#include "common/game/game.h"
+
 void network_handle_receive(network_t *network, const net_udp_event_t *context);
 
 int network_init(network_t *network, const network_settings_t *settings, void *networkAdapter) {
@@ -74,7 +76,7 @@ int network_send(net_udp_peer_t *peer, void *pkt, const uint32_t flags) {
     length = *((uint64_t *)pkt + 1);
     numBytes = length + PACKET_HEADER_SIZE;
     buffer = malloc(numBytes);
-    packet_send_table[pktId](pkt, buffer, &offset);
+    packet_send_table[pktId](buffer, &offset, pkt);
     net_udp_packet_t *packet = net_udp_packet_create(buffer, numBytes, flags);
     if (!packet) {
         log_error("Failed to create packet for sending.");
@@ -109,7 +111,7 @@ int network_send_batch(net_udp_peer_t *peer, void **pkts, const uint32_t count) 
     // Serialize each packet into the buffer
     for (i = 0; i < count; i++) {
         pktId = *((uint8_t *)pkts[i]);
-        packet_send_table[pktId](pkts[i], buffer, &offset);
+        packet_send_table[pktId](buffer, &offset, pkts[i]);
     }
 
     net_udp_packet_t *packet = net_udp_packet_create(buffer, numBytes, 0);
@@ -146,13 +148,13 @@ void network_handle_receive(network_t *network, const net_udp_event_t *context) 
     offset = 0;
     while (offset < bytes) {
         packetID = buffer[offset];
-        length = be64toh(*((uint64_t *)(buffer + offset + sizeof(uint8_t))));
+        length = be64toh(*((uint64_t *)(buffer + offset + sizeof(uint8_t)))) + PACKET_HEADER_SIZE;
         if (packetID >= PACKET_COUNT) {
             log_info("Received invalid packet ID: %d", packetID);
             break;
         }
 
-        if (offset + PACKET_HEADER_SIZE + length > bytes) {
+        if (offset + length > bytes) {
             log_info("Received incomplete packet with ID: %d", packetID);
             break;
         }
