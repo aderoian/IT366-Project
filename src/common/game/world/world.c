@@ -7,6 +7,10 @@
 #include "common/game/entity.h"
 #include "common/game/game.h"
 #include "common/game/world/chunk.h"
+#include "common/network/udp.h"
+#include "common/network/packet/definitions.h"
+#include "common/network/packet/io.h"
+#include "server/server.h"
 
 world_t *world_create(const int width, const int height, const uint8_t local) {
     int i, j;
@@ -103,6 +107,27 @@ chunk_t * world_get_chunk(const world_t *world, const int x, const int y) {
 void world_update(world_t *world, float deltaTime) {
     if (!world) {
         return;
+    }
+
+    // Update cycle time
+    game_phase_t state = g_game.state.phase;
+    if (state != GAME_PHASE_PAUSED && state != GAME_PHASE_EXPLORING) {
+        g_game.state.cycleTime -= deltaTime;
+        if (g_game.state.cycleTime <= 0) {
+            if (state == GAME_PHASE_BUILDING) {
+                g_game.state.phase = GAME_PHASE_WAVE;
+                log_info("Transitioning to WAVE phase");
+            } else if (state == GAME_PHASE_WAVE) {
+                g_game.state.phase = GAME_PHASE_BUILDING;
+                g_game.state.waveNumber++;
+                log_info("Transitioning to BUILDING phase, wave number: %lu", g_game.state.waveNumber);
+            }
+
+            g_game.state.cycleTime = HALF_CYCLE_TIME;
+            s2c_game_state_snapshot_packet_t pkt;
+            create_s2c_game_state_snapshot(&pkt, &g_game.state);
+            server_broadcast_packet(&g_server, &pkt, NET_UDP_FLAG_RELIABLE);
+        }
     }
 }
 

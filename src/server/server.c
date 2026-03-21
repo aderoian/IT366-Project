@@ -143,6 +143,7 @@ void *server_run(void *arg) {
 
     g_game.state.phase = GAME_PHASE_EXPLORING;
     g_game.state.waveNumber = 0;
+    g_game.state.cycleTime = HALF_CYCLE_TIME;
 
     server_tickProcessor(server);
     log_info("Server stopped!");
@@ -155,6 +156,7 @@ void server_tick(Server *server, float deltaTime) {
     g_game.tickNumber++;
 
     server_network_tick(server->network);
+    world_update(g_game.world, deltaTime);
     entity_think_all(server->entityManager);
     entity_update_all(server->entityManager, deltaTime);
 

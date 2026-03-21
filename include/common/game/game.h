@@ -7,6 +7,8 @@
 #define GAME_ROLE_SERVER 1
 #define GAME_ROLE_CLIENT 2
 
+#define HALF_CYCLE_TIME 10.0f // Time in second for day and night cycle
+
 typedef enum game_phase_e {
     GAME_PHASE_EXPLORING = 0,
     GAME_PHASE_BUILDING,
@@ -17,7 +19,7 @@ typedef enum game_phase_e {
 typedef struct game_state_t {
     game_phase_t phase;
     uint64_t waveNumber;
-    float timeUntilNextWave;
+    float cycleTime;
 } game_state_t;
 
 typedef struct game_s {
