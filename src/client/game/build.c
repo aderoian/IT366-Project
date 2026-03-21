@@ -13,10 +13,23 @@ extern uint8_t __DEBUG;
 static build_mode_t *build_mode = NULL;
 
 void build_mode_enter(const tower_def_t *towerDef) {
+    if (build_mode) {
+        build_mode_exit();
+    }
+
+    if (g_game.state.phase == GAME_PHASE_EXPLORING && towerDef->type != TOWER_TYPE_STASH) {
+        return; // Can only build stash towers during the exploring phase
+    }
+    if (g_game.state.phase == GAME_PHASE_BUILDING && towerDef->type == TOWER_TYPE_STASH) {
+        return; // Can't build stash towers during the building phase
+    }
+
     build_mode = gfc_allocate_array(sizeof(build_mode_t), 1);
     if (!build_mode) {
         return;
     }
+
+
     build_mode_change(towerDef);
     camera_get_mouse_world_position(&g_camera, &build_mode->position);
 }

@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "common/game/game.h"
 #include "common/network/packet/definitions.h"
 
 #define MAX_STRING_LENGTH UINT16_MAX
@@ -36,11 +37,13 @@ float read_float(buffer_t buffer, buffer_offset_t *offset);
 double read_double(buffer_t buffer, buffer_offset_t *offset);
 char *read_string(buffer_t buffer, buffer_offset_t *offset, uint16_t *outCount, uint16_t maxLen);
 
+void write_game_state(buffer_t buffer, buffer_offset_t *offset, const game_state_t *state);
 void write_player_input_command(buffer_t buffer, buffer_offset_t *offset, const player_input_command_t *cmd);
 void write_item(buffer_t buffer, buffer_offset_t *offset, const item_t *item);
 void write_item_array(buffer_t buffer, buffer_offset_t *offset, const item_t *items, size_t count);
 void write_inventory_transaction(buffer_t buffer, buffer_offset_t *offset, const inventory_transaction_t *transaction);
 
+void read_game_state(buffer_t buffer, buffer_offset_t *offset, game_state_t *state);
 void read_player_input_command(buffer_t buffer, buffer_offset_t *offset, player_input_command_t *cmd);
 void read_item(buffer_t buffer, buffer_offset_t *offset, item_t *transaction);
 item_t *read_item_array(buffer_t buffer, buffer_offset_t *offset, uint16_t *outCount, uint16_t maxCount);
@@ -57,7 +60,7 @@ void write_s2c_player_join_response(buffer_t, buffer_offset_t *, const s2c_playe
 void read_s2c_player_join_response(buffer_t, buffer_offset_t *, s2c_player_join_response_packet_t *);
 
 void create_s2c_player_join_response(s2c_player_join_response_packet_t *pkt, uint8_t success, uint32_t playerID,
-                                     int32_t worldL, int32_t worldW, float spawnX, float spawnY);
+                                     int32_t worldL, int32_t worldW, float spawnX, float spawnY, game_state_t *initialGameState);
 
 void write_c2s_player_input_snapshot(buffer_t, buffer_offset_t *, const c2s_player_input_snapshot_packet_t *);
 
@@ -106,5 +109,11 @@ void read_s2c_inventory_update(buffer_t, buffer_offset_t *, s2c_inventory_update
 
 void create_s2c_inventory_update(s2c_inventory_update_packet_t *pkt, uint32_t playerID,
                                  inventory_transaction_t *transaction);
+
+void write_s2c_game_state_snapshot(buffer_t, buffer_offset_t *, const s2c_game_state_snapshot_packet_t *);
+
+void read_s2c_game_state_snapshot(buffer_t, buffer_offset_t *, s2c_game_state_snapshot_packet_t *);
+
+void create_s2c_game_state_snapshot(s2c_game_state_snapshot_packet_t *pkt, game_state_t *state);
 
 #endif /* NETWORK_PACKET_IO_H */

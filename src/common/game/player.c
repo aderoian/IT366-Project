@@ -234,6 +234,18 @@ int player_try_build_tower(player_t *player, const struct tower_def_s *towerDef,
         return 0;
     }
 
+    if (towerDef->type == TOWER_TYPE_STASH) {
+        if (g_game.state.phase == GAME_PHASE_EXPLORING) {
+            g_game.state.phase = GAME_PHASE_BUILDING;
+            s2c_game_state_snapshot_packet_t snapshot;
+            create_s2c_game_state_snapshot(&snapshot, &g_game.state);
+            server_broadcast_packet(&g_server, &snapshot, NET_UDP_FLAG_RELIABLE);
+        } else {
+            // Stash towers start the game & players can only have one
+            return 0;
+        }
+    }
+
     transaction = tower_get_cost_transaction(towerDef, 0);
     if (!player_inventory_transaction(player, transaction)) {
         log_info("Player ID %u cannot afford to build tower with definition index %u", player->id, towerDef->index);
@@ -242,6 +254,7 @@ int player_try_build_tower(player_t *player, const struct tower_def_s *towerDef,
 
     entity = tower_create_by_def(g_server.entityManager, g_server.towerManager, towerDef, position);
     tower = (tower_state_t *) entity->data;
+
     if (entity) {
         create_s2c_tower_create(&towerPkt, position.x, position.y, towerDef->index, tower->id);
         server_broadcast_packet(&g_server, &towerPkt, NET_UDP_FLAG_RELIABLE);

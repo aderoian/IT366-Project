@@ -176,6 +176,12 @@ char *read_string(buffer_t buffer, buffer_offset_t *offset, uint16_t *outCount, 
     return str;
 }
 
+void write_game_state(buffer_t buffer, buffer_offset_t *offset, const game_state_t *state) {
+    write_uint8(buffer, offset, state->phase);
+    write_float(buffer, offset, state->timeUntilNextWave);
+    write_uint64(buffer, offset, state->waveNumber);
+}
+
 void write_player_input_command(buffer_t buffer, buffer_offset_t *offset, const player_input_command_t *cmd) {
     write_uint64(buffer, offset, cmd->tickNumber);
     write_uint32(buffer, offset, cmd->axisX);
@@ -197,6 +203,12 @@ void write_item_array(buffer_t buffer, buffer_offset_t *offset, const item_t *it
 void write_inventory_transaction(buffer_t buffer, buffer_offset_t *offset, const inventory_transaction_t *transaction) {
     write_uint8(buffer, offset, transaction->isAddition);
     write_item_array(buffer, offset, transaction->items, transaction->numItems);
+}
+
+void read_game_state(buffer_t buffer, buffer_offset_t *offset, game_state_t *state) {
+    state->phase = read_uint8(buffer, offset);
+    state->timeUntilNextWave = read_float(buffer, offset);
+    state->waveNumber = read_uint64(buffer, offset);
 }
 
 void read_player_input_command(buffer_t buffer, buffer_offset_t *offset, player_input_command_t *cmd) {
@@ -260,6 +272,7 @@ void write_s2c_player_join_response(buffer_t buf, buffer_offset_t *off,
     write_int32(buf, off, pkt->worldW);
     write_float(buf, off, pkt->spawnX);
     write_float(buf, off, pkt->spawnY);
+    write_game_state(buf, off, &pkt->initialGameState);
 }
 
 void write_c2s_player_input_snapshot(buffer_t buf, buffer_offset_t *off,
@@ -319,6 +332,12 @@ void write_s2c_inventory_update(buffer_t buf, buffer_offset_t *off, const s2c_in
     write_inventory_transaction(buf, off, &pkt->transaction);
 }
 
+void write_s2c_game_state_snapshot(buffer_t buf, buffer_offset_t *off, const s2c_game_state_snapshot_packet_t *pkt) {
+    write_uint8(buf, off, pkt->packetID);
+    write_uint64(buf, off, pkt->length);
+    write_game_state(buf, off, &pkt->gameState);
+}
+
 void read_c2s_player_join_request(buffer_t buf, buffer_offset_t *off, c2s_player_join_request_packet_t *pkt) {
     pkt->packetID = read_uint8(buf, off);
     pkt->length = read_uint64(buf, off);
@@ -334,6 +353,7 @@ void read_s2c_player_join_response(buffer_t buf, buffer_offset_t *off, s2c_playe
     pkt->worldW = read_int32(buf, off);
     pkt->spawnX = read_float(buf, off);
     pkt->spawnY = read_float(buf, off);
+    read_game_state(buf, off, &pkt->initialGameState);
 }
 
 void read_c2s_player_input_snapshot(buffer_t buf, buffer_offset_t *off,
@@ -392,6 +412,12 @@ void read_s2c_inventory_update(buffer_t buf, buffer_offset_t *off, s2c_inventory
     read_inventory_transaction(buf, off, &pkt->transaction);
 }
 
+void read_s2c_game_state_snapshot(buffer_t buf, buffer_offset_t *off, s2c_game_state_snapshot_packet_t *pkt) {
+    pkt->packetID = read_uint8(buf, off);
+    pkt->length = read_uint64(buf, off);
+    read_game_state(buf, off, &pkt->gameState);
+}
+
 void create_c2s_player_join_request(c2s_player_join_request_packet_t *pkt, char *name) {
     pkt->packetID = PACKET_C2S_PLAYER_JOIN_REQUEST;
     pkt->length = sizeof(uint16_t) + strnlen(name, MAX_STRING_LENGTH);
@@ -399,15 +425,16 @@ void create_c2s_player_join_request(c2s_player_join_request_packet_t *pkt, char 
 }
 
 void create_s2c_player_join_response(s2c_player_join_response_packet_t *pkt, uint8_t success, uint32_t playerID,
-                                     int32_t worldL, int32_t worldW, float spawnX, float spawnY) {
+                                     int32_t worldL, int32_t worldW, float spawnX, float spawnY, game_state_t *initialGameState) {
     pkt->packetID = PACKET_S2C_PLAYER_JOIN_RESPONSE;
-    pkt->length = sizeof(success) + sizeof(playerID) + sizeof(worldL) + sizeof(worldW) + sizeof(spawnX) + sizeof(spawnY);
+    pkt->length = sizeof(success) + sizeof(playerID) + sizeof(worldL) + sizeof(worldW) + sizeof(spawnX) + sizeof(spawnY) + (sizeof(uint8_t) + sizeof(float) + sizeof(uint64_t));
     pkt->success = success;
     pkt->playerID = playerID;
     pkt->worldL = worldL;
     pkt->worldW = worldW;
     pkt->spawnX = spawnX;
     pkt->spawnY = spawnY;
+    pkt->initialGameState = *initialGameState;
 }
 
 void create_c2s_player_input_snapshot(c2s_player_input_snapshot_packet_t *pkt, player_input_command_t *inputCommand) {
@@ -468,4 +495,10 @@ void create_s2c_inventory_update(s2c_inventory_update_packet_t *pkt, uint32_t pl
     pkt->length = sizeof(playerID) + sizeof(transaction->isAddition) + sizeof(uint16_t) + ((sizeof(uint32_t) + sizeof(uint32_t)) * transaction->numItems);
     pkt->playerID = playerID;
     pkt->transaction = *transaction;
+}
+
+void create_s2c_game_state_snapshot(s2c_game_state_snapshot_packet_t *pkt, game_state_t *state) {
+    pkt->packetID = PACKET_S2C_GAME_STATE_SNAPSHOT;
+    pkt->length = sizeof(uint8_t) + sizeof(state->timeUntilNextWave) + sizeof(state->waveNumber);
+    pkt->gameState = *state;
 }

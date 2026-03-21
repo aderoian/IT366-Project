@@ -7,6 +7,19 @@
 #define GAME_ROLE_SERVER 1
 #define GAME_ROLE_CLIENT 2
 
+typedef enum game_phase_e {
+    GAME_PHASE_EXPLORING = 0,
+    GAME_PHASE_BUILDING,
+    GAME_PHASE_WAVE,
+    GAME_PHASE_PAUSED
+} game_phase_t;
+
+typedef struct game_state_t {
+    game_phase_t phase;
+    uint64_t waveNumber;
+    float timeUntilNextWave;
+} game_state_t;
+
 typedef struct game_s {
     uint64_t tickNumber;
     float deltaTime;
@@ -15,6 +28,8 @@ typedef struct game_s {
 
     struct item_def_manager_s *itemDefManager;
     struct world_s *world; // Pointer to the game world (server and client will have their own instances)
+
+    game_state_t state;
 } game_t;
 
 extern __thread game_t g_game;

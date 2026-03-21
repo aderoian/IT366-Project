@@ -42,8 +42,9 @@ void handle_c2s_player_join_request(const c2s_player_join_request_packet_t *pkt,
         g_game.world->size.x,
         g_game.world->size.y,
         player->position.x,
-        player->position.y
-    ); // FIXME: Use actual spawn position
+        player->position.y,
+        &g_game.state
+    );
     server_send_packet(&g_server, player, &packet, NET_UDP_FLAG_RELIABLE);
 }
 

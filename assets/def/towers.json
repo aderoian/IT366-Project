@@ -3,7 +3,7 @@
     {
       "name": "Arrow Tower",
       "description": "A basic tower that shoots arrows at enemies. Effective against both ground and air units.",
-      "type": "combat",
+      "type": "defensive",
       "size": 2.0,
       "maxHealth": [100, 120, 140, 160, 180],
       "cost": [
@@ -27,10 +27,140 @@
           "enemyTypes": ["*", "ground", "air"]
         }
       ],
-      "production": [],
       "model": {
         "base": "images/tower/arrow/arrow_tower_t%d_base.svg",
         "head": "images/tower/arrow/arrow_tower_t%d_head.svg"
+      }
+    },
+    {
+      "name": "Bomb Tower",
+      "description": "A tower that launches bombs at enemies, dealing area damage. Effective against groups of enemies.",
+      "type": "defensive",
+      "size": 2.0,
+      "maxHealth": [100, 120, 140, 160, 180],
+      "cost": [
+        [50, 0, 0],
+        [50, 0, 0],
+        [100, 0, 0],
+        [150, 0, 0],
+        [200, 0, 0]
+      ],
+      "weapons": [
+        {
+          "damage": [10, 20, 30, 40, 50],
+          "range": [200, 240, 280, 320, 360],
+          "fireRate": [1.0, 0.9, 0.8, 0.7, 0.6],
+          "bulletSpeed": [200, 220, 240, 260, 280],
+          "projectileSprite": "images/tower/bomb/bomb_tower_projectile.svg",
+          "directional": false,
+          "piercing": false,
+          "areaEffect": false,
+          "direction": [1, 0],
+          "enemyTypes": ["*", "ground", "air"]
+        }
+      ],
+      "model": {
+        "base": "images/tower/bomb/bomb_tower_t%d_base.svg",
+        "head": "images/tower/bomb/bomb_tower_t%d_head.svg"
+      }
+    },
+    {
+      "name": "Cannon Tower",
+      "description": "A tower that fires powerful cannonballs at enemies, dealing high damage. Effective against heavily armored units.",
+      "type": "defensive",
+      "size": 2.0,
+      "maxHealth": [100, 120, 140, 160, 180],
+      "cost": [
+        [50, 0, 0],
+        [50, 0, 0],
+        [100, 0, 0],
+        [150, 0, 0],
+        [200, 0, 0]
+      ],
+      "weapons": [
+        {
+          "damage": [10, 20, 30, 40, 50],
+          "range": [200, 240, 280, 320, 360],
+          "fireRate": [1.0, 0.9, 0.8, 0.7, 0.6],
+          "bulletSpeed": [200, 220, 240, 260, 280],
+          "projectileSprite": "images/tower/cannon/cannon_tower_projectile.svg",
+          "directional": false,
+          "piercing": false,
+          "areaEffect": false,
+          "direction": [1, 0],
+          "enemyTypes": ["*", "ground", "air"]
+        }
+      ],
+      "model": {
+        "base": "images/tower/cannon/cannon_tower_t%d_base.svg",
+        "head": "images/tower/cannon/cannon_tower_t%d_head.svg"
+      }
+    },
+    {
+      "name": "Door",
+      "description": "A door that can be placed on the path to block enemies.",
+      "type": "passive",
+      "size": 1.0,
+      "maxHealth": [100, 120, 140, 160, 180],
+      "cost": [
+        [50, 0, 0],
+        [50, 0, 0],
+        [100, 0, 0],
+        [150, 0, 0],
+        [200, 0, 0]
+      ],
+      "model": {
+        "base": "images/tower/door/door_t%d_base.svg"
+      }
+    },
+    {
+      "name": "Melee Tower",
+      "description": "A tower that attacks enemies in close range. Effective against fast-moving units.",
+      "type": "defensive",
+      "size": 2.0,
+      "maxHealth": [100, 120, 140, 160, 180],
+      "cost": [
+        [50, 0, 0],
+        [50, 0, 0],
+        [100, 0, 0],
+        [150, 0, 0],
+        [200, 0, 0]
+      ],
+      "weapons": [
+        {
+          "damage": [10, 20, 30, 40, 50],
+          "range": [200, 240, 280, 320, 360],
+          "fireRate": [1.0, 0.9, 0.8, 0.7, 0.6],
+          "bulletSpeed": [200, 220, 240, 260, 280],
+          "projectileSprite": "images/tower/melee/melee_tower_projectile.svg",
+          "directional": false,
+          "piercing": false,
+          "areaEffect": false,
+          "direction": [1, 0],
+          "enemyTypes": ["*", "ground", "air"]
+        }
+      ],
+      "model": {
+        "base": "images/tower/melee/melee_tower_t%d_base.svg",
+        "head": "images/tower/melee/melee_tower_t%d_head.svg"
+      }
+    },
+    {
+      "name": "Gold Stash",
+      "description": "The heart of your base. Protect it at all costs! If it is destroyed, you lose the game.",
+      "type": "stash",
+      "size": 2.0,
+      "maxHealth": [100, 120, 140, 160, 180],
+      "cost": [
+        [50, 0, 0],
+        [50, 0, 0],
+        [100, 0, 0],
+        [150, 0, 0],
+        [200, 0, 0]
+      ],
+      "production": [5, 10, 15, 20, 25],
+      "model": {
+        "base": "images/tower/stash/gold_stash_t%d_base.svg"
       }
     }
   ]

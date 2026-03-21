@@ -140,6 +140,10 @@ void *server_run(void *arg) {
     g_game.tickNumber = 0;
     g_game.deltaTime = 0.0f;
     g_game.role = GAME_ROLE_SERVER;
+
+    g_game.state.phase = GAME_PHASE_EXPLORING;
+    g_game.state.waveNumber = 0;
+
     server_tickProcessor(server);
     log_info("Server stopped!");
 

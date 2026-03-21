@@ -54,6 +54,12 @@ void receive_s2c_inventory_update(buffer_t buf, buffer_offset_t *off, void *c) {
     handle_s2c_inventory_update(&pkt, c);
 }
 
+void receive_s2c_game_state_snapshot(buffer_t buf, buffer_offset_t *off, void *c) {
+    s2c_game_state_snapshot_packet_t pkt;
+    read_s2c_game_state_snapshot(buf, off, &pkt);
+    handle_s2c_game_state_snapshot(&pkt, c);
+}
+
 packet_receive_fn packet_dispatch_table[PACKET_COUNT] = {
     [PACKET_C2S_PLAYER_JOIN_REQUEST] = receive_c2s_player_join_request,
     [PACKET_S2C_PLAYER_JOIN_RESPONSE] = receive_s2c_player_join_response,
@@ -64,6 +70,7 @@ packet_receive_fn packet_dispatch_table[PACKET_COUNT] = {
     [PACKET_S2C_TOWER_CREATE] = receive_s2c_tower_create,
     [PACKET_S2C_TOWER_EVENT] = receive_s2c_tower_event,
     [PACKET_S2C_INVENTORY_UPDATE] = receive_s2c_inventory_update,
+    [PACKET_S2C_GAME_STATE_SNAPSHOT] = receive_s2c_game_state_snapshot,
 };
 
 void prepare_send_c2s_player_join_request(buffer_t buf, buffer_offset_t *off, void *c) {
@@ -102,6 +109,10 @@ void prepare_send_s2c_inventory_update(buffer_t buf, buffer_offset_t *off, void 
     write_s2c_inventory_update(buf, off, (s2c_inventory_update_packet_t *) c);
 }
 
+void prepare_send_s2c_game_state_snapshot(buffer_t buf, buffer_offset_t *off, void *c) {
+    write_s2c_game_state_snapshot(buf, off, (s2c_game_state_snapshot_packet_t *) c);
+}
+
 packet_send_fn packet_send_table[PACKET_COUNT] = {
     [PACKET_C2S_PLAYER_JOIN_REQUEST] = prepare_send_c2s_player_join_request,
     [PACKET_S2C_PLAYER_JOIN_RESPONSE] = prepare_send_s2c_player_join_response,
@@ -112,4 +123,5 @@ packet_send_fn packet_send_table[PACKET_COUNT] = {
     [PACKET_S2C_TOWER_CREATE] = prepare_send_s2c_tower_create,
     [PACKET_S2C_TOWER_EVENT] = prepare_send_s2c_tower_event,
     [PACKET_S2C_INVENTORY_UPDATE] = prepare_send_s2c_inventory_update,
+    [PACKET_S2C_GAME_STATE_SNAPSHOT] = prepare_send_s2c_game_state_snapshot,
 };

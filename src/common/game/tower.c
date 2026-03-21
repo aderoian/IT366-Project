@@ -130,50 +130,52 @@ tower_def_manager_t * tower_load_defs(const struct def_manager_s *defManager, ch
         }
 
         weaponJson = def_data_get_array(towerJson, "weapons");
-        def_data_array_get_count(weaponJson, &def->numWeapons);
-        def->weaponDefs = gfc_allocate_array(sizeof(tower_weapon_def_t), def->numWeapons);
-        for (j = 0; j < def->numWeapons; ++j) {
-            weaponDefJson = def_data_array_get_nth(weaponJson, j);
-            weaponDef = &def->weaponDefs[j];
+        if (weaponJson) {
+            def_data_array_get_count(weaponJson, &def->numWeapons);
+            def->weaponDefs = gfc_allocate_array(sizeof(tower_weapon_def_t), def->numWeapons);
+            for (j = 0; j < def->numWeapons; ++j) {
+                weaponDefJson = def_data_array_get_nth(weaponJson, j);
+                weaponDef = &def->weaponDefs[j];
 
-            valueArray = def_data_get_array(weaponDefJson, "damage");
-            for (k = 0; k < TOWER_MAX_LEVEL; k++) {
-                sj_get_float_value(def_data_array_get_nth(valueArray, k), &weaponDef->damage[k]);
+                valueArray = def_data_get_array(weaponDefJson, "damage");
+                for (k = 0; k < TOWER_MAX_LEVEL; k++) {
+                    sj_get_float_value(def_data_array_get_nth(valueArray, k), &weaponDef->damage[k]);
+                }
+
+                valueArray = def_data_get_array(weaponDefJson, "range");
+                for (k = 0; k < TOWER_MAX_LEVEL; k++) {
+                    sj_get_float_value(def_data_array_get_nth(valueArray, k), &weaponDef->range[k]);
+                }
+
+                valueArray = def_data_get_array(weaponDefJson, "fireRate");
+                for (k = 0; k < TOWER_MAX_LEVEL; k++) {
+                    sj_get_float_value(def_data_array_get_nth(valueArray, k), &weaponDef->fireRate[k]);
+                }
+
+                valueArray = def_data_get_array(weaponDefJson, "bulletSpeed");
+                for (k = 0; k < TOWER_MAX_LEVEL; k++) {
+                    sj_get_float_value(def_data_array_get_nth(valueArray, k), &weaponDef->bulletSpeed[k]);
+                }
+
+                str = def_data_get_string(weaponDefJson, "projectileSprite");
+                if (!str || strlen(str) >= sizeof(weaponDef->projectileSprite)) {
+                    log_error("Invalid or missing projectileSprite for weapon definition at index %u of tower definition at index %u", j, i);
+                    continue;
+                }
+                strncpy(weaponDef->projectileSprite, str, sizeof(weaponDef->projectileSprite) - 1);
+                weaponDef->projectileSprite[sizeof(weaponDef->projectileSprite) - 1] = '\0';
+
+                weaponDef->flags = 0;
+                def_data_get_int(weaponDefJson, "directional", &flag);
+                if (flag) weaponDef->flags |= TOWER_WEAPON_FLAG_DIRECTIONAL;
+                def_data_get_int(weaponDefJson, "piercing", &flag);
+                if (flag) weaponDef->flags |= TOWER_WEAPON_FLAG_PIERCING;
+                def_data_get_int(weaponDefJson, "areaEffect", &flag);
+                if (flag) weaponDef->flags |= TOWER_WEAPON_FLAG_AREA_EFFECT;
+                valueArray = def_data_get_array(weaponDefJson, "direction");
+                sj_get_float_value(def_data_array_get_nth(valueArray, 0), &weaponDef->direction.x);
+                sj_get_float_value(def_data_array_get_nth(valueArray, 1), &weaponDef->direction.y);
             }
-
-            valueArray = def_data_get_array(weaponDefJson, "range");
-            for (k = 0; k < TOWER_MAX_LEVEL; k++) {
-                sj_get_float_value(def_data_array_get_nth(valueArray, k), &weaponDef->range[k]);
-            }
-
-            valueArray = def_data_get_array(weaponDefJson, "fireRate");
-            for (k = 0; k < TOWER_MAX_LEVEL; k++) {
-                sj_get_float_value(def_data_array_get_nth(valueArray, k), &weaponDef->fireRate[k]);
-            }
-
-            valueArray = def_data_get_array(weaponDefJson, "bulletSpeed");
-            for (k = 0; k < TOWER_MAX_LEVEL; k++) {
-                sj_get_float_value(def_data_array_get_nth(valueArray, k), &weaponDef->bulletSpeed[k]);
-            }
-
-            str = def_data_get_string(weaponDefJson, "projectileSprite");
-            if (!str || strlen(str) >= sizeof(weaponDef->projectileSprite)) {
-                log_error("Invalid or missing projectileSprite for weapon definition at index %u of tower definition at index %u", j, i);
-                continue;
-            }
-            strncpy(weaponDef->projectileSprite, str, sizeof(weaponDef->projectileSprite) - 1);
-            weaponDef->projectileSprite[sizeof(weaponDef->projectileSprite) - 1] = '\0';
-
-            weaponDef->flags = 0;
-            def_data_get_int(weaponDefJson, "directional", &flag);
-            if (flag) weaponDef->flags |= TOWER_WEAPON_FLAG_DIRECTIONAL;
-            def_data_get_int(weaponDefJson, "piercing", &flag);
-            if (flag) weaponDef->flags |= TOWER_WEAPON_FLAG_PIERCING;
-            def_data_get_int(weaponDefJson, "areaEffect", &flag);
-            if (flag) weaponDef->flags |= TOWER_WEAPON_FLAG_AREA_EFFECT;
-            valueArray = def_data_get_array(weaponDefJson, "direction");
-            sj_get_float_value(def_data_array_get_nth(valueArray, 0), &weaponDef->direction.x);
-            sj_get_float_value(def_data_array_get_nth(valueArray, 1), &weaponDef->direction.y);
         }
 
         modelDefJson = def_data_get_obj(towerJson, "model");
@@ -187,13 +189,16 @@ tower_def_manager_t * tower_load_defs(const struct def_manager_s *defManager, ch
         def->modelDef.baseSpritePath[sizeof(def->modelDef.baseSpritePath) - 1] = '\0';
 
         str = def_data_get_string(modelDefJson, "head");
-        if (!str || strlen(str) >= sizeof(def->modelDef.weaponSpritePath)) {
-            log_error("Invalid or missing modelDef.baseSpritePath for tower definition at index %u", i);
-            continue;
+        if (str) {
+            if (!str || strlen(str) >= sizeof(def->modelDef.weaponSpritePath)) {
+                log_error("Invalid or missing modelDef.baseSpritePath for tower definition at index %u", i);
+                continue;
+            }
+
+            strncpy(def->modelDef.weaponSpritePath, str, sizeof(def->modelDef.weaponSpritePath) - 1);
+            def->modelDef.weaponSpritePath[sizeof(def->modelDef.weaponSpritePath) - 1] = '\0';
         }
 
-        strncpy(def->modelDef.weaponSpritePath, str, sizeof(def->modelDef.weaponSpritePath) - 1);
-        def->modelDef.weaponSpritePath[sizeof(def->modelDef.weaponSpritePath) - 1] = '\0';
         def->index = i;
 
         costArray = def_data_get_array(towerJson, "cost");
