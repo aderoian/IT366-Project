@@ -127,6 +127,7 @@ Sprite *gf2d_sprite_load_all(
         return sprite;
     }
     surface = IMG_Load(filename);
+    SDL_SetSurfaceBlendMode(surface, SDL_BLENDMODE_BLEND);
     if (!surface) {
         slog("failed to load sprite image %s", filename);
         return NULL;
@@ -151,10 +152,6 @@ Sprite *gf2d_sprite_load_all(
         return NULL;
     }
     SDL_SetTextureBlendMode(sprite->texture, SDL_BLENDMODE_BLEND);
-    SDL_UpdateTexture(sprite->texture,
-                      NULL,
-                      surface->pixels,
-                      surface->pitch);
     if (frameHeight == -1) {
         sprite->frame_h = surface->h;
     } else sprite->frame_h = frameHeight;
@@ -394,6 +391,7 @@ SDL_Texture *gf2d_texture_convert_surface(SDL_Renderer *renderer, SDL_Surface *s
 
     // Convert to a consistent format (important for rendering)
     formatted = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_RGBA32, 0);
+    formatted = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_RGBA32, SDL_BLENDMODE_BLEND);
     SDL_FreeSurface(surface);
 
     if (!formatted)
@@ -496,6 +494,17 @@ void gf2d_sprite_draw_simple(
         NULL,
         NULL,
         frame);
+}
+
+void gf2d_sprite_set_alpha(Sprite *sprite, const Uint8 alpha)
+{
+    if (!sprite || !sprite->texture) return;
+
+    // Enable blending just in case
+    SDL_SetTextureBlendMode(sprite->texture, SDL_BLENDMODE_BLEND);
+
+    // Set alpha
+    SDL_SetTextureAlphaMod(sprite->texture, alpha);
 }
 
 /*eol@eof*/

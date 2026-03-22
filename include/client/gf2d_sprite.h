@@ -196,5 +196,6 @@ void gf2d_sprite_draw_simple(
     GFC_Vector2D position,
     Uint32 frame);
 
+void gf2d_sprite_set_alpha(Sprite *sprite, const Uint8 alpha);
 
 #endif

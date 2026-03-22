@@ -1,9 +1,87 @@
 {
   "elements": [
     {
-      "type": "hudbar",
-      "position": [217, 602],
-      "sprite": "images/ui/overlay/hudbar.png"
+      "type": "tower_hudbar",
+      "position": [242, 630],
+      "size": [716, 56],
+      "sprite": "images/ui/overlay/tower_hudbar.png"
+    },
+    {
+      "type": "tower_hb_tower",
+      "position": [247, 635],
+      "size": [46, 46],
+      "sprite": "images/ui/overlay/arrow_tower.png",
+      "data": 0
+    },
+    {
+      "type": "tower_hb_tower",
+      "position": [313, 635],
+      "size": [46, 46],
+      "sprite": "images/ui/overlay/bomb_tower.png",
+      "data": 1
+    },
+    {
+      "type": "tower_hb_tower",
+      "position": [379, 635],
+      "size": [46, 46],
+      "sprite": "images/ui/overlay/cannon_tower.png",
+      "data": 2
+    },
+    {
+      "type": "tower_hb_tower",
+      "position": [445, 635],
+      "size": [46, 46],
+      "sprite": "images/ui/overlay/door.png",
+      "data": 3
+    },
+    {
+      "type": "tower_hb_tower",
+      "position": [511, 635],
+      "size": [46, 46],
+      "sprite": "images/ui/overlay/melee_tower.png",
+      "data": 4
+    },
+    {
+      "type": "tower_hb_tower",
+      "position": [577, 635],
+      "size": [46, 46],
+      "sprite": "images/ui/overlay/mine.png",
+      "data": 5
+    },
+    {
+      "type": "tower_hb_tower",
+      "position": [643, 635],
+      "size": [46, 46],
+      "sprite": "images/ui/overlay/mage_tower.png",
+      "data": 6
+    },
+    {
+      "type": "tower_hb_tower",
+      "position": [709, 635],
+      "size": [46, 46],
+      "sprite": "images/ui/overlay/harvestor.png",
+      "data": 7
+    },
+    {
+      "type": "tower_hb_tower",
+      "position": [775, 635],
+      "size": [46, 46],
+      "sprite": "images/ui/overlay/wall.png",
+      "data": 8
+    },
+    {
+      "type": "tower_hb_tower",
+      "position": [841, 635],
+      "size": [46, 46],
+      "sprite": "images/ui/overlay/trap.png",
+      "data": 9
+    },
+    {
+      "type": "tower_hb_tower",
+      "position": [907, 635],
+      "size": [46, 46],
+      "sprite": "images/ui/overlay/stash.png",
+      "data": 10
     }
   ]
 }

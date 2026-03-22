@@ -166,3 +166,63 @@ void gf2d_font_draw_text_centeredf(int size, const char *text, GFC_Vector2D posi
 
     gf2d_font_draw_text_centered(size, buffer, position);
 }
+
+void gf2d_font_draw_text_wrapf(int size, const char *text, GFC_Vector2D position, float maxWidth, ...) {
+    char buffer[1024];
+    va_list args;
+    va_start(args, maxWidth);
+    vsnprintf(buffer, sizeof(buffer), text, args);
+    va_end(args);
+
+    float penX = position.x;
+    float penY = position.y;
+
+    const char* wordStart = buffer;
+    while (*wordStart) {
+        // Skip leading spaces
+        while (*wordStart == ' ') wordStart++;
+
+        if (!*wordStart) break;
+
+        // Find end of word
+        const char* wordEnd = wordStart;
+        while (*wordEnd && *wordEnd != ' ' && *wordEnd != '\n') wordEnd++;
+
+        // Measure word width
+        float wordWidth = 0;
+        for (const char* p = wordStart; p < wordEnd; p++) {
+            glyph_t* g = gf2d_font_get_glyph(size, *p);
+            if (g) wordWidth += g->w;
+        }
+
+        // Wrap if word doesn't fit
+        if (penX + wordWidth > position.x + maxWidth) {
+            penX = position.x;
+            penY += size; // line height
+        }
+
+        // Render the word
+        for (const char* p = wordStart; p < wordEnd; p++) {
+            glyph_t* g = gf2d_font_get_glyph(size, *p);
+            if (!g) continue;
+
+            SDL_FRect dst = {penX, penY, g->w, g->h};
+            SDL_RenderCopyF(g_fontRenderer.renderer, g->texture, NULL, &dst);
+
+            penX += g->w;
+        }
+
+        // Move past this word
+        wordStart = wordEnd;
+
+        // Handle space or newline
+        if (*wordStart == ' ') {
+            penX += gf2d_font_get_glyph(size, ' ')->w; // add space width
+            wordStart++;
+        } else if (*wordStart == '\n') {
+            penX = position.x;
+            penY += size;
+            wordStart++;
+        }
+    }
+}

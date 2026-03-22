@@ -4,18 +4,31 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "gfc_shape.h"
 #include "gfc_vector.h"
 
 #define OVERLAY_TYPE_SIMPLE 0
 
 #define OVERLAY_ELEMENTS(X) \
-X(hudbar, HUDBAR, SIMPLE)
+X(tower_hudbar, TOWER_HUDBAR, SIMPLE) \
+X(tower_hb_tower, TOWER_HB_TOWER, SIMPLE)
+
+#define OVERLAY_CREATION(name, cap_name, type) TYPE_##cap_name,
+typedef enum overlay_element_type_e {
+    OVERLAY_ELEMENTS(OVERLAY_CREATION)
+    TYPE_NONE
+} overlay_element_type_t;
+#undef OVERLAY_CREATION
 
 struct def_manager_s;
 
 typedef struct overlay_element_s {
+    overlay_element_type_t type;
     GFC_Vector2D position;
-    void *data;
+    GFC_Vector2D size;
+    GFC_Rect bounds;
+    int data;
+    Sprite *sprite;
     uint8_t _inuse;
     uint8_t visible;
 
@@ -28,6 +41,8 @@ typedef struct overlay_s {
     overlay_element_t *elements;
     size_t maxElements;
     uint8_t visible;
+
+    overlay_element_t *hoveredElement;
 } overlay_t;
 
 void overlay_init(const struct def_manager_s *defManager, overlay_t *overlay, size_t initialCapacity, const char *config);
@@ -42,18 +57,11 @@ void overlay_draw(const overlay_t *overlay);
 
 void overlay_update(overlay_t *overlay, float deltaTime);
 
-#define OVERLAY_CREATION(name, cap_name, type) TYPE_##cap_name,
-typedef enum overlay_element_type_e {
-    OVERLAY_ELEMENTS(OVERLAY_CREATION)
-    TYPE_NONE
-} overlay_element_type_t;
-#undef OVERLAY_CREATION
-
 overlay_element_type_t overlay_element_type_from_string(const char *typeStr);
 
 #define OVERLAY_CREATION(name, cap_name, type) OVERLAY_CREATION_##type(name)
 #define OVERLAY_CREATION_SIMPLE(name) \
-    void overlay_element_create_##name(overlay_element_t *element, GFC_Vector2D position, const char* sprite);
+    void overlay_element_create_##name(overlay_element_t *element, GFC_Vector2D position, GFC_Vector2D size, int data, const char* sprite);
 
 OVERLAY_ELEMENTS(OVERLAY_CREATION)
 

@@ -131,8 +131,15 @@ void gf2d_graphics_initialize(
         gf2d_graphics_close();
         return;
     }
+    SDL_SetSurfaceBlendMode(gf2d_graphics.surface, SDL_BLENDMODE_BLEND);
     
-    gf2d_graphics.background_color = SDL_MapRGB(gf2d_graphics.surface->format, bgcolor.x,bgcolor.y,bgcolor.z);
+    gf2d_graphics.background_color = gf2d_graphics.background_color = SDL_MapRGBA(
+        gf2d_graphics.surface->format,
+        bgcolor.x,
+        bgcolor.y,
+        bgcolor.z,
+        bgcolor.w
+    );
     gfc_vector4d_set(gf2d_graphics.background_color_v,bgcolor.x,bgcolor.y,bgcolor.z,bgcolor.w);
     SDL_SetRenderDrawBlendMode(gf2d_graphics_get_renderer(),SDL_BLENDMODE_BLEND);
 
@@ -343,6 +350,7 @@ SDL_Surface *gf2d_graphics_create_surface(Uint32 w,Uint32 h)
         gf2d_graphics.gmask,
         gf2d_graphics.bmask,
         gf2d_graphics.amask);
+    SDL_SetSurfaceBlendMode(surface, SDL_BLENDMODE_BLEND);
     return surface;
 }
 
@@ -391,14 +399,13 @@ SDL_Surface *gf2d_graphics_screen_convert(SDL_Surface **surface)
         slog("graphics not yet initialized");
         return NULL;
     }
-    convert = SDL_ConvertSurface(*surface,
-                       gf2d_graphics.surface->format,
-                       0);
+    convert = SDL_ConvertSurface(*surface, gf2d_graphics.surface->format, SDL_BLENDMODE_BLEND);
     if (!convert)
     {
         slog("failed to convert surface: %s",SDL_GetError());
         return NULL;
     }
+    SDL_SetSurfaceBlendMode(convert, SDL_BLENDMODE_BLEND);
     SDL_FreeSurface(*surface);
     *surface = NULL;
     return convert;

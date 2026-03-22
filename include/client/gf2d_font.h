@@ -53,4 +53,6 @@ void gf2d_font_draw_text_centered(int size, const char* text, GFC_Vector2D posit
  */
 void gf2d_font_draw_text_centeredf(int size, const char* text, GFC_Vector2D position, ...);
 
+void gf2d_font_draw_text_wrapf(int size, const char* text, GFC_Vector2D position, float maxWidth, ...);
+
 #endif /* GF2D_FONT_H */
