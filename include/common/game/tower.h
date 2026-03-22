@@ -22,9 +22,10 @@ struct entity_manager_s;
 
 typedef enum tower_type_e {
     TOWER_TYPE_DEFENSIVE = 0,
-    TOWER_TYPE_PRODUCTION = 1,
-    TOWER_TYPE_PASSIVE = 2,
-    TOWER_TYPE_STASH = 3,
+    TOWER_TYPE_GOLD_PRODUCTION = 1,
+    TOWER_TYPE_GATHERING = 2,
+    TOWER_TYPE_PASSIVE = 3,
+    TOWER_TYPE_STASH = 4,
 } tower_type_t;
 
 typedef struct tower_weapon_def_s {
@@ -51,6 +52,8 @@ typedef struct tower_def_s {
     float maxHealth[TOWER_MAX_LEVEL];
     int numWeapons;
     const tower_weapon_def_t *weaponDefs;
+    float productionRate[TOWER_MAX_LEVEL];
+    int productionAmount[TOWER_MAX_LEVEL];
     item_t cost[TOWER_MAX_LEVEL][3];
     tower_model_def_t modelDef;
 } tower_def_t;
@@ -60,7 +63,8 @@ typedef struct tower_state_s {
     const tower_def_t *def;
     float health;
     int level;
-    float cooldown;
+    float attackCooldown;
+    float productionCooldown;
     GFC_Vector2D worldPos;
     struct entity_s *entity;
     Sprite *baseSprite;

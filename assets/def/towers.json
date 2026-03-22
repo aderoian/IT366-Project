@@ -158,9 +158,30 @@
         [150, 0, 0],
         [200, 0, 0]
       ],
-      "production": [5, 10, 15, 20, 25],
+      "productionRate": [5, 4, 2, 1, 0.5],
+      "productionAmount": [10, 20, 30, 40, 50],
       "model": {
         "base": "images/tower/stash/gold_stash_t%d_base.svg"
+      }
+    },
+    {
+      "name": "Gold Mine",
+      "description": "A structure that produces gold over time. Protect it to ensure a steady income of resources.",
+      "type": "gold_production",
+      "size": 2.0,
+      "maxHealth": [100, 120, 140, 160, 180],
+      "cost": [
+        [50, 0, 0],
+        [50, 0, 0],
+        [100, 0, 0],
+        [150, 0, 0],
+        [200, 0, 0]
+      ],
+      "productionRate": [5, 4, 2, 1, 0.5],
+      "productionAmount": [10, 20, 30, 40, 50],
+      "model": {
+        "base": "images/tower/mine/gold_mine_t%d_base.svg",
+        "head": "images/tower/mine/gold_mine_t%d_head.svg"
       }
     }
   ]

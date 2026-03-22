@@ -13,6 +13,7 @@
 #include "common/network/packet/definitions.h"
 #include "common/network/packet/io.h"
 #include "server/server.h"
+#include "server/game/player_manager.h"
 
 struct tower_def_manager_s {
     tower_def_t *towerDefs;
@@ -219,6 +220,20 @@ tower_def_manager_t * tower_load_defs(const struct def_manager_s *defManager, ch
             sj_get_uint32_value(def_data_array_get_nth(valueArray, 1), &def->cost[j][1].quantity);
             sj_get_uint32_value(def_data_array_get_nth(valueArray, 2), &def->cost[j][2].quantity);
         }
+
+        valueArray = def_data_get_array(towerJson, "productionRate");
+        if (valueArray) {
+            for (j = 0; j < TOWER_MAX_LEVEL; j++) {
+                sj_get_float_value(def_data_array_get_nth(valueArray, j), &def->productionRate[j]);
+            }
+        }
+
+        valueArray = def_data_get_array(towerJson, "productionAmount");
+        if (valueArray) {
+            for (j = 0; j < TOWER_MAX_LEVEL; j++) {
+                sj_get_int32_value(def_data_array_get_nth(valueArray, j), &def->productionAmount[j]);
+            }
+        }
     }
 
     return towerDefManager;
@@ -343,8 +358,10 @@ void tower_destroy(tower_manager_t *towerManager, entity_t *entity) {
 void tower_type_from_string(const char *str, tower_type_t *outType) {
     if (strcmp(str, "defensive") == 0) {
         *outType = TOWER_TYPE_DEFENSIVE;
-    } else if (strcmp(str, "production") == 0) {
-        *outType = TOWER_TYPE_PRODUCTION;
+    } else if (strcmp(str, "gold_production") == 0) {
+        *outType = TOWER_TYPE_GOLD_PRODUCTION;
+    } else if (strcmp(str, "gathering") == 0) {
+        *outType = TOWER_TYPE_GATHERING;
     } else if (strcmp(str, "passive") == 0) {
         *outType = TOWER_TYPE_PASSIVE;
     } else if (strcmp(str, "stash") == 0) {
@@ -358,13 +375,13 @@ int tower_try_shoot(entity_t *entity, const float deltaTime) {
 
     if (tower->def->numWeapons <= 0) return 0;
 
-    if (tower->cooldown > 0) {
-        tower->cooldown -= deltaTime;
-        if (tower->cooldown < 0) tower->cooldown = 0;
+    if (tower->attackCooldown > 0) {
+        tower->attackCooldown -= deltaTime;
+        if (tower->attackCooldown < 0) tower->attackCooldown = 0;
     }
 
-    if (tower->cooldown <= 0) {
-        tower->cooldown = tower->def->weaponDefs[0].fireRate[tower->level]; // TODO: Handle multiple weapons and levels properly
+    if (tower->attackCooldown <= 0) {
+        tower->attackCooldown = tower->def->weaponDefs[0].fireRate[tower->level]; // TODO: Handle multiple weapons and levels properly
         return 1; // Can shoot
     }
 
@@ -428,9 +445,9 @@ inventory_transaction_t * tower_get_cost_transaction(const tower_def_t *def, int
         return NULL;
     }
 
-    transaction->items[0] = def->cost[level][0];
-    transaction->items[1] = def->cost[level][1];
-    transaction->items[2] = def->cost[level][2];
+    inventory_transaction_add_item(transaction, &def->cost[level][0]);
+    inventory_transaction_add_item(transaction, &def->cost[level][1]);
+    inventory_transaction_add_item(transaction, &def->cost[level][2]);
 
     return transaction;
 }
@@ -487,6 +504,16 @@ void tower_entity_think(const entity_manager_t *entityManager, entity_t *ent) {
         gfc_vector2d_normalize(&pos);
         tower->shootDirection = pos;
         tower->canShoot = 1;
+    } else if ((tower->def->type == TOWER_TYPE_GOLD_PRODUCTION || tower->def->type == TOWER_TYPE_STASH) && tower->productionCooldown <= 0) {
+        tower->productionCooldown = tower->def->productionRate[tower->level];
+
+        player_t *player = player_manager_get(g_server.playerManager, 0); //TODO: make this for non singleplayer
+        inventory_transaction_t *trans = inventory_transaction_create(1, 1);
+        item_t *item = item_create(item_def_get(g_game.itemDefManager, "gold"), tower->def->productionAmount[tower->level]);
+        inventory_transaction_add_item(trans, item);
+        player_inventory_transaction(player, trans);
+        free(item);
+        log_info("Tower produced %d gold for player %s", tower->def->productionAmount[tower->level], player->name);
     }
 }
 
@@ -508,6 +535,8 @@ void tower_entity_update(const entity_manager_t *entityManager, entity_t *ent, f
             server_broadcast_packet_batch(&g_server, towerPkt);
             tower_shoot_all(entityManager, ent);
         }
+
+        tower->productionCooldown -= deltaTime;
     }
 }
 

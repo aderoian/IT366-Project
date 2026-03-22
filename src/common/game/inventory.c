@@ -118,7 +118,7 @@ inventory_transaction_t * inventory_transaction_create(uint32_t numItems, uint8_
     }
 
     transaction->items = gfc_allocate_array(sizeof(item_t), numItems);
-    transaction->numItems = numItems;
+    transaction->numItems = 0;
     transaction->capacity = numItems;
     transaction->isAddition = isAddition;
 
