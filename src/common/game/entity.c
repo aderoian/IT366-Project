@@ -108,8 +108,6 @@ void entity_free(const entity_manager_t *entityManager, entity_t* ent) {
     uint64_t generation;
     if (!ent) return;
 
-    log_info("Freeing entity with ID: %lld", ent->id);
-
      // Clear ID to slot mapping if applicable
 
     if (ent->flags & ENT_FLAG_ANIMATED) {

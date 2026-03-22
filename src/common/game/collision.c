@@ -52,10 +52,8 @@ int collision_check_chunk(const chunk_t *chunk, const entity_t *ent, GFC_Vector2
 
         if (gfc_rect_overlap(aBoundingBox, bBoundingBox)) {
             if (collisionType & COLLISION_SOLID) {
-                if (ent->onCollide) {
-                    if (ent->onCollide(ent, otherEnt, collisionType)) {
-                        return 1; // onCollide can override and block movement if it returns nonzero
-                    }
+                if (ent->onCollide && !ent->onCollide(ent, otherEnt, collisionType)) {
+                    continue;
                 }
                 return 1; // Collision detected, cannot move
             }

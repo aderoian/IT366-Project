@@ -80,7 +80,7 @@ void build_mode_update(void) {
         }
 
         camera_get_mouse_world_position(&g_camera, &build_mode->position);
-        build_mode->position = world_pos_tile_snap(g_game.world, build_mode->position);
+        build_mode->position = tower_snap_to_grid(build_mode->towerDef, build_mode->position);
 
         if (mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)) {
             GFC_Rect towerRect = gfc_rect(build_mode->position.x + 2.5 - (build_mode->towerDef->size * TILE_SIZE / 2.0f), build_mode->position.y + 2.5 - (build_mode->towerDef->size * TILE_SIZE / 2.0f), (build_mode->towerDef->size * TILE_SIZE) - 5, (build_mode->towerDef->size * TILE_SIZE) - 5);

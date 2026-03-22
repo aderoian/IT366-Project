@@ -317,7 +317,7 @@ entity_t *tower_place(const entity_manager_t *entityManager, tower_manager_t *to
         tower->weaponSprite = gf2d_sprite_load_image(spritePath);
     }
 
-    tower->worldPos = world_pos_tile_snap(g_game.world, position);
+    tower->worldPos = tower_snap_to_grid(tower->def, position);
     ent->position = tower->worldPos;
     world_add_entity(g_game.world, ent);
 
@@ -462,6 +462,18 @@ uint32_t tower_collides_with(entity_t *ent, entity_t *other) {
     }
 
     return COLLISION_NONE; // No collision
+}
+
+GFC_Vector2D tower_snap_to_grid(const tower_def_t *towerDef, const GFC_Vector2D position) {
+    float gridSize = TILE_SIZE;
+    GFC_Vector2D snappedPos;
+
+    float halfSize = (towerDef->size * gridSize) / 2.0f;
+
+    snappedPos.x = floorf((position.x - halfSize) / gridSize) * gridSize + halfSize;
+    snappedPos.y = floorf((position.y - halfSize) / gridSize) * gridSize + halfSize;
+
+    return snappedPos;
 }
 
 void tower_entity_think(const entity_manager_t *entityManager, entity_t *ent) {

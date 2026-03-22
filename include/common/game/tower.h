@@ -223,4 +223,6 @@ inventory_transaction_t *tower_get_cost_transaction(const tower_def_t *def, int 
 
 uint32_t tower_collides_with(entity_t *ent, entity_t *other);
 
+GFC_Vector2D tower_snap_to_grid(const tower_def_t *towerDef, GFC_Vector2D position);
+
 #endif /* TOWER_H */

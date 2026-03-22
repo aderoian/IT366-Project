@@ -24,8 +24,6 @@ void world_create_chunk_texture(world_t *world);
 
 void world_destroy(world_t *world);
 
-GFC_Vector2D world_pos_tile_snap(const world_t *world, GFC_Vector2D worldPos);
-
 chunk_t *world_get_chunk(const world_t *world, int x, int y);
 
 void world_update(world_t *world, float deltaTime);

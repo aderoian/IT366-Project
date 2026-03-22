@@ -105,7 +105,6 @@ void handle_s2c_enemy_snapshot(const s2c_enemy_snapshot_packet_t *pkt, void *cli
         enemy->position.y = pkt->eventData.moveData.yPos;
         enemy->rotation = pkt->eventData.moveData.rotation;
     } else if (pkt->eventID == ENEMY_EVENT_ATTACK) {
-        log_info("Enemy attack event for enemy ID: %lld", pkt->enemyID);
     } else if (pkt->eventID == ENEMY_EVENT_DESPAWN) {
         entity_t *enemy = entity_get(g_client.entityManager, pkt->enemyID);
         if (!enemy) {
@@ -114,8 +113,7 @@ void handle_s2c_enemy_snapshot(const s2c_enemy_snapshot_packet_t *pkt, void *cli
         }
 
         enemy->think = entity_free; // Mark enemy for removal
-        log_info("Enemy despawn event for enemy ID: %lld", pkt->enemyID);
     } else {
-        log_info("Unknown enemy event ID: %u for enemy ID: %lld", pkt->eventID, pkt->enemyID);
+        log_warn("Unknown enemy event ID: %u for enemy ID: %lld", pkt->eventID, pkt->enemyID);
     }
 }
