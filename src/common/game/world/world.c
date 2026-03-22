@@ -161,6 +161,28 @@ void world_update(world_t *world, float deltaTime) {
     }
 }
 
+void world_clear(world_t *world) {
+    chunk_t *chunk;
+    entity_t *ent;
+    int i, j, k;
+    if (!world) {
+        return;
+    }
+    for (i = 0; i < world->size.x; i++) {
+        for (j = 0; j < world->size.y; j++) {
+            chunk = &world->chunks[i * world->size.y + j];
+            for (k = 0; k < gfc_list_count(chunk->entities); k++) {
+                ent = gfc_list_get_nth(chunk->entities, k);
+                if (ent && (ent->layers & (ENT_LAYER_TOWER | ENT_LAYER_PROJECTILE | ENT_LAYER_ENEMY))) {
+                    ent->think = entity_free;
+                }
+            }
+
+
+        }
+    }
+}
+
 void world_draw(const world_t *world) {
     if (!world) {
         return;

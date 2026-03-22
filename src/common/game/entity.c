@@ -108,6 +108,10 @@ void entity_free(const entity_manager_t *entityManager, entity_t* ent) {
     uint64_t generation;
     if (!ent) return;
 
+    log_info("Freeing entity with ID: %lld", ent->id);
+
+     // Clear ID to slot mapping if applicable
+
     if (ent->flags & ENT_FLAG_ANIMATED) {
         // Assuming model is of type AnimatedSprite when ENT_FLAG_ANIMATED is set
         AnimatedSprite *animatedSprite = (AnimatedSprite *)ent->model;
@@ -119,7 +123,10 @@ void entity_free(const entity_manager_t *entityManager, entity_t* ent) {
     }
 
     if (ent->destroy) ent->destroy(entityManager, ent);
-    if (ent->data) free(ent->data);
+    if (ent->data) {
+        free(ent->data);
+        ent->data = NULL;
+    }
 
     memset(ent, 0, sizeof(entity_t));
 }

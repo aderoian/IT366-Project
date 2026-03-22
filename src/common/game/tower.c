@@ -338,11 +338,6 @@ void tower_destroy(tower_manager_t *towerManager, entity_t *entity) {
     }
     towerManager->freeSlots[towerManager->numFreeSlots++] = index;
     tower->id = UINT32_MAX;
-
-    if (tower->entity) {
-        entity_free(NULL, tower->entity);
-        tower->entity = NULL;
-    }
 }
 
 void tower_type_from_string(const char *str, tower_type_t *outType) {
@@ -464,6 +459,11 @@ void tower_entity_think(const entity_manager_t *entityManager, entity_t *ent) {
         return; // Only run AI logic on server
     }
 
+    if (tower->health <= 0) {
+        ent->think = entity_free;
+        return;
+    }
+
     if (tower->def->type == TOWER_TYPE_DEFENSIVE) {
         GFC_List *enemiesInRange = collision_get_entities_in_range(g_game.world, ent->position, tower->def->weaponDefs[0].range[tower->level], ENT_LAYER_ENEMY);
         c = gfc_list_count(enemiesInRange);
@@ -521,12 +521,38 @@ void tower_entity_destroy(const entity_manager_t *entityManager, entity_t *ent) 
     if (!ent || !ent->data) return;
     tower_state_t *tower = (tower_state_t *)ent->data;
 
-    if (tower->baseSprite) {
-        gf2d_sprite_free(tower->baseSprite);
-        tower->baseSprite = NULL;
+    if (g_game.role == GAME_ROLE_SERVER) {
+        if (tower->def->type == TOWER_TYPE_STASH) {
+            world_clear(g_game.world);
+
+            game_state_t *state = &g_game.state;
+            state->phase = GAME_PHASE_EXPLORING;
+            state->stashPosition = gfc_vector2d(0, 0);
+            state->waveNumber = 0;
+
+            s2c_game_state_snapshot_packet_t statePkt;
+            create_s2c_game_state_snapshot(&statePkt, state);
+            server_broadcast_packet(&g_server, &statePkt, NET_UDP_FLAG_RELIABLE);
+        }
+
+        s2c_tower_snapshot_packet_t *towerPkt = gfc_allocate_array(sizeof(s2c_tower_snapshot_packet_t), 1);
+        tower_snapshot_data_t towerData;
+        create_s2c_tower_snapshot(towerPkt, tower->id, TOWER_SNAPSHOT_DESTROY, &towerData);
+        server_broadcast_packet_batch(&g_server, towerPkt);
+
+        tower_destroy(g_server.towerManager, ent);
+    } else {
+        if (tower->baseSprite) {
+            gf2d_sprite_free(tower->baseSprite);
+            tower->baseSprite = NULL;
+        }
+        if (tower->weaponSprite) {
+            gf2d_sprite_free(tower->weaponSprite);
+            tower->weaponSprite = NULL;
+        }
+
+        tower_destroy(g_client.towerManager, ent);
     }
-    if (tower->weaponSprite) {
-        gf2d_sprite_free(tower->weaponSprite);
-        tower->weaponSprite = NULL;
-    }
+    world_remove_entity(g_game.world, ent);
+    ent->data = NULL; // Clear data pointer to avoid dangling reference
 }

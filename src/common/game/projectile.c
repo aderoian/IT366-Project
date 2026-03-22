@@ -165,7 +165,5 @@ void projectile_destroy(const entity_manager_t *entityManager, entity_t *ent) {
         return;
     }
 
-    projectile_state_t *projectile = (projectile_state_t *)ent->data;
-
     world_remove_entity(g_game.world, ent);
 }

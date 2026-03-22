@@ -265,6 +265,10 @@ void gf2d_sprite_draw_centered(
     GFC_Color *color,
     Uint32 frame) {
 
+    if (!sprite) {
+        return;
+    }
+
     GFC_Vector2D centerOffset = {sprite->frame_w / 2.0f, sprite->frame_h / 2.0f};
     if (center) {
         gfc_vector2d_add(centerOffset, centerOffset, (*center));

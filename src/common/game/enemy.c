@@ -7,6 +7,7 @@
 #include "common/logger.h"
 #include "common/game/collision.h"
 #include "common/game/game.h"
+#include "common/game/tower.h"
 #include "common/game/world/world.h"
 #include "common/network/packet/definitions.h"
 #include "common/network/packet/io.h"
@@ -270,7 +271,14 @@ void enemy_think(const entity_manager_t *entityManager, entity_t *ent) {
 
         collision_raycast_world(g_game.world, ent, ent->position, rayCastEnd, state->targets);
 
-        // TODO: Filter targets
+        for (size_t i = 0; i < gfc_list_count(state->targets); i++) {
+            entity_t *target = gfc_list_get_nth(state->targets, i);
+            if (!(target->layers & ENT_LAYER_TOWER)) {
+                gfc_list_delete_nth(state->targets, i);
+                i--; // Adjust index after removal
+            }
+        }
+
         state->attackTargetTimer = g_game.deltaTime * 5; // every 5 ticks
     }
 
@@ -279,6 +287,7 @@ void enemy_think(const entity_manager_t *entityManager, entity_t *ent) {
 
 void enemy_update(const entity_manager_t *entityManager, entity_t *ent, float deltaTime) {
     GFC_Vector2D newPosition, diff;
+    uint32_t i;
     if (!ent || !ent->data) {
         return;
     }
@@ -297,7 +306,13 @@ void enemy_update(const entity_manager_t *entityManager, entity_t *ent, float de
     ent->position = newPosition;
 
     if (state->attackCooldownTimer <= 0 && gfc_list_count(state->targets) > 0) {
-        // TODO: Implement attack logic (e.g., apply damage to target, play attack animation, etc.)
+
+        for (i = 0; i < gfc_list_count(state->targets); i++) {
+            entity_t *target = gfc_list_get_nth(state->targets, i);
+            tower_state_t *towerState = (tower_state_t *)target->data;
+            towerState->health -= state->def->damage[state->level];
+        }
+
         state->attackCooldownTimer = state->def->attackCooldown[state->level];
         state->dirtyFlags |= ENEMY_DIRTY_ATTACK;
     }
@@ -337,10 +352,13 @@ void enemy_draw(const entity_manager_t *entityManager, entity_t *ent) {
     gf2d_sprite_draw(headSprite, position,NULL, &centerPos, NULL, NULL, NULL, 0);
 
     if (__DEBUG) {
-        GFC_Rect bounding = state->def->modelDef.boundingBox;
-        bounding.x -= g_camera.position.x;
-        bounding.y -= g_camera.position.y;
-        gf2d_draw_rect(bounding, GFC_COLOR_DARKBLUE);
+        GFC_Vector2D direction, rayCastEnd;
+
+        direction = gfc_vector2d_from_angle((ent->rotation + 180.f) * M_PI / 180.0f);
+        gfc_vector2d_scale(rayCastEnd, direction, state->def->range[state->level]);
+        gfc_vector2d_add(rayCastEnd, rayCastEnd, position);
+
+        gf2d_draw_line(position, rayCastEnd, GFC_COLOR_DARKMAGENTA);
     }
 }
 
