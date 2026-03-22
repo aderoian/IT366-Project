@@ -20,7 +20,7 @@ void build_mode_enter(const tower_def_t *towerDef) {
     if (g_game.state.phase == GAME_PHASE_EXPLORING && towerDef->type != TOWER_TYPE_STASH) {
         return; // Can only build stash towers during the exploring phase
     }
-    if (g_game.state.phase == GAME_PHASE_BUILDING && towerDef->type == TOWER_TYPE_STASH) {
+    if (g_game.state.phase != GAME_PHASE_EXPLORING && towerDef->type == TOWER_TYPE_STASH) {
         return; // Can't build stash towers during the building phase
     }
 
@@ -83,7 +83,7 @@ void build_mode_update(void) {
         build_mode->position = world_pos_tile_snap(g_game.world, build_mode->position);
 
         if (mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)) {
-            GFC_Rect towerRect = gfc_rect(build_mode->position.x + 2.5, build_mode->position.y + 2.5, (build_mode->towerDef->size * TILE_SIZE) - 5, (build_mode->towerDef->size * TILE_SIZE) - 5);
+            GFC_Rect towerRect = gfc_rect(build_mode->position.x + 2.5 - (build_mode->towerDef->size * TILE_SIZE / 2.0f), build_mode->position.y + 2.5 - (build_mode->towerDef->size * TILE_SIZE / 2.0f), (build_mode->towerDef->size * TILE_SIZE) - 5, (build_mode->towerDef->size * TILE_SIZE) - 5);
             if (!collision_check_world_bounding(g_game.world, towerRect)) {
                 return; // Can't build here, something is in the way
             }
@@ -97,9 +97,9 @@ void build_mode_update(void) {
 
 void build_mode_render(void) {
     if (build_mode && build_mode->towerDef) {
-        tower_entity_draw_full(build_mode->towerDef->size, build_mode->position, build_mode->previewSpriteBase, build_mode->previewSpriteHead);
+        tower_entity_draw_full(build_mode->towerDef->size, build_mode->position, build_mode->previewSpriteBase, build_mode->previewSpriteHead, 0);
         if (__DEBUG) {
-            GFC_Rect towerRect = gfc_rect(build_mode->position.x + 2.5 - g_camera.position.x, build_mode->position.y + 2.5 - g_camera.position.y, (build_mode->towerDef->size * TILE_SIZE) - 5, (build_mode->towerDef->size * TILE_SIZE) - 5);
+            GFC_Rect towerRect = gfc_rect(build_mode->position.x + 2.5 - (build_mode->towerDef->size * TILE_SIZE / 2.0f) - g_camera.position.x, build_mode->position.y + 2.5 - (build_mode->towerDef->size * TILE_SIZE / 2.0f) - g_camera.position.y, (build_mode->towerDef->size * TILE_SIZE) - 5, (build_mode->towerDef->size * TILE_SIZE) - 5);
             gf2d_draw_rect(towerRect, GFC_COLOR_DARKBLUE);
         }
     }

@@ -10,9 +10,9 @@
       "range": [2, 2, 2, 2, 2],
       "reward": [10, 12, 14, 16, 18],
       "model": {
-        "body": "images/enemy/example/example_enemy_t%d_head.svg",
-        "hands": "images/enemy/example/example_enemy_t%_hands.svg",
-        "boundingBox": [0, 0, 32, 32]
+        "body": "images/enemy/zombie_basic_t%d_head.svg",
+        "hands": "images/enemy/zombie_basic_t%d_hands.svg",
+        "boundingBox": [-16, -16, 32, 32]
       }
     }
   ]

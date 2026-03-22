@@ -268,6 +268,7 @@ void write_s2c_player_join_response(buffer_t buf, buffer_offset_t *off,
     write_uint64(buf, off, pkt->length);
     write_uint8(buf, off, pkt->success);
     write_uint32(buf, off, pkt->playerID);
+    write_int64(buf, off, pkt->entityID);
     write_int32(buf, off, pkt->worldL);
     write_int32(buf, off, pkt->worldW);
     write_float(buf, off, pkt->spawnX);
@@ -308,21 +309,25 @@ void write_c2s_tower_build_request(buffer_t buf, buffer_offset_t *off,
     write_uint32(buf, off, pkt->towerDefIndex);
 }
 
-void write_s2c_tower_create(buffer_t buf, buffer_offset_t *off, const s2c_tower_create_packet_t *pkt) {
-    write_uint8(buf, off, pkt->packetID);
-    write_uint64(buf, off, pkt->length);
-    write_float(buf, off, pkt->xPos);
-    write_float(buf, off, pkt->yPos);
-    write_uint32(buf, off, pkt->towerDefIndex);
-    write_uint32(buf, off, pkt->towerID);
-}
-
-void write_s2c_tower_event(buffer_t buf, buffer_offset_t *off, const s2c_tower_event_packet_t *pkt) {
+void write_s2c_tower_snapshot(buffer_t buf, buffer_offset_t *off, const s2c_tower_snapshot_packet_t *pkt) {
     write_uint8(buf, off, pkt->packetID);
     write_uint64(buf, off, pkt->length);
     write_uint32(buf, off, pkt->towerID);
-    write_uint32(buf, off, pkt->eventID);
-    write_uint64(buf, off, pkt->data);
+    write_uint8(buf, off, pkt->snapshotID);
+    if (pkt->snapshotID == TOWER_SNAPSHOT_CREATE) {
+        write_float(buf, off, pkt->snapshotData.createData.xPos);
+        write_float(buf, off, pkt->snapshotData.createData.yPos);
+        write_uint32(buf, off, pkt->snapshotData.createData.towerDefIndex);
+        write_uint32(buf, off, pkt->snapshotData.createData.towerID);
+        write_int64(buf, off, pkt->snapshotData.createData.entityID);
+    } else if (pkt->snapshotID == TOWER_SNAPSHOT_SHOOT) {
+        write_float(buf, off, pkt->snapshotData.shootData.xDir);
+        write_float(buf, off, pkt->snapshotData.shootData.yDir);
+    } else if (pkt->snapshotID == TOWER_SNAPSHOT_CHANGE) {
+        write_int32(buf, off, pkt->snapshotData.changeData.level);
+    } else if (pkt->snapshotID == TOWER_SNAPSHOT_DESTROY) {
+        // No additional data for destroy snapshot
+    }
 }
 
 void write_s2c_inventory_update(buffer_t buf, buffer_offset_t *off, const s2c_inventory_update_packet_t *pkt) {
@@ -338,6 +343,28 @@ void write_s2c_game_state_snapshot(buffer_t buf, buffer_offset_t *off, const s2c
     write_game_state(buf, off, &pkt->gameState);
 }
 
+void write_s2c_enemy_snapshot(buffer_t buf, buffer_offset_t *off, const s2c_enemy_snapshot_packet_t *pkt) {
+    write_uint8(buf, off, pkt->packetID);
+    write_uint64(buf, off, pkt->length);
+    write_int64(buf, off, pkt->enemyID);
+    write_uint32(buf, off, pkt->eventID);
+
+    if (pkt->eventID == ENEMY_EVENT_SPAWN) {
+        write_uint32(buf, off, pkt->eventData.spawnData.enemyDefIndex);
+        write_float(buf, off, pkt->eventData.spawnData.xPos);
+        write_float(buf, off, pkt->eventData.spawnData.yPos);
+        write_float(buf, off, pkt->eventData.spawnData.rotation);
+    } else if (pkt->eventID == ENEMY_EVENT_DESPAWN) {
+        // No additional data for despawn
+    } else if (pkt->eventID == ENEMY_EVENT_MOVE) {
+        write_float(buf, off, pkt->eventData.moveData.xPos);
+        write_float(buf, off, pkt->eventData.moveData.yPos);
+        write_float(buf, off, pkt->eventData.moveData.rotation);
+    } else if (pkt->eventID == ENEMY_EVENT_ATTACK) {
+        // No additional data for attack
+    }
+}
+
 void read_c2s_player_join_request(buffer_t buf, buffer_offset_t *off, c2s_player_join_request_packet_t *pkt) {
     pkt->packetID = read_uint8(buf, off);
     pkt->length = read_uint64(buf, off);
@@ -349,6 +376,7 @@ void read_s2c_player_join_response(buffer_t buf, buffer_offset_t *off, s2c_playe
     pkt->length = read_uint64(buf, off);
     pkt->success = read_uint8(buf, off);
     pkt->playerID = read_uint32(buf, off);
+    pkt->entityID = read_int64(buf, off);
     pkt->worldL = read_int32(buf, off);
     pkt->worldW = read_int32(buf, off);
     pkt->spawnX = read_float(buf, off);
@@ -388,21 +416,26 @@ void read_c2s_tower_build_request(buffer_t buf, buffer_offset_t *off, c2s_tower_
     pkt->towerDefIndex = read_uint32(buf, off);
 }
 
-void read_s2c_tower_create(buffer_t buf, buffer_offset_t *off, s2c_tower_create_packet_t *pkt) {
+void read_s2c_tower_snapshot(buffer_t buf, buffer_offset_t *off, s2c_tower_snapshot_packet_t *pkt) {
     pkt->packetID = read_uint8(buf, off);
     pkt->length = read_uint64(buf, off);
-    pkt->xPos = read_float(buf, off);
-    pkt->yPos = read_float(buf, off);
-    pkt->towerDefIndex = read_uint32(buf, off);
     pkt->towerID = read_uint32(buf, off);
-}
+    pkt->snapshotID = read_uint8(buf, off);
 
-void read_s2c_tower_event(buffer_t buf, buffer_offset_t *off, s2c_tower_event_packet_t *pkt) {
-    pkt->packetID = read_uint8(buf, off);
-    pkt->length = read_uint64(buf, off);
-    pkt->towerID = read_uint32(buf, off);
-    pkt->eventID = read_uint32(buf, off);
-    pkt->data = read_uint64(buf, off);
+    if (pkt->snapshotID == TOWER_SNAPSHOT_CREATE) {
+        pkt->snapshotData.createData.xPos = read_float(buf, off);
+        pkt->snapshotData.createData.yPos = read_float(buf, off);
+        pkt->snapshotData.createData.towerDefIndex = read_uint32(buf, off);
+        pkt->snapshotData.createData.towerID = read_uint32(buf, off);
+        pkt->snapshotData.createData.entityID = read_int64(buf, off);
+    } else if (pkt->snapshotID == TOWER_SNAPSHOT_SHOOT) {
+        pkt->snapshotData.shootData.xDir = read_float(buf, off);
+        pkt->snapshotData.shootData.yDir = read_float(buf, off);
+    } else if (pkt->snapshotID == TOWER_SNAPSHOT_CHANGE) {
+        pkt->snapshotData.changeData.level = read_int32(buf, off);
+    } else if (pkt->snapshotID == TOWER_SNAPSHOT_DESTROY) {
+        // No additional data for destroy snapshot
+    }
 }
 
 void read_s2c_inventory_update(buffer_t buf, buffer_offset_t *off, s2c_inventory_update_packet_t *pkt) {
@@ -418,18 +451,41 @@ void read_s2c_game_state_snapshot(buffer_t buf, buffer_offset_t *off, s2c_game_s
     read_game_state(buf, off, &pkt->gameState);
 }
 
+void read_s2c_enemy_snapshot(buffer_t buf, buffer_offset_t *off, s2c_enemy_snapshot_packet_t *pkt) {
+    pkt->packetID = read_uint8(buf, off);
+    pkt->length = read_uint64(buf, off);
+    pkt->enemyID = read_int64(buf, off);
+    pkt->eventID = read_uint32(buf, off);
+
+    if (pkt->eventID == ENEMY_EVENT_SPAWN) {
+        pkt->eventData.spawnData.enemyDefIndex = read_uint32(buf, off);
+        pkt->eventData.spawnData.xPos = read_float(buf, off);
+        pkt->eventData.spawnData.yPos = read_float(buf, off);
+        pkt->eventData.spawnData.rotation = read_float(buf, off);
+    } else if (pkt->eventID == ENEMY_EVENT_DESPAWN) {
+        // No additional data for despawn
+    } else if (pkt->eventID == ENEMY_EVENT_MOVE) {
+        pkt->eventData.moveData.xPos = read_float(buf, off);
+        pkt->eventData.moveData.yPos = read_float(buf, off);
+        pkt->eventData.moveData.rotation = read_float(buf, off);
+    } else if (pkt->eventID == ENEMY_EVENT_ATTACK) {
+        // No additional data for attack
+    }
+}
+
 void create_c2s_player_join_request(c2s_player_join_request_packet_t *pkt, char *name) {
     pkt->packetID = PACKET_C2S_PLAYER_JOIN_REQUEST;
     pkt->length = sizeof(uint16_t) + strnlen(name, MAX_STRING_LENGTH);
     pkt->name = name;
 }
 
-void create_s2c_player_join_response(s2c_player_join_response_packet_t *pkt, uint8_t success, uint32_t playerID,
+void create_s2c_player_join_response(s2c_player_join_response_packet_t *pkt, uint8_t success, uint32_t playerID, int64_t entityID,
                                      int32_t worldL, int32_t worldW, float spawnX, float spawnY, game_state_t *initialGameState) {
     pkt->packetID = PACKET_S2C_PLAYER_JOIN_RESPONSE;
-    pkt->length = sizeof(success) + sizeof(playerID) + sizeof(worldL) + sizeof(worldW) + sizeof(spawnX) + sizeof(spawnY) + (sizeof(uint8_t) + sizeof(float) + sizeof(uint64_t));
+    pkt->length = sizeof(success) + sizeof(playerID) + sizeof(entityID) + sizeof(worldL) + sizeof(worldW) + sizeof(spawnX) + sizeof(spawnY) + (sizeof(uint8_t) + sizeof(float) + sizeof(uint64_t));
     pkt->success = success;
     pkt->playerID = playerID;
+    pkt->entityID = entityID;
     pkt->worldL = worldL;
     pkt->worldW = worldW;
     pkt->spawnX = spawnX;
@@ -470,23 +526,23 @@ void create_c2s_tower_build_request(c2s_tower_build_request_packet_t *pkt, float
     pkt->towerDefIndex = towerDefIndex;
 }
 
-void create_s2c_tower_create(s2c_tower_create_packet_t *pkt, float xPos, float yPos,
-                             uint32_t towerDefIndex, uint32_t towerID) {
-    pkt->packetID = PACKET_S2C_TOWER_CREATE;
-    pkt->length = sizeof(xPos) + sizeof(yPos) + sizeof(towerDefIndex) + sizeof(towerID);
-    pkt->xPos = xPos;
-    pkt->yPos = yPos;
-    pkt->towerDefIndex = towerDefIndex;
-    pkt->towerID = towerID;
-}
+void create_s2c_tower_snapshot(s2c_tower_snapshot_packet_t *pkt, uint32_t towerID, tower_snapshot_id_t snapshotID, tower_snapshot_data_t *eventData) {
+    pkt->packetID = PACKET_S2C_TOWER_SNAPSHOT;
+    pkt->length = sizeof(towerID) + sizeof(uint8_t);
 
-void create_s2c_tower_event(s2c_tower_event_packet_t *pkt, uint32_t towerID, uint32_t eventID,
-                            uint64_t data) {
-    pkt->packetID = PACKET_S2C_TOWER_EVENT;
-    pkt->length = sizeof(towerID) + sizeof(eventID) + sizeof(data);
+    if (snapshotID == TOWER_SNAPSHOT_CREATE) {
+        pkt->length += sizeof(eventData->createData.xPos) + sizeof(eventData->createData.yPos) + sizeof(eventData->createData.towerDefIndex) + sizeof(eventData->createData.towerID) + sizeof(eventData->createData.entityID);
+    } else if (snapshotID == TOWER_SNAPSHOT_SHOOT) {
+        pkt->length += sizeof(eventData->shootData.xDir) + sizeof(eventData->shootData.yDir);
+    } else if (snapshotID == TOWER_SNAPSHOT_CHANGE) {
+        pkt->length += sizeof(eventData->changeData.level);
+    } else if (snapshotID == TOWER_SNAPSHOT_DESTROY) {
+        // No additional data for destroy snapshot
+    }
+
     pkt->towerID = towerID;
-    pkt->eventID = eventID;
-    pkt->data = data;
+    pkt->snapshotID = snapshotID;
+    pkt->snapshotData = *eventData;
 }
 
 void create_s2c_inventory_update(s2c_inventory_update_packet_t *pkt, uint32_t playerID,
@@ -501,4 +557,19 @@ void create_s2c_game_state_snapshot(s2c_game_state_snapshot_packet_t *pkt, game_
     pkt->packetID = PACKET_S2C_GAME_STATE_SNAPSHOT;
     pkt->length = sizeof(uint8_t) + sizeof(state->cycleTime) + sizeof(state->waveNumber);
     pkt->gameState = *state;
+}
+
+void create_s2c_enemy_snapshot(s2c_enemy_snapshot_packet_t *pkt, int64_t enemyID, uint32_t eventID, enemy_snapshot_data_t *eventData) {
+    pkt->packetID = PACKET_S2C_ENEMY_SNAPSHOT;
+    pkt->length = sizeof(enemyID) + sizeof(eventID);
+
+    if (eventID == ENEMY_EVENT_SPAWN) {
+        pkt->length += sizeof(uint32_t) + sizeof(float) + sizeof(float) + sizeof(float);
+    } else if (eventID == ENEMY_EVENT_MOVE) {
+        pkt->length += sizeof(float) + sizeof(float) + sizeof(float);
+    }
+
+    pkt->enemyID = enemyID;
+    pkt->eventID = eventID;
+    pkt->eventData = *eventData;
 }

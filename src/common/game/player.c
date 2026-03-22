@@ -30,6 +30,7 @@ typedef struct player_snapshot_s {
 void player_think(const entity_manager_t *entityManager, entity_t *ent);
 void player_update(const entity_manager_t *entityManager, entity_t *ent, float deltaTime);
 void player_draw(const entity_manager_t *entityManager, entity_t *ent);
+uint32_t player_collides_with(entity_t *ent, entity_t *other);
 
 player_t *player_create(uint32_t id, const char *name) {
     player_t *player = (player_t *)gfc_allocate_array(sizeof(player_t), 1);
@@ -57,7 +58,7 @@ entity_t * player_entity_spawn(const entity_manager_t *entityManager, player_t *
     entity_t *ent;
     Sprite *spriteImage;
 
-    ent = entity_new(entityManager);
+    ent = entity_new(entityManager, entity_next_id((entity_manager_t *)entityManager));
     ent->position = pos;
 
     if (g_game.role == GAME_ROLE_CLIENT) {
@@ -87,6 +88,7 @@ entity_t * player_entity_spawn(const entity_manager_t *entityManager, player_t *
     ent->think = player_think;
     ent->update = player_update;
     ent->draw = player_draw;
+    ent->collidesWith = player_collides_with;
 
     return ent;
 }
@@ -229,7 +231,6 @@ int player_try_build_tower(player_t *player, const struct tower_def_s *towerDef,
     inventory_transaction_t *transaction;
     entity_t *entity;
     tower_state_t *tower;
-    s2c_tower_create_packet_t towerPkt;
     if (!player || !towerDef) {
         return 0;
     }
@@ -257,8 +258,17 @@ int player_try_build_tower(player_t *player, const struct tower_def_s *towerDef,
     tower = (tower_state_t *) entity->data;
 
     if (entity) {
-        create_s2c_tower_create(&towerPkt, position.x, position.y, towerDef->index, tower->id);
-        server_broadcast_packet(&g_server, &towerPkt, NET_UDP_FLAG_RELIABLE);
+        s2c_tower_snapshot_packet_t *towerPkt = gfc_allocate_array(sizeof(s2c_tower_snapshot_packet_t), 1);
+        tower_snapshot_data_t towerData = {
+            .createData = {
+                .entityID = entity->id,
+                .towerDefIndex = towerDef->index,
+                .xPos = position.x,
+                .yPos = position.y
+            }
+        };
+        create_s2c_tower_snapshot(towerPkt, tower->id, TOWER_SNAPSHOT_CREATE, &towerData);
+        server_broadcast_packet_batch(&g_server, towerPkt);
         return 1;
     }
 
@@ -323,4 +333,16 @@ void player_draw(const entity_manager_t *entityManager, entity_t *ent) {
     }
 
     gf2d_sprite_draw(ent->model, position,NULL, &centerPos, NULL, NULL, NULL, 0);
+}
+
+uint32_t player_collides_with(entity_t *ent, entity_t *other) {
+    if (!ent || !other || !ent->data) {
+        return COLLISION_NONE;
+    }
+
+    if (other->layers & ENT_LAYER_TOWER) {
+        return COLLISION_SOLID;
+    }
+
+    return COLLISION_NONE;
 }

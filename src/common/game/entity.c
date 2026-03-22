@@ -6,13 +6,16 @@
 #include "client/camera.h"
 #include "client/gf2d_draw.h"
 #include "common/logger.h"
+#include "common/game/game.h"
 
 extern uint8_t __DEBUG;
 
 struct entity_manager_s {
     entity_t *ents;
-    uint32_t *idToSlot;
+    uint64_t *idToSlot;
     uint32_t maxEnts;
+    int64_t maxIdSlots;
+    int64_t nextId;
 };
 
 entity_manager_t *entity_init(const uint32_t maxEnts) {
@@ -29,7 +32,7 @@ entity_manager_t *entity_init(const uint32_t maxEnts) {
         return NULL;
     }
 
-    manager->idToSlot = calloc(maxEnts, sizeof(uint32_t));
+    manager->idToSlot = calloc(maxEnts, sizeof(uint64_t));
     if (!manager->idToSlot) {
         free(manager->ents);
         free(manager);
@@ -38,6 +41,8 @@ entity_manager_t *entity_init(const uint32_t maxEnts) {
     }
 
     manager->maxEnts = maxEnts;
+    manager->maxIdSlots = maxEnts;
+    manager->nextId = 1; // Start IDs from 1 to avoid using
     return manager;
 }
 
@@ -45,7 +50,7 @@ void entity_close(const entity_manager_t *manager) {
     if (manager->ents) free(manager->ents);
 }
 
-entity_t *entity_new(const entity_manager_t *manager) {
+entity_t *entity_new(entity_manager_t *manager, const int64_t id) {
     uint32_t i;
     entity_t* ent;
     if (!manager->ents) 
@@ -56,12 +61,31 @@ entity_t *entity_new(const entity_manager_t *manager) {
         if (ent->_inUse > 0) continue;
 
         ent->_inUse = 1;
-        ent->id = (ent->id & 0xFFFFFFFF00000000) | i; // Preserve generation
+        ent->id = id;
         ent->draw = entity_draw;
         ent->scale = gfc_vector2d(1, 1);
         ent->layers = 0xFFFF;
 
-        manager->idToSlot[(uint32_t)ent->id] = i; // Map ID to slot index
+        if (id < 0) {
+            return ent; // Negative IDs are not mapped, client side
+        }
+
+        if (id >= manager->maxIdSlots) {
+            uint64_t newMaxIdSlots = manager->maxIdSlots * 2;
+            uint64_t *newIdToSlot = malloc(sizeof(uint64_t) * newMaxIdSlots);
+            if (!newIdToSlot) {
+                log_error("Failed to reallocate memory for ID to slot mapping");
+                ent->_inUse = 0; // Mark entity as not in use since we failed to map its ID
+                return NULL;
+            }
+
+            memcpy(newIdToSlot, manager->idToSlot, sizeof(uint64_t) * manager->maxIdSlots);
+            memset(newIdToSlot + manager->maxIdSlots, 0, sizeof(uint64_t) * (newMaxIdSlots - manager->maxIdSlots));
+            free(manager->idToSlot);
+            manager->idToSlot = newIdToSlot;
+        }
+
+        manager->idToSlot[ent->id] = i; // Map ID to slot index
 
         return ent;
     }
@@ -69,8 +93,8 @@ entity_t *entity_new(const entity_manager_t *manager) {
     return NULL;
 }
 
-entity_t *entity_new_animated(const entity_manager_t *manager) {
-    entity_t *ent = entity_new(manager);
+entity_t *entity_new_animated(const entity_manager_t *manager, const int64_t id) {
+    entity_t *ent = entity_new(manager, id);
     if (!ent) return NULL;
 
     ent->flags |= ENT_FLAG_ANIMATED;
@@ -78,19 +102,6 @@ entity_t *entity_new_animated(const entity_manager_t *manager) {
     ent->update = entity_update_animated;
 
     return ent;
-}
-
-void entity_set_id(const entity_manager_t *manager, entity_t *ent, const uint64_t id) {
-    uint32_t i;
-    if (!ent) return;
-
-    for (i = 0; i < manager->maxEnts; i++) {
-        if (&manager->ents[i] == ent) {
-            manager->idToSlot[(uint32_t)id] = i; // Map new ID to slot index
-            ent->id = id;
-            return;
-        }
-    }
 }
 
 void entity_free(const entity_manager_t *entityManager, entity_t* ent) {
@@ -110,9 +121,7 @@ void entity_free(const entity_manager_t *entityManager, entity_t* ent) {
     if (ent->destroy) ent->destroy(entityManager, ent);
     if (ent->data) free(ent->data);
 
-    generation = ent->id + 0x000100000000; // Increment generation
     memset(ent, 0, sizeof(entity_t));
-    ent->id = generation; // Update ID with new generation
 }
 
 void entity_think_all(const entity_manager_t *manager) {
@@ -153,6 +162,63 @@ void entity_draw(const entity_manager_t *entityManager, entity_t *ent) {
     gf2d_sprite_draw_image(ent->model, position);
 }
 
+int64_t entity_next_id(entity_manager_t *entityManager) {
+    if (g_game.role == GAME_ROLE_CLIENT) {
+        return -1; // Use negative IDs for client-side entities
+    } else {
+        return entityManager->nextId++; // Use positive IDs for server-side entities
+    }
+}
+
+void entity_set_id(entity_manager_t *entityManager, entity_t *ent, int64_t id) {
+    uint32_t i;
+    if (!ent) return;
+    ent->id = id;
+
+    if (id < 0) {
+        return; // Negative IDs are not mapped, client side
+    }
+
+    for (i = 0; i < entityManager->maxEnts; i++) {
+        if (&entityManager->ents[i] == ent) {
+            if (id >= entityManager->maxIdSlots) {
+                uint64_t newMaxIdSlots = entityManager->maxIdSlots * 2;
+                uint64_t *newIdToSlot = malloc(sizeof(uint64_t) * newMaxIdSlots);
+                if (!newIdToSlot) {
+                    log_error("Failed to reallocate memory for ID to slot mapping");
+                    return;
+                }
+
+                memcpy(newIdToSlot, entityManager->idToSlot, sizeof(uint64_t) * entityManager->maxIdSlots);
+                memset(newIdToSlot + entityManager->maxIdSlots, 0, sizeof(uint64_t) * (newMaxIdSlots - entityManager->maxIdSlots));
+                free(entityManager->idToSlot);
+                entityManager->idToSlot = newIdToSlot;
+            }
+
+            entityManager->idToSlot[id] = i; // Map ID to slot index
+            return;
+        }
+    }
+}
+
+entity_t * entity_get(const entity_manager_t *manager, int64_t id) {
+    if (!manager->idToSlot || id >= manager->maxIdSlots) {
+        return NULL;
+    }
+
+    uint64_t slotIndex = manager->idToSlot[id];
+    if (slotIndex >= manager->maxEnts) {
+        return NULL;
+    }
+
+    entity_t *ent = &manager->ents[slotIndex];
+    if (ent->_inUse == 0 || ent->id != id) {
+        return NULL; // ID does not match, likely a stale reference
+    }
+
+    return ent;
+}
+
 void entity_draw_animated(const entity_manager_t *entityManager, entity_t *ent) {
     GFC_Vector2D position;
     if (!ent) return;
@@ -184,13 +250,19 @@ void entity_draw_all(const entity_manager_t *manager) {
         if (ent->_inUse == 0 || !ent->draw) continue;
         ent->draw(manager, ent);
 
-        if (__DEBUG) {
-            GFC_Vector2D position;
-            gfc_vector2d_sub(position, ent->position, g_camera.position);
-            gf2d_draw_rect(
-                gfc_rect(position.x + ent->boundingBox.x, position.y + ent->boundingBox.x, ent->boundingBox.w, ent->boundingBox.h),
-                GFC_COLOR_DARKBLUE
-            );
-        }
+        entity_draw_debug(manager, ent);
     }
+}
+
+void entity_draw_debug(const entity_manager_t *entityManager, entity_t *ent) {
+    if (!ent || !__DEBUG) return;
+
+    GFC_Vector2D position;
+    gfc_vector2d_sub(position, ent->position, g_camera.position);
+    gf2d_draw_rect(
+        gfc_rect(position.x + ent->boundingBox.x, position.y + ent->boundingBox.y, ent->boundingBox.w, ent->boundingBox.h),
+        GFC_COLOR_DARKBLUE
+    );
+
+    gf2d_draw_circle(position, 3, GFC_COLOR_RED);
 }

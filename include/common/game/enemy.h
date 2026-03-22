@@ -5,8 +5,13 @@
 
 #include "entity.h"
 #include "gfc_shape.h"
+#include "client/gf2d_sprite.h"
 
 #define ENEMY_MAX_LEVEL 5
+
+#define ENEMY_DIRTY_POSITION 0x0001
+#define ENEMY_DIRTY_HEALTH 0x0002
+#define ENEMY_DIRTY_ATTACK 0x0004
 
 struct def_manager_s;
 struct entity_manager_s;
@@ -43,8 +48,14 @@ typedef struct enemy_state_s {
     GFC_Vector2D worldPos;
     struct entity_s *entity;
 
+    Sprite *bodySprite;
+    Sprite *handsSprite;
+
+    float attackCooldownTimer;
+    float attackTargetTimer;
+
     GFC_List *targets;
-    uint8_t dirty; // Flag to indicate if the enemy state has changed and needs to be synchronized with clients
+    uint32_t dirtyFlags; // Bitfield for tracking what needs to be updated on clients (e.g., position, health, targets)
 } enemy_state_t;
 
 typedef struct enemy_def_manager_s enemy_def_manager_t;
@@ -62,5 +73,11 @@ entity_t *enemy_create_by_name(const struct entity_manager_s *entityManager, con
 entity_t *enemy_spawn(const struct entity_manager_s *entityManager, const enemy_def_t *def, GFC_Vector2D pos);
 
 enemy_type_t enemy_type_from_string(const char *str);
+
+void enemy_think(const entity_manager_t *entityManager, entity_t *ent);
+void enemy_update(const entity_manager_t *entityManager, entity_t *ent, float deltaTime);
+void enemy_draw(const entity_manager_t *entityManager, entity_t *ent);
+void enemy_destroy(const entity_manager_t *entityManager, entity_t *ent);
+uint32_t enemy_collides_with(entity_t *ent, entity_t *other);
 
 #endif /* ENEMY_H */

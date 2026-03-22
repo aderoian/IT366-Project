@@ -112,6 +112,7 @@ int network_send_batch(net_udp_peer_t *peer, void **pkts, const uint32_t count) 
     for (i = 0; i < count; i++) {
         pktId = *((uint8_t *)pkts[i]);
         packet_send_table[pktId](buffer, &offset, pkts[i]);
+        free(pkts[i]);
     }
 
     net_udp_packet_t *packet = net_udp_packet_create(buffer, numBytes, 0);

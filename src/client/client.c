@@ -17,6 +17,7 @@
 #include "client/ui/overlay.h"
 #include "client/ui/window.h"
 #include "client/ui/types/windows.h"
+#include "common/game/enemy.h"
 #include "common/game/item.h"
 #include "common/network/packet/definitions.h"
 #include "common/network/packet/io.h"
@@ -55,6 +56,7 @@ int client_main(void) {
     //phys_init(1024);
     g_game.itemDefManager = item_init(g_client.defManager, "def/items.json");
     g_client.towerManager = tower_init(tower_load_defs(g_client.defManager, "def/towers.json"), 32);
+    g_client.enemyManager = enemy_load_defs(g_client.defManager, "def/enemies.json");
 
     camera_init(&g_camera);
 

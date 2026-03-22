@@ -18,6 +18,7 @@
 #include "server/game/player_manager.h"
 #include "../../include/server/network/server_network.h"
 #include "client/client.h"
+#include "common/game/enemy.h"
 #include "server/network/network_session.h"
 Server g_server = {0};
 
@@ -84,6 +85,7 @@ int server_startup(Server *server) {
     server->entityManager = entity_init(1024);
     g_game.itemDefManager = item_init(server->defManager, "def/items.json");
     server->towerManager = tower_init(tower_load_defs(server->defManager, "def/towers.json"), 128);
+    server->enemyManager = enemy_load_defs(server->defManager, "def/enemies.json");
 
     g_game.world = world_create(5, 5, 0);
 

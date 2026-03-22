@@ -7,6 +7,7 @@
 #include "client/camera.h"
 #include "client/client.h"
 #include "client/gf2d_sprite.h"
+#include "common/game/collision.h"
 #include "common/game/projectile.h"
 #include "common/game/world/world.h"
 #include "common/network/packet/definitions.h"
@@ -76,7 +77,8 @@ tower_def_manager_t * tower_load_defs(const struct def_manager_s *defManager, ch
     tower_def_t *def;
     tower_weapon_def_t *weaponDef;
     const char * str;
-    int i, j, k, flag;
+    int i, j, k;
+    short int flag;
 
     towerDefManager = gfc_allocate_array(sizeof(tower_def_manager_t), 1);
     if (!towerDefManager) {
@@ -166,11 +168,11 @@ tower_def_manager_t * tower_load_defs(const struct def_manager_s *defManager, ch
                 weaponDef->projectileSprite[sizeof(weaponDef->projectileSprite) - 1] = '\0';
 
                 weaponDef->flags = 0;
-                def_data_get_int(weaponDefJson, "directional", &flag);
+                sj_object_get_bool(weaponDefJson, "directional", &flag);
                 if (flag) weaponDef->flags |= TOWER_WEAPON_FLAG_DIRECTIONAL;
-                def_data_get_int(weaponDefJson, "piercing", &flag);
+                sj_object_get_bool(weaponDefJson, "piercing", &flag);
                 if (flag) weaponDef->flags |= TOWER_WEAPON_FLAG_PIERCING;
-                def_data_get_int(weaponDefJson, "areaEffect", &flag);
+                sj_object_get_bool(weaponDefJson, "areaEffect", &flag);
                 if (flag) weaponDef->flags |= TOWER_WEAPON_FLAG_AREA_EFFECT;
                 valueArray = def_data_get_array(weaponDefJson, "direction");
                 sj_get_float_value(def_data_array_get_nth(valueArray, 0), &weaponDef->direction.x);
@@ -277,7 +279,7 @@ entity_t *tower_place(const entity_manager_t *entityManager, tower_manager_t *to
     tower->def = def;
 
     // TODO: create entity based on tower definition's modelDef and assign to tower->entity
-    ent = entity_new(entityManager);
+    ent = entity_new(entityManager, entity_next_id(entityManager));
     if (!ent) {
         log_error("Failed to create entity for tower");
         towerManager->freeSlots[towerManager->numFreeSlots++] = slotIndex; // Return slot to free stack
@@ -288,6 +290,7 @@ entity_t *tower_place(const entity_manager_t *entityManager, tower_manager_t *to
     ent->update = tower_entity_update;
     ent->draw = tower_entity_draw;
     ent->destroy = tower_entity_destroy;
+    ent->collidesWith = tower_collides_with;
     ent->data = tower;
     tower->entity = ent;
 
@@ -303,8 +306,8 @@ entity_t *tower_place(const entity_manager_t *entityManager, tower_manager_t *to
     ent->position = tower->worldPos;
     world_add_entity(g_game.world, ent);
 
-    ent->layers = ENT_LAYER_TOWER | ENT_LAYER_PLAYER;
-    ent->boundingBox = gfc_rect(0, 0, def->size * TILE_SIZE, def->size * TILE_SIZE);
+    ent->layers = ENT_LAYER_TOWER;
+    ent->boundingBox = gfc_rect(-def->size * TILE_SIZE / 2.0f, -def->size * TILE_SIZE / 2.0f, def->size * TILE_SIZE, def->size * TILE_SIZE);
 
     return ent;
 }
@@ -377,19 +380,26 @@ void tower_shoot(const entity_manager_t *entityManager, entity_t *entity, int we
     tower_state_t *tower;
     const tower_weapon_def_t *weaponDef;
     int level;
+    GFC_Vector2D direction;
     if (!entity || !entity->data) return;
 
     tower = (tower_state_t *)entity->data;
     if (weaponIndex < 0 || weaponIndex >= tower->def->numWeapons) return;
 
-    level = tower->level;
     weaponDef = &tower->def->weaponDefs[weaponIndex];
+    level = tower->level;
+    if (weaponDef->flags & TOWER_WEAPON_FLAG_DIRECTIONAL) {
+        direction = weaponDef->direction;
+    } else {
+        direction = tower->shootDirection;
+    }
+
     projectile_spawn(
         entityManager,
         weaponDef->bulletSpeed[level],
         weaponDef->damage[level],
         weaponDef->range[level],
-        weaponDef->direction,
+        direction,
         weaponDef->projectileSprite,
         tower
     );
@@ -407,14 +417,14 @@ void tower_shoot_all(const entity_manager_t *entityManager, entity_t *entity) {
     }
 }
 
-void tower_entity_draw_full(float size, GFC_Vector2D pos, Sprite *baseSprite, Sprite *weaponSprite) {
+void tower_entity_draw_full(float size, GFC_Vector2D pos, Sprite *baseSprite, Sprite *weaponSprite, float rotation) {
     GFC_Vector2D drawPos, headPos, centerPos;
     gfc_vector2d_sub(drawPos, pos, g_camera.position);
-    gf2d_sprite_draw_image(baseSprite, drawPos);
+    gf2d_sprite_draw_centered(baseSprite, drawPos, NULL, NULL, NULL, NULL, NULL, 0);
 
     headPos.x = drawPos.x + (size * TILE_SIZE / 2) - ((float)weaponSprite->frame_w / 2);
     headPos.y = drawPos.y + (size * TILE_SIZE / 2) - ((float)weaponSprite->frame_h / 2);
-    gf2d_sprite_draw_image(weaponSprite, headPos);
+    gf2d_sprite_draw_centered(weaponSprite, drawPos, NULL, NULL, &rotation, NULL, NULL, 0);
 }
 
 inventory_transaction_t * tower_get_cost_transaction(const tower_def_t *def, int level) {
@@ -430,12 +440,54 @@ inventory_transaction_t * tower_get_cost_transaction(const tower_def_t *def, int
     return transaction;
 }
 
+uint32_t tower_collides_with(entity_t *ent, entity_t *other) {
+    if (!ent || !other || !ent->data) {
+        return COLLISION_NONE;
+    }
+
+    if (other->layers & (ENT_LAYER_TOWER | ENT_LAYER_PLAYER)) {
+        return COLLISION_SOLID; // Collides with enemies
+    }
+
+    return COLLISION_NONE; // No collision
+}
+
 void tower_entity_think(const entity_manager_t *entityManager, entity_t *ent) {
+    uint32_t c, i;
+    GFC_Vector2D targetPos, pos;
+    float dist = FLT_MAX, enmyDist;
     if (!ent) return;
     tower_state_t *tower = (tower_state_t *)ent->data;
     if (!tower) return;
 
-    // TODO: Implement tower thinking behavior, such as targeting enemies, deciding when to shoot, etc.
+    if (g_game.role != GAME_ROLE_SERVER) {
+        return; // Only run AI logic on server
+    }
+
+    if (tower->def->type == TOWER_TYPE_DEFENSIVE) {
+        GFC_List *enemiesInRange = collision_get_entities_in_range(g_game.world, ent->position, tower->def->weaponDefs[0].range[tower->level], ENT_LAYER_ENEMY);
+        c = gfc_list_count(enemiesInRange);
+        if (c == 0) {
+            tower->canShoot = 0;
+            return; // No enemies in range
+        }
+
+        for (i = 0; i < c; i++) {
+            entity_t *enemy = (entity_t *)gfc_list_get_nth(enemiesInRange, i);
+            if (enemy) {
+                enmyDist = gfc_vector2d_magnitude_between_squared(ent->position, enemy->position);
+                if (enmyDist < dist) {
+                    dist = enmyDist;
+                    targetPos = enemy->position;
+                }
+            }
+        }
+
+        gfc_vector2d_sub(pos, targetPos, ent->position);
+        gfc_vector2d_normalize(&pos);
+        tower->shootDirection = pos;
+        tower->canShoot = 1;
+    }
 }
 
 void tower_entity_update(const entity_manager_t *entityManager, entity_t *ent, float deltaTime) {
@@ -443,12 +495,17 @@ void tower_entity_update(const entity_manager_t *entityManager, entity_t *ent, f
     tower_state_t *tower = (tower_state_t *)ent->data;
 
     if (g_game.role == GAME_ROLE_SERVER) {
-        if (tower_try_shoot(ent, deltaTime)) {
+        if (tower->canShoot && tower_try_shoot(ent, deltaTime)) {
 
-            s2c_tower_event_packet_t pkt;
-            create_s2c_tower_event(&pkt, tower->id, TOWER_EVENT_SHOOT, *(uint64_t*) &ent->rotation);
-            server_broadcast_packet(&g_server, &pkt, 0);
-
+            s2c_tower_snapshot_packet_t *towerPkt = gfc_allocate_array(sizeof(s2c_tower_snapshot_packet_t), 1);
+            tower_snapshot_data_t towerData = {
+                .shootData = {
+                    .xDir = tower->shootDirection.x,
+                    .yDir = tower->shootDirection.y
+                }
+            };
+            create_s2c_tower_snapshot(towerPkt, tower->id, TOWER_EVENT_SHOOT, &towerData);
+            server_broadcast_packet_batch(&g_server, towerPkt);
             tower_shoot_all(entityManager, ent);
         }
     }
@@ -457,7 +514,7 @@ void tower_entity_update(const entity_manager_t *entityManager, entity_t *ent, f
 void tower_entity_draw(const entity_manager_t *entityManager, entity_t *ent) {
     if (!ent || !ent->data) return;
     tower_state_t *tower = (tower_state_t *)ent->data;
-    tower_entity_draw_full(tower->def->size, ent->position, tower->baseSprite, tower->weaponSprite);
+    tower_entity_draw_full(tower->def->size, ent->position, tower->baseSprite, tower->weaponSprite, gfc_vector2d_angle(tower->shootDirection) * 180.0f / M_PI - 90.0f);
 }
 
 void tower_entity_destroy(const entity_manager_t *entityManager, entity_t *ent) {

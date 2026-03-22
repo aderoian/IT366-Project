@@ -7,12 +7,14 @@
 #include "common/game/tower.h"
 
 #include "client/gf2d_sprite.h"
+#include "common/game/collision.h"
 #include "common/game/game.h"
 #include "server/server.h"
 
 void projectile_think(const entity_manager_t *entityManager, entity_t *ent);
 void projectile_update(const entity_manager_t *entityManager, entity_t *ent, float deltaTime);
 void projectile_draw(const entity_manager_t *entityManager, entity_t *ent);
+uint32_t projectile_collides_with(entity_t *ent, entity_t *other);
 
 int projectile_spawn(const entity_manager_t *entityManager, const float speed, const float damage, const float range,
                         const GFC_Vector2D direction, const char *spriteModel, struct tower_state_s *sourceTower) {
@@ -24,7 +26,7 @@ int projectile_spawn(const entity_manager_t *entityManager, const float speed, c
         return -1;
     }
 
-    ent = entity_new(entityManager);
+    ent = entity_new(entityManager, entity_next_id(entityManager));
     if (!ent) {
         log_error("Failed to create new entity for projectile");
         return -1;
@@ -55,7 +57,7 @@ int projectile_spawn(const entity_manager_t *entityManager, const float speed, c
     ent->boundingBox = gfc_rect(-12, -12, 24, 24); // Example bounding box size for projectile, can be adjusted based on sprite
 
     // Position the entity at the source tower's location
-    gfc_vector2d_add(ent->position, sourceTower->worldPos, gfc_vector2d((sourceTower->def->size * TILE_SIZE) / 2, (sourceTower->def->size * TILE_SIZE) / 2));
+    ent->position = sourceTower->worldPos;
     ent->rotation = gfc_vector2d_angle(direction) * 180.0f / M_PI;
     ent->data = projectile;
 
@@ -109,4 +111,16 @@ void projectile_draw(const entity_manager_t *entityManager, entity_t *ent) {
 
     gfc_vector2d_sub(position, ent->position, g_camera.position);
     gf2d_sprite_draw_centered(ent->model, position, NULL, NULL, &ent->rotation, NULL, NULL, 0);
+}
+
+uint32_t projectile_collides_with(entity_t *ent, entity_t *other) {
+    if (!ent || !other || !ent->data) {
+        return COLLISION_NONE;
+    }
+
+    if (other->layers & ENT_LAYER_ENEMY) {
+        return COLLISION_SOLID; // Collides with enemies
+    }
+
+    return COLLISION_NONE; // No collision
 }

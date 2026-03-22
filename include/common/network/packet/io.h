@@ -59,7 +59,7 @@ void write_s2c_player_join_response(buffer_t, buffer_offset_t *, const s2c_playe
 
 void read_s2c_player_join_response(buffer_t, buffer_offset_t *, s2c_player_join_response_packet_t *);
 
-void create_s2c_player_join_response(s2c_player_join_response_packet_t *pkt, uint8_t success, uint32_t playerID,
+void create_s2c_player_join_response(s2c_player_join_response_packet_t *pkt, uint8_t success, uint32_t playerID, int64_t entityID,
                                      int32_t worldL, int32_t worldW, float spawnX, float spawnY, game_state_t *initialGameState);
 
 void write_c2s_player_input_snapshot(buffer_t, buffer_offset_t *, const c2s_player_input_snapshot_packet_t *);
@@ -89,19 +89,11 @@ void read_c2s_tower_build_request(buffer_t, buffer_offset_t *, c2s_tower_build_r
 void create_c2s_tower_build_request(c2s_tower_build_request_packet_t *pkt, float xPos, float yPos,
                                     uint32_t towerDefIndex);
 
-void write_s2c_tower_create(buffer_t, buffer_offset_t *, const s2c_tower_create_packet_t *);
+void write_s2c_tower_snapshot(buffer_t, buffer_offset_t *, const s2c_tower_snapshot_packet_t *);
 
-void read_s2c_tower_create(buffer_t, buffer_offset_t *, s2c_tower_create_packet_t *);
+void read_s2c_tower_snapshot(buffer_t, buffer_offset_t *, s2c_tower_snapshot_packet_t *);
 
-void create_s2c_tower_create(s2c_tower_create_packet_t *pkt, float xPos, float yPos,
-                             uint32_t towerDefIndex, uint32_t towerID);
-
-void write_s2c_tower_event(buffer_t, buffer_offset_t *, const s2c_tower_event_packet_t *);
-
-void read_s2c_tower_event(buffer_t, buffer_offset_t *, s2c_tower_event_packet_t *);
-
-void create_s2c_tower_event(s2c_tower_event_packet_t *pkt, uint32_t towerID, uint32_t eventID,
-                            uint64_t data);
+void create_s2c_tower_snapshot(s2c_tower_snapshot_packet_t *pkt, uint32_t towerID, tower_snapshot_id_t snapshotID, tower_snapshot_data_t *eventData);
 
 void write_s2c_inventory_update(buffer_t, buffer_offset_t *, const s2c_inventory_update_packet_t *);
 
@@ -115,5 +107,11 @@ void write_s2c_game_state_snapshot(buffer_t, buffer_offset_t *, const s2c_game_s
 void read_s2c_game_state_snapshot(buffer_t, buffer_offset_t *, s2c_game_state_snapshot_packet_t *);
 
 void create_s2c_game_state_snapshot(s2c_game_state_snapshot_packet_t *pkt, game_state_t *state);
+
+void write_s2c_enemy_snapshot(buffer_t, buffer_offset_t *, const s2c_enemy_snapshot_packet_t *);
+
+void read_s2c_enemy_snapshot(buffer_t, buffer_offset_t *, s2c_enemy_snapshot_packet_t *);
+
+void create_s2c_enemy_snapshot(s2c_enemy_snapshot_packet_t *pkt, int64_t enemyID, uint32_t eventID, enemy_snapshot_data_t *eventData);
 
 #endif /* NETWORK_PACKET_IO_H */

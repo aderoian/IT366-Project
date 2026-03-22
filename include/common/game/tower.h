@@ -65,6 +65,8 @@ typedef struct tower_state_s {
     struct entity_s *entity;
     Sprite *baseSprite;
     Sprite *weaponSprite;
+    GFC_Vector2D shootDirection;
+    uint8_t canShoot;
 } tower_state_t;
 
 typedef struct tower_def_manager_s tower_def_manager_t;
@@ -211,8 +213,10 @@ void tower_shoot(const struct entity_manager_s *entityManager, entity_t *entity,
  */
 void tower_shoot_all(const struct entity_manager_s *entityManager, entity_t *entity);
 
-void tower_entity_draw_full(float size, GFC_Vector2D pos, Sprite *baseSprite, Sprite *weaponSprite);
+void tower_entity_draw_full(float size, GFC_Vector2D pos, Sprite *baseSprite, Sprite *weaponSprite, float rotation);
 
 inventory_transaction_t *tower_get_cost_transaction(const tower_def_t *def, int level);
+
+uint32_t tower_collides_with(entity_t *ent, entity_t *other);
 
 #endif /* TOWER_H */

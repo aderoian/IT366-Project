@@ -9,7 +9,7 @@
 #define GAME_ROLE_SERVER 1
 #define GAME_ROLE_CLIENT 2
 
-#define HALF_CYCLE_TIME 10.0f // Time in second for day and night cycle
+#define HALF_CYCLE_TIME 3.0f // Time in second for day and night cycle
 
 typedef enum game_phase_e {
     GAME_PHASE_EXPLORING = 0,

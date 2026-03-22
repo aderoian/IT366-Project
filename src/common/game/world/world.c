@@ -1,9 +1,11 @@
 #include "common/game/world/world.h"
 
 #include "client/camera.h"
+#include "client/gf2d_draw.h"
 #include "client/gf2d_graphics.h"
 #include "client/gf2d_sprite.h"
 #include "common/logger.h"
+#include "common/game/enemy.h"
 #include "common/game/entity.h"
 #include "common/game/game.h"
 #include "common/game/world/chunk.h"
@@ -11,6 +13,8 @@
 #include "common/network/packet/definitions.h"
 #include "common/network/packet/io.h"
 #include "server/server.h"
+
+extern uint8_t __DEBUG;
 
 world_t *world_create(const int width, const int height, const uint8_t local) {
     int i, j;
@@ -104,6 +108,31 @@ chunk_t * world_get_chunk(const world_t *world, const int x, const int y) {
     return &world->chunks[x * world->size.y + y];
 }
 
+void world_spawn_wave(world_t *world) {
+    GFC_Vector2D pos;
+    if (!world) {
+        return;
+    }
+
+    pos = g_game.state.stashPosition;
+    pos.x -= 100; // Spawn enemies 100 units to the left of the stash
+
+    // TODO: Implement wave spawning logic, e.g. create enemies based on current wave number and add them to the world
+    entity_t *entity = enemy_spawn(g_server.entityManager, enemy_def_get_by_index(g_server.enemyManager, 0), pos);
+
+    s2c_enemy_snapshot_packet_t *pkt = gfc_allocate_array(sizeof(s2c_enemy_snapshot_packet_t), 1);
+    enemy_snapshot_data_t eventData = {
+        .spawnData = {
+            .enemyDefIndex = 0, // Placeholder, should be set based on enemy type
+            .xPos = pos.x,
+            .yPos = pos.y,
+            .rotation = entity->rotation
+        }
+    };
+    create_s2c_enemy_snapshot(pkt, entity->id, ENEMY_EVENT_SPAWN, &eventData);
+    server_broadcast_packet_batch(&g_server, pkt);
+}
+
 void world_update(world_t *world, float deltaTime) {
     if (!world) {
         return;
@@ -117,6 +146,7 @@ void world_update(world_t *world, float deltaTime) {
             if (state == GAME_PHASE_BUILDING) {
                 g_game.state.phase = GAME_PHASE_WAVE;
                 log_info("Transitioning to WAVE phase");
+                world_spawn_wave(world);
             } else if (state == GAME_PHASE_WAVE) {
                 g_game.state.phase = GAME_PHASE_BUILDING;
                 g_game.state.waveNumber++;
@@ -151,6 +181,34 @@ void world_draw(const world_t *world) {
                 .h = CHUNK_TILE_SIZE * TILE_SIZE
             };
             SDL_RenderCopy(gf2d_graphics_get_renderer(), world->chunkTexture, NULL, &destRect);
+        }
+    }
+
+    if (__DEBUG) {
+        // Draw tile boundaries for debugging
+        for (int y = startChunkY * CHUNK_TILE_SIZE; y <= (endChunkY + 1) * CHUNK_TILE_SIZE; y++) {
+            for (int x = startChunkX * CHUNK_TILE_SIZE; x <= (endChunkX + 1) * CHUNK_TILE_SIZE; x++) {
+                GFC_Rect tileRect = {
+                    .x = x * TILE_SIZE - g_camera.position.x,
+                    .y = y * TILE_SIZE - g_camera.position.y,
+                    .w = TILE_SIZE,
+                    .h = TILE_SIZE
+                };
+                gf2d_draw_rect(tileRect, GFC_COLOR_LIGHTGREEN);
+            }
+        }
+
+        // Draw chunk boundaries for debugging
+        for (int y = startChunkY; y <= endChunkY; y++) {
+            for (int x = startChunkX; x <= endChunkX; x++) {
+                GFC_Rect boundaryRect = {
+                    .x = x * CHUNK_TILE_SIZE * TILE_SIZE - g_camera.position.x,
+                    .y = y * CHUNK_TILE_SIZE * TILE_SIZE - g_camera.position.y,
+                    .w = CHUNK_TILE_SIZE * TILE_SIZE,
+                    .h = CHUNK_TILE_SIZE * TILE_SIZE
+                };
+                gf2d_draw_rect(boundaryRect, GFC_COLOR_RED);
+            }
         }
     }
 }
