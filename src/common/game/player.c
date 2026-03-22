@@ -19,6 +19,8 @@
 
 #define MAX_DIVERSION 1.5f
 #define MAX_TELEPORT_DISTANCE 5.0f
+#define PLAYER_ATTACK_COOLDOWN 0.5f
+#define PLAYER_ATTACK_STRENGTH 60.0f
 
 extern uint8_t __INF_RESOURCES;
 
@@ -102,12 +104,13 @@ GFC_Vector2D player_input_apply(player_t *player, const GFC_Vector2D position, c
         return position;
     }
 
-    GFC_Vector2D direction = gfc_vector2d(0.0f, 0.0f);
-    direction.y = (actions->up ? -1.0f : 0.0f) + (actions->down ? 1.0f : 0.0f);
-    direction.x = (actions->right ? 1.0f : 0.0f) + (actions->left ? -1.0f : 0.0f);
+    int8_t dirX, dirY;
+    dirX = (actions->right ? 1 : 0) - (actions->left ? 1 : 0);
+    dirY = (actions->down ? 1 : 0) - (actions->up ? 1 : 0);
+    GFC_Vector2D direction = gfc_vector2d(dirX, dirY);
 
-    if (direction.x == 0.0f && direction.y == 0.0f) {
-        return position; // No movement input, skip processing
+    if (direction.x == 0.0f && direction.y == 0.0f && !actions->attack) {
+        return position; // No input, skip processing
     }
 
     newPos = player_move(player, g_game.world, position, direction, PLAYER_SPEED, deltaTime);
@@ -117,8 +120,9 @@ GFC_Vector2D player_input_apply(player_t *player, const GFC_Vector2D position, c
             .position = newPos,
             .cmd = {
                 .tickNumber = g_game.tickNumber,
-                .axisX = (int32_t)direction.x,
-                .axisY = (int32_t)direction.y
+                .axisX = dirX, // Scale to fit in int8 range
+                .axisY = dirY,
+                .attack = actions->attack
             }
         };
         buf_spsc_ring_push(player->inputBuffer, &snapshot);
@@ -139,6 +143,12 @@ void player_input_process(player_t *player, const player_input_command_t *cmd, c
 
     direction = gfc_vector2d((float)cmd->axisX, (float)cmd->axisY);
     player->position = player_move(player, g_game.world, player->position, direction, PLAYER_SPEED, deltaTime);
+
+    if (cmd->attack && player->attackCooldown <= 0.0f) {
+        player->attackCooldown = PLAYER_ATTACK_COOLDOWN;
+        // TODO: Implement attack logic, e.g. check for nearby enemies and apply damage
+    }
+
     player->lastProcessedInputTick = cmd->tickNumber;
     player->processedInput = 1;
 }
@@ -282,7 +292,8 @@ void player_think(const entity_manager_t *entityManager, entity_t *ent) {
         return;
     }
 
-    // Placeholder for future thinking logic (e.g., AI, state changes)
+    player_t *player = (player_t *)ent->data;
+    player->attackCooldown -= g_game.deltaTime;
 }
 
 void player_update(const entity_manager_t *entityManager, entity_t *ent, float deltaTime) {
@@ -300,12 +311,18 @@ void player_update(const entity_manager_t *entityManager, entity_t *ent, float d
         actions.down = gfc_input_command_down("down");
         actions.left = gfc_input_command_down("left");
         actions.right = gfc_input_command_down("right");
+        actions.attack = SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT);
 
         position = player->position;
         camera_get_mouse_world_position(&g_camera, &mousePosition);
         ent->rotation = atan2f(mousePosition.y - position.y, mousePosition.x - position.x) * 180.0f / M_PI + 90.0f;
 
         player->position = player_input_apply(player, player->position, &actions, deltaTime, 1);
+
+        if (actions.attack && player->attackCooldown <= 0.0f) {
+            player->attackCooldown = PLAYER_ATTACK_COOLDOWN;
+            // TODO: implement attack logic, e.g. check for enemies in range and apply damage
+        }
     } else if (player->processedInput) {
         player->processedInput = 0;
 
@@ -318,20 +335,24 @@ void player_update(const entity_manager_t *entityManager, entity_t *ent, float d
 void player_draw(const entity_manager_t *entityManager, entity_t *ent) {
     GFC_Vector2D position, centerPos, heldItemOffset, itemCenterPos;
     Sprite *playerSprite, *heldItemSprite;
+    float handsRotation;
     if (!ent || !ent->data) {
         return;
     }
 
-    ent->position = ((player_t *)ent->data)->position;
+    player_t *player = (player_t *)ent->data;
+
+    ent->position = player->position;
     gfc_vector2d_sub(position, ent->position, g_camera.position);
 
     playerSprite = ent->model;
-    heldItemSprite = ((player_t *)ent->data)->heldItem;
+    heldItemSprite = player->heldItem;
     centerPos = gfc_vector2d(playerSprite->frame_w * 0.5f, playerSprite->frame_h * 0.5f);
     heldItemOffset = gfc_vector2d(heldItemSprite->frame_w * 0.5f, heldItemSprite->frame_h);
 
-    if (((player_t *)ent->data)->heldItem) {
-        gf2d_sprite_draw(heldItemSprite, position, NULL, &heldItemOffset, &ent->rotation, NULL, NULL, 0);
+    if (player->heldItem) {
+        handsRotation = ent->rotation - PLAYER_ATTACK_STRENGTH * sinf(fmaxf(0.0f, player->attackCooldown / PLAYER_ATTACK_COOLDOWN * M_PI));
+        gf2d_sprite_draw(heldItemSprite, position, NULL, &heldItemOffset, &handsRotation, NULL, NULL, 0);
     }
 
     gf2d_sprite_draw(ent->model, position,NULL, &centerPos, NULL, NULL, NULL, 0);

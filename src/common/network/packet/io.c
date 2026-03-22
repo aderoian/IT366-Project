@@ -184,8 +184,9 @@ void write_game_state(buffer_t buffer, buffer_offset_t *offset, const game_state
 
 void write_player_input_command(buffer_t buffer, buffer_offset_t *offset, const player_input_command_t *cmd) {
     write_uint64(buffer, offset, cmd->tickNumber);
-    write_uint32(buffer, offset, cmd->axisX);
-    write_uint32(buffer, offset, cmd->axisY);
+    write_int8(buffer, offset, cmd->axisX);
+    write_int8(buffer, offset, cmd->axisY);
+    write_int8(buffer, offset, cmd->attack);
 }
 
 void write_item(buffer_t buffer, buffer_offset_t *offset, const item_t *item) {
@@ -213,8 +214,9 @@ void read_game_state(buffer_t buffer, buffer_offset_t *offset, game_state_t *sta
 
 void read_player_input_command(buffer_t buffer, buffer_offset_t *offset, player_input_command_t *cmd) {
     cmd->tickNumber = read_uint64(buffer, offset);
-    cmd->axisX = read_int32(buffer, offset);
-    cmd->axisY = read_int32(buffer, offset);
+    cmd->axisX = read_int8(buffer, offset);
+    cmd->axisY = read_int8(buffer, offset);
+    cmd->attack = read_int8(buffer, offset);
 }
 
 void read_item(buffer_t buffer, buffer_offset_t *offset, item_t *item) {
@@ -495,7 +497,7 @@ void create_s2c_player_join_response(s2c_player_join_response_packet_t *pkt, uin
 
 void create_c2s_player_input_snapshot(c2s_player_input_snapshot_packet_t *pkt, player_input_command_t *inputCommand) {
     pkt->packetID = PACKET_C2S_PLAYER_INPUT_SNAPSHOT;
-    pkt->length = sizeof(*inputCommand);
+    pkt->length = sizeof(inputCommand->tickNumber) + sizeof(inputCommand->axisX) + sizeof(inputCommand->axisY) + sizeof(inputCommand->attack);
     pkt->inputCommand = *inputCommand;
 }
 

@@ -150,6 +150,18 @@ void world_update(world_t *world, float deltaTime) {
     }
 }
 
+int world_on_click(world_t *world, uint32_t mouseButton, int x, int y) {
+    GFC_Vector2D worldPos;
+    if (!world) {
+        return;
+    }
+
+    // Convert screen coordinates to world coordinates
+    camera_get_mouse_world_position(&g_camera, &worldPos);
+
+    // TODO: Implement click handling logic, e.g. selecting entities, placing towers, etc. based on current game phase and mouse button
+}
+
 void world_clear(world_t *world) {
     chunk_t *chunk;
     entity_t *ent;

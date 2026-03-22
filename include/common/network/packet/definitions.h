@@ -12,12 +12,6 @@ size_t length;
 
 #define BATCH_PACKET_ID 255
 
-typedef struct player_input_command_s {
-    uint64_t tickNumber;
-    int32_t axisX;
-    int32_t axisY;
-} player_input_command_t;
-
 /**
  * @brief Generated packet ID table.
  */
@@ -51,6 +45,16 @@ typedef struct s2c_player_join_response_packet_s {
     float spawnY;
     game_state_t initialGameState;
 } s2c_player_join_response_packet_t;
+
+#define MOUSE_BUTTON_LEFT 1
+#define MOUSE_BUTTON_RIGHT 2
+
+typedef struct player_input_command_s {
+    uint64_t tickNumber;
+    int8_t axisX;
+    int8_t axisY;
+    uint8_t attack;
+} player_input_command_t;
 
 typedef struct c2s_player_input_snapshot_packet_s {
     PACKET_HEADER

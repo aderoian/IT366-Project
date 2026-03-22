@@ -28,6 +28,7 @@ typedef struct player_s {
     uint64_t lastProcessedInputTick;
     uint8_t processedInput;
 
+    float attackCooldown;
     Sprite *heldItem;
 } player_t;
 
@@ -37,6 +38,7 @@ typedef struct player_input_actions_s {
     uint8_t left : 1;
     uint8_t right : 1;
     uint8_t use : 1;
+    uint8_t attack : 1;
     float rotation;
 } player_input_actions_t;
 

@@ -27,6 +27,9 @@ void world_destroy(world_t *world);
 chunk_t *world_get_chunk(const world_t *world, int x, int y);
 
 void world_update(world_t *world, float deltaTime);
+
+int world_on_click(world_t *world, uint32_t mouseButton, int x, int y);
+
 void world_clear(world_t *world);
 
 void world_draw(const world_t *world);

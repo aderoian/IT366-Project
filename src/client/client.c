@@ -182,6 +182,10 @@ void client_on_mouse(float deltaTime) {
             g_client.clickDelay = 0.2f; // Set click delay to prevent multiple clicks in quick succession
             return;
         }
+
+        if (world_on_click(g_game.world, buttons, x, y)) {
+            return;
+        }
     }
 }
 
