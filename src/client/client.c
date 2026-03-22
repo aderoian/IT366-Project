@@ -13,6 +13,7 @@
 #include "client/gf2d_sprite.h"
 #include "client/client.h"
 #include "client/camera.h"
+#include "client/gf2d_font.h"
 #include "client/game/build.h"
 #include "client/ui/overlay.h"
 #include "client/ui/window.h"
@@ -48,6 +49,7 @@ int client_main(void) {
         0);
     gf2d_graphics_set_frame_delay(16);
     gf2d_sprite_init(1024);
+    gf2d_font_init("fonts/SourceSansPro-Regular.otf", GFC_COLOR_WHITE);
     g_client.defManager = def_init(32);
     animation_manager_init(256);
     window_init(32, 256, 256);
@@ -222,10 +224,13 @@ void client_tickLoop(Client* client) {
 void client_render(Client* client, uint64_t alpha) {
     gf2d_graphics_clear_screen();
 
-    //gf2d_sprite_draw_image(client->renderState.background, gfc_vector2d(0, 0));
     if (g_game.world) world_draw(g_game.world);
     entity_draw_all(g_client.entityManager);
     overlay_draw(&g_client.overlay);
     build_mode_render();
     window_draw_all();
+
+    if (__DEBUG) {
+        gf2d_font_draw_textf(14, "FPS: %f", gfc_vector2d(10, 10), gf2d_graphics_get_frames_per_second());
+    }
 }

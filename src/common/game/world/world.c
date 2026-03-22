@@ -14,7 +14,7 @@
 #include "common/network/packet/io.h"
 #include "server/server.h"
 
-extern uint8_t __DEBUG;
+extern uint8_t __DEBUG_LINES;
 
 world_t *world_create(const int width, const int height, const uint8_t local) {
     int i, j;
@@ -195,7 +195,7 @@ void world_draw(const world_t *world) {
         }
     }
 
-    if (__DEBUG) {
+    if (__DEBUG_LINES) {
         // Draw tile boundaries for debugging
         for (int y = startChunkY * CHUNK_TILE_SIZE; y <= (endChunkY + 1) * CHUNK_TILE_SIZE; y++) {
             for (int x = startChunkX * CHUNK_TILE_SIZE; x <= (endChunkX + 1) * CHUNK_TILE_SIZE; x++) {

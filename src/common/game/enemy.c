@@ -13,7 +13,7 @@
 #include "common/network/packet/io.h"
 #include "server/server.h"
 
-extern uint8_t __DEBUG;
+extern uint8_t __DEBUG_LINES;
 
 struct enemy_def_manager_s {
     enemy_def_t *enemyDefs;
@@ -351,7 +351,7 @@ void enemy_draw(const entity_manager_t *entityManager, entity_t *ent) {
     gf2d_sprite_draw(handsSprite, position, NULL, &heldItemOffset, &ent->rotation, NULL, NULL, 0);
     gf2d_sprite_draw(headSprite, position,NULL, &centerPos, NULL, NULL, NULL, 0);
 
-    if (__DEBUG) {
+    if (__DEBUG_LINES) {
         GFC_Vector2D direction, rayCastEnd;
 
         direction = gfc_vector2d_from_angle((ent->rotation + 180.f) * M_PI / 180.0f);

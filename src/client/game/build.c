@@ -8,7 +8,7 @@
 #include "common/network/packet/definitions.h"
 #include "common/network/packet/io.h"
 
-extern uint8_t __DEBUG;
+extern uint8_t __DEBUG_LINES;
 
 static build_mode_t *build_mode = NULL;
 
@@ -98,7 +98,7 @@ void build_mode_update(void) {
 void build_mode_render(void) {
     if (build_mode && build_mode->towerDef) {
         tower_entity_draw_full(build_mode->towerDef->size, build_mode->position, build_mode->previewSpriteBase, build_mode->previewSpriteHead, 0);
-        if (__DEBUG) {
+        if (__DEBUG_LINES) {
             GFC_Rect towerRect = gfc_rect(build_mode->position.x + 2.5 - (build_mode->towerDef->size * TILE_SIZE / 2.0f) - g_camera.position.x, build_mode->position.y + 2.5 - (build_mode->towerDef->size * TILE_SIZE / 2.0f) - g_camera.position.y, (build_mode->towerDef->size * TILE_SIZE) - 5, (build_mode->towerDef->size * TILE_SIZE) - 5);
             gf2d_draw_rect(towerRect, GFC_COLOR_DARKBLUE);
         }

@@ -8,7 +8,7 @@
 #include "common/logger.h"
 #include "common/game/game.h"
 
-extern uint8_t __DEBUG;
+extern uint8_t __DEBUG_LINES;
 
 struct entity_manager_s {
     entity_t *ents;
@@ -260,7 +260,7 @@ void entity_draw_all(const entity_manager_t *manager) {
 }
 
 void entity_draw_debug(const entity_manager_t *entityManager, entity_t *ent) {
-    if (!ent || !__DEBUG) return;
+    if (!ent || !__DEBUG_LINES) return;
 
     GFC_Vector2D position;
     gfc_vector2d_sub(position, ent->position, g_camera.position);
