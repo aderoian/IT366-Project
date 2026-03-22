@@ -57,6 +57,8 @@ void overlay_draw(const overlay_t *overlay);
 
 void overlay_update(overlay_t *overlay, float deltaTime);
 
+int overlay_on_click(overlay_t *overlay, uint32_t mouseButton, int x, int y);
+
 overlay_element_type_t overlay_element_type_from_string(const char *typeStr);
 
 #define OVERLAY_CREATION(name, cap_name, type) OVERLAY_CREATION_##type(name)

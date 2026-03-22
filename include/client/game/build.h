@@ -43,6 +43,17 @@ void build_mode_change(const tower_def_t *towerDef);
 void build_mode_update(void);
 
 /**
+ * @brief Handles mouse click events while in build mode. This function should be called when a mouse click is detected to determine
+ * if the click should confirm the placement of the tower or if it should be ignored (e.g., if clicking on the UI).
+ *
+ * @param mouseButton The mouse button that was clicked (e.g., SDL_BUTTON_LEFT).
+ * @param x The x-coordinate of the mouse click.
+ * @param y The y-coordinate of the mouse click.
+ * @return A non-zero value if the click was handled by build mode (e.g., confirming tower placement), or zero if it was not handled.
+ */
+int build_mode_handle_click(uint32_t mouseButton, int x, int y);
+
+/**
  * @brief Renders the build mode preview, typically called each frame while in build mode. This function draws the preview sprite
  * at the current position, allowing the player to see where the tower will be placed before confirming the build.
  */

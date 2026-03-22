@@ -112,7 +112,8 @@ void window_update_all(float deltaTime);
 /**
  * @brief Handles all pending events for the active windows.
  */
-void window_handle_event_all(void);
+int window_handle_mouse(uint32_t mouseButton, int x, int y);
+void window_handle_keyboard(void);
 
 /**
  * @brief Loads a window from a JSON definition.

@@ -97,11 +97,6 @@ void event_buffer_close(void);
 window_event_t *event_buffer_create(void);
 
 /**
- * @brief Processes mouse input and adds corresponding mouse events to the event buffer.
- */
-void event_process_mouse(void);
-
-/**
  * @brief Processes keyboard input and adds corresponding keyboard events to the event buffer.
  */
 void event_process_keyboard(void);

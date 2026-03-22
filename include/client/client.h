@@ -42,7 +42,7 @@ typedef struct Client_S {
     player_t *player;
 
     client_render_state_t renderState;
-    float deltaTime;
+    float clickDelay;
 
     overlay_t overlay;
 } Client;

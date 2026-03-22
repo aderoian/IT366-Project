@@ -151,7 +151,6 @@ uint32_t projectile_on_collide(entity_t *ent, entity_t *other, uint32_t collisio
         if (other->data) {
             enemy_state_t *enemy = (enemy_state_t *)other->data;
             enemy->health -= projectile->damage;
-            log_info("Projectile hit enemy! Enemy health is now: %f", enemy->health);
         }
         // Destroy the projectile after hitting an enemy
         ent->think = entity_free;

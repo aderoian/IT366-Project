@@ -70,29 +70,37 @@ void build_mode_change(const tower_def_t *towerDef) {
 }
 
 void build_mode_update(void) {
-    uint32_t mouseState;
-    c2s_tower_build_request_packet_t pkt;
     if (build_mode) {
-        mouseState = SDL_GetMouseState(NULL, NULL);
-        if (mouseState & SDL_BUTTON(SDL_BUTTON_RIGHT)) {
-            build_mode_exit();
-            return;
-        }
-
         camera_get_mouse_world_position(&g_camera, &build_mode->position);
         build_mode->position = tower_snap_to_grid(build_mode->towerDef, build_mode->position);
-
-        if (mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)) {
-            GFC_Rect towerRect = gfc_rect(build_mode->position.x + 2.5 - (build_mode->towerDef->size * TILE_SIZE / 2.0f), build_mode->position.y + 2.5 - (build_mode->towerDef->size * TILE_SIZE / 2.0f), (build_mode->towerDef->size * TILE_SIZE) - 5, (build_mode->towerDef->size * TILE_SIZE) - 5);
-            if (!collision_check_world_bounding(g_game.world, towerRect)) {
-                return; // Can't build here, something is in the way
-            }
-
-            create_c2s_tower_build_request(&pkt, build_mode->position.x, build_mode->position.y, build_mode->towerDef->index);
-            client_send_to_server(&g_client, &pkt, NET_UDP_FLAG_RELIABLE);
-            build_mode_exit();
-        }
     }
+}
+
+int build_mode_handle_click(uint32_t mouseButton, int x, int y) {
+    c2s_tower_build_request_packet_t pkt;
+
+    if (!build_mode) {
+        return 0;
+    }
+
+    if (mouseButton & SDL_BUTTON(SDL_BUTTON_RIGHT)) {
+        build_mode_exit();
+        return 1;
+    }
+
+    if (mouseButton & SDL_BUTTON(SDL_BUTTON_LEFT)) {
+        GFC_Rect towerRect = gfc_rect(build_mode->position.x + 2.5 - (build_mode->towerDef->size * TILE_SIZE / 2.0f), build_mode->position.y + 2.5 - (build_mode->towerDef->size * TILE_SIZE / 2.0f), (build_mode->towerDef->size * TILE_SIZE) - 5, (build_mode->towerDef->size * TILE_SIZE) - 5);
+        if (!collision_check_world_bounding(g_game.world, towerRect)) {
+            return 0; // Can't build here, something is in the way
+        }
+
+        create_c2s_tower_build_request(&pkt, build_mode->position.x, build_mode->position.y, build_mode->towerDef->index);
+        client_send_to_server(&g_client, &pkt, NET_UDP_FLAG_RELIABLE);
+        build_mode_exit();
+        return 1;
+    }
+
+    return 0;
 }
 
 void build_mode_render(void) {

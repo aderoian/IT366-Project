@@ -138,32 +138,29 @@ void overlay_draw(const overlay_t *overlay) {
     }
 }
 
-void overlay_hover(overlay_t *overlay, overlay_element_t *element) {
+int overlay_hover(overlay_t *overlay, overlay_element_t *element) {
     size_t i;
     if (!overlay || !overlay->visible) {
-        return;
+        return 0;
     }
 
     if (element->type == TYPE_TOWER_HB_TOWER) {
         hudbar_tower_hover_create(element);
-    } else {
-        if (overlay->hoveredElement) {
-            overlay->hoveredElement->destroy(overlay->hoveredElement);
-            free(overlay->hoveredElement);
-            overlay->hoveredElement = NULL;
-        }
+        return 1;
     }
 
-    if (overlay->hoveredElement && overlay->hoveredElement->type == TYPE_TOWER_HB_TOWER) {
-        if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT)) {
-            build_mode_enter(tower_def_get_by_index(g_client.towerManager, element->data));
-        }
+    if (overlay->hoveredElement) {
+        overlay->hoveredElement->destroy(overlay->hoveredElement);
+        free(overlay->hoveredElement);
+        overlay->hoveredElement = NULL;
     }
+
+    return 0;
 }
 
 void overlay_update(overlay_t *overlay, const float deltaTime) {
     size_t i;
-    int x, y;
+    int x, y, hover = 0;
     if (!overlay || !overlay->visible) {
         return;
     }
@@ -184,9 +181,15 @@ void overlay_update(overlay_t *overlay, const float deltaTime) {
     for (i = 0; i < overlay->maxElements; i++) {
         if (overlay->elements[i]._inuse && overlay->elements[i].visible) {
             if (gfc_point_in_rect(gfc_vector2d(x, y), overlay->elements[i].bounds)) {
-                overlay_hover(overlay, &overlay->elements[i]);
+                hover = overlay_hover(overlay, &overlay->elements[i]);
             }
         }
+    }
+
+    if (!hover && overlay->hoveredElement) {
+        overlay->hoveredElement->destroy(overlay->hoveredElement);
+        free(overlay->hoveredElement);
+        overlay->hoveredElement = NULL;
     }
 
     if (gfc_input_key_pressed("1")) {
@@ -210,6 +213,26 @@ void overlay_update(overlay_t *overlay, const float deltaTime) {
     } else if (gfc_input_key_pressed("0")) {
         build_mode_enter(tower_def_get_by_index(g_client.towerManager, 9));
     }
+}
+
+int overlay_on_click(overlay_t *overlay, uint32_t mouseButton, int x, int y) {
+    if (!overlay) {
+        return 0;
+    }
+
+    if (overlay->hoveredElement && overlay->hoveredElement->type == TYPE_TOWER_HB_TOWER) {
+        if (mouseButton & SDL_BUTTON(SDL_BUTTON_LEFT)) {
+            build_mode_enter(tower_def_get_by_index(g_client.towerManager, overlay->hoveredElement->data));
+
+            overlay->hoveredElement->destroy(overlay->hoveredElement);
+            free(overlay->hoveredElement);
+            overlay->hoveredElement = NULL;
+
+            return 1;
+        }
+    }
+
+    return 0;
 }
 
 void element_simple_draw(overlay_element_t *element) {

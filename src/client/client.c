@@ -158,6 +158,33 @@ int client_send_to_server(Client *client, void *pkt, const uint32_t flags) {
     return client_network_send(client->network, pkt, flags);
 }
 
+void client_on_mouse(float deltaTime) {
+    int x, y;
+    uint32_t buttons = SDL_GetMouseState(&x, &y);
+
+    g_client.clickDelay -= deltaTime;
+    if (g_client.clickDelay > 0) {
+        return; // Still in click delay, ignore mouse input
+    }
+
+    if (buttons) {
+        if (window_handle_mouse(buttons, x, y)) {
+            g_client.clickDelay = 0.2f; // Set click delay to prevent multiple clicks in quick succession
+            return;
+        }
+
+        if (overlay_on_click(&g_client.overlay, buttons, x, y)) {
+            g_client.clickDelay = 0.2f; // Set click delay to prevent multiple clicks in quick succession
+            return;
+        }
+
+        if (build_mode_handle_click(buttons, x, y)) {
+            g_client.clickDelay = 0.2f; // Set click delay to prevent multiple clicks in quick succession
+            return;
+        }
+    }
+}
+
 void client_tickLoop(Client* client) {
     uint8_t shutDownRequested = 0;
 
@@ -197,7 +224,8 @@ void client_tickLoop(Client* client) {
             gfc_input_update();
             network_tick(&client->network->baseNetwork);
 
-            window_handle_event_all();
+            client_on_mouse(g_game.deltaTime);
+            window_handle_keyboard();
             window_update_all(g_game.deltaTime);
             overlay_update(&g_client.overlay, g_game.deltaTime);
 

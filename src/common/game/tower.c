@@ -525,7 +525,6 @@ void tower_entity_think(const entity_manager_t *entityManager, entity_t *ent) {
         inventory_transaction_add_item(trans, item);
         player_inventory_transaction(player, trans);
         free(item);
-        log_info("Tower produced %d gold for player %s", tower->def->productionAmount[tower->level], player->name);
     }
 }
 

@@ -191,15 +191,27 @@ void window_update_all(const float deltaTime) {
     }
 }
 
-void window_handle_event_all(void) {
+int window_handle_mouse(uint32_t mouseButton, int x, int y) {
+    window_event_t event;
+    event.type = EVENT_TYPE_MOUSE;
+    event.data.mouse.x = x;
+    event.data.mouse.y = y;
+    event.data.mouse.buttons = mouseButton;
+
+    if (g_windowManager.active) {
+        return window_handle_event(g_windowManager.active, &event);
+    }
+
+    return 0;
+}
+
+void window_handle_keyboard(void) {
     size_t head = 0, tail;
     const window_event_t *event;
     if (!g_windowManager.active) {
         return;
     }
 
-    event_buffer_clear();
-    event_process_mouse();
     event_process_keyboard();
 
     tail = event_buffer_tail();
@@ -208,6 +220,8 @@ void window_handle_event_all(void) {
         window_handle_event(g_windowManager.active, event);
         head++;
     }
+
+    event_buffer_clear();
 }
 
 window_t * window_load_from_json(const struct def_manager_s *defManager, const char *filePath) {

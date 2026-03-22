@@ -44,22 +44,6 @@ window_event_t *event_buffer_create(void) {
     return event;
 }
 
-void event_process_mouse(void) {
-    uint8_t buttons;
-    int x = 0, y = 0;
-
-    buttons = SDL_GetRelativeMouseState(&x, &y);
-    if (buttons || x || y) {
-        window_event_t *event = event_buffer_create();
-        if (event) {
-            event->type = EVENT_TYPE_MOUSE;
-            event->data.mouse.x = x;
-            event->data.mouse.y = y;
-            event->data.mouse.buttons = buttons;
-        }
-    }
-}
-
 void event_process_keyboard(void) {
     // TODO: Implement keyboard processing. Cannot use SDL_PumpEvents
 }
