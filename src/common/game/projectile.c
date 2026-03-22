@@ -8,13 +8,16 @@
 
 #include "client/gf2d_sprite.h"
 #include "common/game/collision.h"
+#include "common/game/enemy.h"
 #include "common/game/game.h"
 #include "server/server.h"
 
 void projectile_think(const entity_manager_t *entityManager, entity_t *ent);
 void projectile_update(const entity_manager_t *entityManager, entity_t *ent, float deltaTime);
 void projectile_draw(const entity_manager_t *entityManager, entity_t *ent);
+void projectile_destroy(const entity_manager_t *entityManager, entity_t *ent);
 uint32_t projectile_collides_with(entity_t *ent, entity_t *other);
+uint32_t projectile_on_collide(entity_t *ent, entity_t *other, uint32_t collisionType);
 
 int projectile_spawn(const entity_manager_t *entityManager, const float speed, const float damage, const float range,
                         const GFC_Vector2D direction, const char *spriteModel, struct tower_state_s *sourceTower) {
@@ -48,10 +51,15 @@ int projectile_spawn(const entity_manager_t *entityManager, const float speed, c
     projectile->sourceTower = sourceTower;
     projectile->entity = ent;
 
+    world_add_entity(g_game.world, ent);
+
     // Set up the entity's properties
     ent->think = projectile_think;
     ent->update = projectile_update;
     ent->draw = projectile_draw;
+    ent->destroy = projectile_destroy;
+    ent->collidesWith = projectile_collides_with;
+    ent->onCollide = projectile_on_collide;
 
     ent->layers = ENT_LAYER_PROJECTILE;
     ent->boundingBox = gfc_rect(-12, -12, 24, 24); // Example bounding box size for projectile, can be adjusted based on sprite
@@ -69,8 +77,14 @@ int projectile_spawn(const entity_manager_t *entityManager, const float speed, c
 }
 
 void projectile_think(const entity_manager_t *entityManager, entity_t *ent) {
-    // Currently, the projectile does not have any specific thinking behavior.
-    // This function can be expanded in the future to handle things like homing behavior, collision detection, etc.
+    if (!ent || !ent->data) {
+        log_error("Invalid entity or missing projectile data in projectile_think");
+        return;
+    }
+
+    if (g_game.role == GAME_ROLE_SERVER) {
+        collision_check_world(g_game.world, ent, ent->position);
+    }
 }
 
 void projectile_update(const entity_manager_t *entityManager, entity_t *ent, const float deltaTime) {
@@ -119,8 +133,39 @@ uint32_t projectile_collides_with(entity_t *ent, entity_t *other) {
     }
 
     if (other->layers & ENT_LAYER_ENEMY) {
-        return COLLISION_SOLID; // Collides with enemies
+        return COLLISION_EVENT; // Collides with enemies
     }
 
     return COLLISION_NONE; // No collision
+}
+
+uint32_t projectile_on_collide(entity_t *ent, entity_t *other, uint32_t collisionType) {
+    if (!ent || !other || !ent->data) {
+        return 0;
+    }
+
+    projectile_state_t *projectile = (projectile_state_t *)ent->data;
+
+    if (collisionType & COLLISION_EVENT) {
+        // Apply damage to the enemy
+        if (other->data) {
+            enemy_state_t *enemy = (enemy_state_t *)other->data;
+            enemy->health -= projectile->damage;
+            log_info("Projectile hit enemy! Enemy health is now: %f", enemy->health);
+        }
+        // Destroy the projectile after hitting an enemy
+        ent->think = entity_free;
+    }
+
+    return 1;
+}
+
+void projectile_destroy(const entity_manager_t *entityManager, entity_t *ent) {
+    if (!ent || !ent->data) {
+        return;
+    }
+
+    projectile_state_t *projectile = (projectile_state_t *)ent->data;
+
+    world_remove_entity(g_game.world, ent);
 }

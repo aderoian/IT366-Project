@@ -31,6 +31,7 @@ int collision_check_chunk(const chunk_t *chunk, const entity_t *ent, GFC_Vector2
     size_t i, j;
     entity_t *otherEnt;
     GFC_Rect aBoundingBox, bBoundingBox;
+    uint32_t collisionType, collided = 0;
     if (!chunk || !ent) {
         return 0;
     }
@@ -38,7 +39,9 @@ int collision_check_chunk(const chunk_t *chunk, const entity_t *ent, GFC_Vector2
     for (i = 0; i < gfc_list_count(chunk->entities); i++) {
         otherEnt = gfc_list_get_nth(chunk->entities, i);
         if (otherEnt == ent) continue; // Skip self
-        if (!ent->collidesWith || !(ent->collidesWith(ent, otherEnt) & COLLISION_SOLID)) continue; // Skip if not collidable
+        if (!ent->collidesWith) continue; // Skip if not collidable
+        collisionType = ent->collidesWith(ent, otherEnt);
+        if (!collisionType) continue; // Skip if collidesWith returns no collision
 
         aBoundingBox = ent->boundingBox;
         bBoundingBox = otherEnt->boundingBox;
@@ -48,11 +51,22 @@ int collision_check_chunk(const chunk_t *chunk, const entity_t *ent, GFC_Vector2
         bBoundingBox.y += otherEnt->position.y;
 
         if (gfc_rect_overlap(aBoundingBox, bBoundingBox)) {
-            return 0; // Collision detected, cannot move
+            if (collisionType & COLLISION_SOLID) {
+                if (ent->onCollide) {
+                    ent->onCollide(ent, otherEnt, collisionType);
+                }
+                return 1; // Collision detected, cannot move
+            }
+
+            if (ent->onCollide) {
+                ent->onCollide(ent, otherEnt, collisionType);
+            }
+            // If it's not a solid collision, we still want to trigger the onCollide event, but it doesn't block movement
+            collided = 1;
         }
     }
 
-    return 1; // No collision detected, can move
+    return collided; // No collision detected, can move
 }
 
 int collision_check_world(const world_t *world, const entity_t *ent,
@@ -69,13 +83,13 @@ int collision_check_world(const world_t *world, const entity_t *ent,
         for (j = chunkY - 1; j <= chunkY + 1; j++) {
             chunk = world_get_chunk(world, i, j);
             if (!chunk) continue;
-            if (!collision_check_chunk(chunk, ent, newPosition)) {
-                return 0; // Collision detected in this chunk, cannot move
+            if (collision_check_chunk(chunk, ent, newPosition)) {
+                return 1; // Collision detected in this chunk, cannot move
             }
         }
     }
 
-    return 1; // No collision detected in surrounding chunks, can move
+    return 0;
 }
 
 int collision_check_chunk_bounding(const chunk_t *chunk, GFC_Rect boundingBox) {

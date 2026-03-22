@@ -8,7 +8,7 @@ struct entity_s;
 
 typedef struct projectile_state_s {
     float speed;
-    int damage;
+    float damage;
     float range;
     GFC_Vector2D direction;
     GFC_Vector2D distanceTraveled;

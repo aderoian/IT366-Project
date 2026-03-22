@@ -225,7 +225,7 @@ GFC_Vector2D enemy_move(entity_t *ent, float deltaTime) {
         return gfc_vector2d(fmaxf(0, fminf(newPosition.x, world->size.x * CHUNK_TILE_SIZE * TILE_SIZE - 1)), fmaxf(0, fminf(newPosition.y, world->size.y * CHUNK_TILE_SIZE * TILE_SIZE - 1)));
     }
 
-    while (!collision_check_world(world, ent, newPosition)) {
+    while (collision_check_world(world, ent, newPosition)) {
         gfc_vector2d_scale(moveDelta, moveDelta, 0.5f);
         gfc_vector2d_add(newPosition, ent->position, moveDelta);
 
@@ -249,6 +249,11 @@ void enemy_think(const entity_manager_t *entityManager, entity_t *ent) {
     }
 
     enemy_state_t *state = (enemy_state_t *)ent->data;
+
+    if (state->health <= 0) {
+        ent->think = entity_free; // Mark for deletion
+        return;
+    }
 
     state->attackTargetTimer -= g_game.deltaTime;
     state->attackCooldownTimer -= g_game.deltaTime;
@@ -349,6 +354,8 @@ void enemy_destroy(const entity_manager_t *entityManager, entity_t *ent) {
     gfc_list_delete(state->targets);
     gf2d_sprite_free(state->bodySprite);
     gf2d_sprite_free(state->handsSprite);
+
+    world_remove_entity(g_game.world, ent);
 
     if (g_game.role == GAME_ROLE_SERVER) {
         s2c_enemy_snapshot_packet_t *pkt = gfc_allocate_array(sizeof(s2c_enemy_snapshot_packet_t), 1);

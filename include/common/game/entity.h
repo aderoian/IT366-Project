@@ -38,6 +38,7 @@ typedef struct entity_s {
     void (*draw)(const entity_manager_t *entityManager, struct entity_s *ent);
     void (*destroy)(const entity_manager_t *entityManager, struct entity_s *ent);
     uint32_t (*collidesWith)(struct entity_s *ent, struct entity_s *other);
+    uint32_t (*onCollide)(struct entity_s *ent, struct entity_s *other, uint32_t type);
 } entity_t;
 
 entity_manager_t *entity_init(uint32_t maxEnts);
