@@ -19,6 +19,7 @@
 
 struct def_manager_s;
 struct entity_manager_s;
+struct player_s;
 
 typedef enum tower_type_e {
     TOWER_TYPE_DEFENSIVE = 0,
@@ -161,6 +162,9 @@ entity_t *tower_create_by_def(const struct entity_manager_s *entityManager, towe
  */
 entity_t *tower_place(const struct entity_manager_s *entityManager, tower_manager_t *towerManager, const tower_def_t *def, GFC_Vector2D position, uint32_t id);
 
+void tower_request_upgrade(const struct entity_manager_s *entityManager, tower_manager_t *towerManager, entity_t *entity);
+void tower_try_upgrade(const struct entity_manager_s *entityManager, tower_manager_t *towerManager, struct player_s *player, entity_t *entity);
+void tower_upgrade(const struct entity_manager_s *entityManager, tower_manager_t *towerManager, entity_t *entity, int newLevel);
 /**
  * @brief Retrieves a tower state by its unique ID. This function looks up the tower manager's mapping of tower IDs to their corresponding states
  * and returns a pointer to the tower state if found.

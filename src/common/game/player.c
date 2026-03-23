@@ -224,12 +224,13 @@ GFC_Vector2D player_move(player_t *player, world_t *world, GFC_Vector2D position
     return newPosition;
 }
 
-int player_inventory_transaction(player_t *player, const inventory_transaction_t *transaction) {
+int player_inventory_transaction(player_t *player, inventory_transaction_t *transaction) {
     if (!player || !transaction) {
         return 0;
     }
 
     if (!inventory_transaction_try(&player->inventory, transaction) && !__INF_RESOURCES) {
+        inventory_transaction_destroy(transaction);
         return 0;
     }
 

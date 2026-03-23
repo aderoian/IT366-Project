@@ -82,12 +82,11 @@ void read_s2c_player_create(buffer_t, buffer_offset_t *, s2c_player_create_packe
 void create_s2c_player_create(s2c_player_create_packet_t *pkt, uint32_t playerID, float spawnX,
                               float spawnY);
 
-void write_c2s_tower_build_request(buffer_t, buffer_offset_t *, const c2s_tower_build_request_packet_t *);
+void write_c2s_tower_request(buffer_t, buffer_offset_t *, const c2s_tower_request_packet_t *);
 
-void read_c2s_tower_build_request(buffer_t, buffer_offset_t *, c2s_tower_build_request_packet_t *);
+void read_c2s_tower_request(buffer_t, buffer_offset_t *, c2s_tower_request_packet_t *);
 
-void create_c2s_tower_build_request(c2s_tower_build_request_packet_t *pkt, float xPos, float yPos,
-                                    uint32_t towerDefIndex);
+void create_c2s_tower_request(c2s_tower_request_packet_t *pkt, tower_request_id_t id, tower_request_data_t *data);
 
 void write_s2c_tower_snapshot(buffer_t, buffer_offset_t *, const s2c_tower_snapshot_packet_t *);
 

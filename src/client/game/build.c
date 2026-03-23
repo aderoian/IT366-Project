@@ -77,7 +77,8 @@ void build_mode_update(void) {
 }
 
 int build_mode_handle_click(uint32_t mouseButton, int x, int y) {
-    c2s_tower_build_request_packet_t pkt;
+    c2s_tower_request_packet_t pkt;
+    tower_request_data_t data;
 
     if (!build_mode) {
         return 0;
@@ -94,7 +95,10 @@ int build_mode_handle_click(uint32_t mouseButton, int x, int y) {
             return 0; // Can't build here, something is in the way
         }
 
-        create_c2s_tower_build_request(&pkt, build_mode->position.x, build_mode->position.y, build_mode->towerDef->index);
+        data.buildData.xPos = build_mode->position.x;
+        data.buildData.yPos = build_mode->position.y;
+        data.buildData.towerDefIndex = build_mode->towerDef->index;
+        create_c2s_tower_request(&pkt, TOWER_REQUEST_BUILD, &data);
         client_send_to_server(&g_client, &pkt, NET_UDP_FLAG_RELIABLE);
         build_mode_exit();
         return 1;

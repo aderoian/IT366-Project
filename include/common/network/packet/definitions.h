@@ -21,7 +21,7 @@ typedef enum {
     PACKET_C2S_PLAYER_INPUT_SNAPSHOT,
     PACKET_S2C_PLAYER_STATE_SNAPSHOT,
     PACKET_S2C_PLAYER_CREATE,
-    PACKET_C2S_TOWER_BUILD_REQUEST,
+    PACKET_C2S_TOWER_REQUEST,
     PACKET_S2C_TOWER_SNAPSHOT,
     PACKET_S2C_INVENTORY_UPDATE,
     PACKET_S2C_GAME_STATE_SNAPSHOT,
@@ -75,12 +75,31 @@ typedef struct s2c_player_create_packet_s {
     float spawnY;
 } s2c_player_create_packet_t;
 
-typedef struct c2s_tower_build_request_packet_s {
+typedef enum tower_request_id_e {
+    TOWER_REQUEST_BUILD,
+    TOWER_REQUEST_UPGRADE,
+    TOWER_REQUEST_SELL
+} tower_request_id_t;
+
+typedef union tower_request_data_u {
+    struct {
+        float xPos;
+        float yPos;
+        uint32_t towerDefIndex;
+    } buildData;
+    struct {
+        uint32_t towerID;
+    } upgradeData;
+    struct {
+        uint32_t towerID;
+    } sellData;
+} tower_request_data_t;
+
+typedef struct c2s_tower_request_packet_s {
     PACKET_HEADER
-    float xPos;
-    float yPos;
-    uint32_t towerDefIndex;
-} c2s_tower_build_request_packet_t;
+    tower_request_id_t requestID;
+    tower_request_data_t requestData;
+} c2s_tower_request_packet_t;
 
 typedef enum tower_snapshot_id_e {
     TOWER_SNAPSHOT_CREATE,

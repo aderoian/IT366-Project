@@ -49,7 +49,7 @@ void handle_c2s_player_join_request(const c2s_player_join_request_packet_t *pkt,
     server_send_packet(&g_server, player, &packet, NET_UDP_FLAG_RELIABLE);
 }
 
-void handle_c2s_tower_build_request(const c2s_tower_build_request_packet_t *pkt, void *peer) {
+void handle_c2s_tower_request(const c2s_tower_request_packet_t *pkt, void *peer) {
     player_t *player;
     network_session_t *session;
     const tower_def_t *towerDef;
@@ -69,15 +69,25 @@ void handle_c2s_tower_build_request(const c2s_tower_build_request_packet_t *pkt,
         return;
     }
 
-    towerDef = tower_def_get_by_index(g_server.towerManager, pkt->towerDefIndex);
-    if (!towerDef) {
-        log_warn("Received tower build request with invalid tower definition index %u from player ID %u", pkt->towerDefIndex, player->id);
-        return;
-    }
+    if (pkt->requestID == TOWER_REQUEST_BUILD) {
+        towerDef = tower_def_get_by_index(g_server.towerManager, pkt->requestData.buildData.towerDefIndex);
+        if (!towerDef) {
+            log_warn("Received tower build request with invalid tower definition index %u from player ID %u", pkt->requestData.buildData.towerDefIndex, player->id);
+            return;
+        }
 
-    if (!player_try_build_tower(player, towerDef, gfc_vector2d(pkt->xPos, pkt->yPos))) {
-        log_info("Player ID %u failed to build tower at position (%f, %f) with definition index %u", player->id, pkt->xPos, pkt->yPos, pkt->towerDefIndex);
-    } else {
-        log_info("Player ID %u successfully built tower at position (%f, %f) with definition index %u", player->id, pkt->xPos, pkt->yPos, pkt->towerDefIndex);
+        if (!player_try_build_tower(player, towerDef, gfc_vector2d(pkt->requestData.buildData.xPos, pkt->requestData.buildData.yPos))) {
+            log_info("Player ID %u failed to build tower at position (%f, %f) with definition index %u", player->id, pkt->requestData.buildData.xPos, pkt->requestData.buildData.yPos, pkt->requestData.buildData.towerDefIndex);
+        } else {
+            log_info("Player ID %u successfully built tower at position (%f, %f) with definition index %u", player->id, pkt->requestData.buildData.xPos, pkt->requestData.buildData.yPos, pkt->requestData.buildData.towerDefIndex);
+        }
+    } else if (pkt->requestID == TOWER_REQUEST_UPGRADE) {
+        entity_t *tower = tower_get_by_id(g_server.towerManager, pkt->requestData.upgradeData.towerID);
+        if (!tower) {
+            log_warn("Received tower upgrade request for non-existent tower ID %u from player ID %u", pkt->requestData.upgradeData.towerID, player->id);
+            return;
+        }
+
+        tower_try_upgrade(g_server.entityManager, g_server.towerManager, player, tower);
     }
 }

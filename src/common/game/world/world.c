@@ -174,8 +174,7 @@ int world_on_click(world_t *world, uint32_t mouseButton, int x, int y) {
         GFC_Rect buttonRect = gfc_rect(element->position.x + 20, element->position.y + 148, 300, 30);
         int pressed = gfc_point_in_rect(worldPos, buttonRect);
         if (pressed) {
-            // TODO: handle tower upgrade
-            log_info("Upgrade button pressed for tower at position (%.2f, %.2f)", world->selected_tower->tower->position.x, world->selected_tower->tower->position.y);
+            tower_request_upgrade(g_client.entityManager, g_client.towerManager, world->selected_tower->tower);
         } else {
             buttonRect.y += 34;
             pressed = gfc_point_in_rect(worldPos, buttonRect);

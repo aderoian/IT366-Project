@@ -327,6 +327,90 @@ entity_t *tower_place(const entity_manager_t *entityManager, tower_manager_t *to
     return ent;
 }
 
+void tower_request_upgrade(const struct entity_manager_s *entityManager, tower_manager_t *towerManager,
+    entity_t *entity) {
+    if (!entity || !entity->data) return;
+
+    tower_state_t *tower = (tower_state_t *)entity->data;
+    if (tower->level >= TOWER_MAX_LEVEL - 1) {
+        log_info("Tower is already at max level");
+        return; // Already at max level
+    }
+
+    c2s_tower_request_packet_t packet;
+    tower_request_data_t data = {
+        .upgradeData = {
+            .towerID = tower->id
+        }
+    };
+
+    create_c2s_tower_request(&packet, TOWER_REQUEST_UPGRADE, &data);
+    client_send_to_server(&g_client, &packet, NET_UDP_FLAG_RELIABLE);
+}
+
+void tower_try_upgrade(const struct entity_manager_s *entityManager, tower_manager_t *towerManager, player_t *player, entity_t *entity) {
+    if (!entity || !entity->data) return;
+    tower_state_t *tower = (tower_state_t *)entity->data;
+
+    if (tower->level >= TOWER_MAX_LEVEL - 1) {
+        log_info("Tower is already at max level");
+        return; // Already at max level
+    }
+
+    const tower_def_t *def = tower->def;
+    int nextLevel = tower->level + 1;
+    inventory_transaction_t *transaction = tower_get_cost_transaction(def, nextLevel);
+    if (!transaction) {
+        log_error("Failed to create inventory transaction for tower upgrade");
+        return;
+    }
+
+    if (!player_inventory_transaction(player, transaction)) {
+        log_info("Player cannot afford tower upgrade");
+        return; // Cannot afford upgrade
+    }
+
+    tower_upgrade(entityManager, towerManager, entity, nextLevel);
+}
+
+void tower_upgrade(const struct entity_manager_s *entityManager, tower_manager_t *towerManager, entity_t *entity, int newLevel) {
+    if (!entity || !entity->data) return;
+    tower_state_t *tower = (tower_state_t *)entity->data;
+
+    if (tower->level >= TOWER_MAX_LEVEL - 1) {
+        log_info("Tower is already at max level");
+        return; // Already at max level
+    }
+
+    tower->level = newLevel;
+
+     // Update tower stats based on new level
+    tower->health = tower->def->maxHealth[tower->level];
+
+    if (g_game.role == GAME_ROLE_CLIENT) {
+        char spritePath[256];
+        if (tower->baseSprite) {
+            gf2d_sprite_free(tower->baseSprite);
+            snprintf(spritePath, sizeof(spritePath), tower->def->modelDef.baseSpritePath, tower->level + 1);
+            tower->baseSprite = gf2d_sprite_load_image(spritePath);
+        }
+        if (tower->weaponSprite) {
+            gf2d_sprite_free(tower->weaponSprite);
+            snprintf(spritePath, sizeof(spritePath), tower->def->modelDef.weaponSpritePath, tower->level + 1);
+            tower->weaponSprite = gf2d_sprite_load_image(spritePath);
+        }
+    } else {
+        s2c_tower_snapshot_packet_t packet;
+        tower_snapshot_data_t snapshotData = {
+            .changeData = {
+                .level = tower->level
+            }
+        };
+        create_s2c_tower_snapshot(&packet, tower->id, TOWER_SNAPSHOT_CHANGE, &snapshotData);
+        server_broadcast_packet(&g_server, &packet, NET_UDP_FLAG_RELIABLE);
+    }
+}
+
 entity_t * tower_get_by_id(tower_manager_t *towerManager, const uint32_t id) {
     uint32_t index;
     if (id >= towerManager->maxTowers) {

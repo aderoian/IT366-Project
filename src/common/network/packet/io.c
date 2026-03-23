@@ -302,13 +302,20 @@ void write_s2c_player_create(buffer_t buf, buffer_offset_t *off, const s2c_playe
     write_float(buf, off, pkt->spawnY);
 }
 
-void write_c2s_tower_build_request(buffer_t buf, buffer_offset_t *off,
-                                       const c2s_tower_build_request_packet_t *pkt) {
+void write_c2s_tower_request(buffer_t buf, buffer_offset_t *off,
+                                       const c2s_tower_request_packet_t *pkt) {
     write_uint8(buf, off, pkt->packetID);
     write_uint64(buf, off, pkt->length);
-    write_float(buf, off, pkt->xPos);
-    write_float(buf, off, pkt->yPos);
-    write_uint32(buf, off, pkt->towerDefIndex);
+    write_uint8(buf, off, pkt->requestID);
+    if (pkt->requestID == TOWER_REQUEST_BUILD) {
+        write_float(buf, off, pkt->requestData.buildData.xPos);
+        write_float(buf, off, pkt->requestData.buildData.yPos);
+        write_uint32(buf, off, pkt->requestData.buildData.towerDefIndex);
+    } else if (pkt->requestID == TOWER_REQUEST_UPGRADE) {
+        write_uint32(buf, off, pkt->requestData.upgradeData.towerID);
+    } else if (pkt->requestID == TOWER_REQUEST_SELL) {
+        write_uint32(buf, off, pkt->requestData.sellData.towerID);
+    }
 }
 
 void write_s2c_tower_snapshot(buffer_t buf, buffer_offset_t *off, const s2c_tower_snapshot_packet_t *pkt) {
@@ -410,12 +417,19 @@ void read_s2c_player_create(buffer_t buf, buffer_offset_t *off, s2c_player_creat
     pkt->spawnY = read_float(buf, off);
 }
 
-void read_c2s_tower_build_request(buffer_t buf, buffer_offset_t *off, c2s_tower_build_request_packet_t *pkt) {
+void read_c2s_tower_request(buffer_t buf, buffer_offset_t *off, c2s_tower_request_packet_t *pkt) {
     pkt->packetID = read_uint8(buf, off);
     pkt->length = read_uint64(buf, off);
-    pkt->xPos = read_float(buf, off);
-    pkt->yPos = read_float(buf, off);
-    pkt->towerDefIndex = read_uint32(buf, off);
+    pkt->requestID = read_uint8(buf, off);
+    if (pkt->requestID == TOWER_REQUEST_BUILD) {
+        pkt->requestData.buildData.xPos = read_float(buf, off);
+        pkt->requestData.buildData.yPos = read_float(buf, off);
+        pkt->requestData.buildData.towerDefIndex = read_uint32(buf, off);
+    } else if (pkt->requestID == TOWER_REQUEST_UPGRADE) {
+        pkt->requestData.upgradeData.towerID = read_uint32(buf, off);
+    } else if (pkt->requestID == TOWER_REQUEST_SELL) {
+        pkt->requestData.sellData.towerID = read_uint32(buf, off);
+    }
 }
 
 void read_s2c_tower_snapshot(buffer_t buf, buffer_offset_t *off, s2c_tower_snapshot_packet_t *pkt) {
@@ -519,13 +533,19 @@ void create_s2c_player_create(s2c_player_create_packet_t *pkt, uint32_t playerID
     pkt->spawnY = spawnY;
 }
 
-void create_c2s_tower_build_request(c2s_tower_build_request_packet_t *pkt, float xPos, float yPos,
-                                    uint32_t towerDefIndex) {
-    pkt->packetID = PACKET_C2S_TOWER_BUILD_REQUEST;
-    pkt->length = sizeof(xPos) + sizeof(yPos) + sizeof(towerDefIndex);
-    pkt->xPos = xPos;
-    pkt->yPos = yPos;
-    pkt->towerDefIndex = towerDefIndex;
+void create_c2s_tower_request(c2s_tower_request_packet_t *pkt, tower_request_id_t id, tower_request_data_t *data) {
+    pkt->packetID = PACKET_C2S_TOWER_REQUEST;
+    pkt->length = sizeof(uint8_t);
+    if (id == TOWER_REQUEST_BUILD) {
+        pkt->length += sizeof(data->buildData.xPos) + sizeof(data->buildData.yPos) + sizeof(data->buildData.towerDefIndex);
+    } else if (id == TOWER_REQUEST_UPGRADE) {
+        pkt->length += sizeof(data->upgradeData.towerID);
+    } else if (id == TOWER_REQUEST_SELL) {
+        pkt->length += sizeof(data->sellData.towerID);
+    }
+
+    pkt->requestID = id;
+    pkt->requestData = *data;
 }
 
 void create_s2c_tower_snapshot(s2c_tower_snapshot_packet_t *pkt, uint32_t towerID, tower_snapshot_id_t snapshotID, tower_snapshot_data_t *eventData) {
