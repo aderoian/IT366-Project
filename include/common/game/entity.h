@@ -18,6 +18,7 @@
 #define ENT_LAYER_TOWER   0x0004
 #define ENT_LAYER_PROJECTILE 0x0008
 #define ENT_LAYER_ENEMY   0x0010
+#define ENT_LAYER_RESOURCE 0x0020
 
 typedef struct entity_manager_s entity_manager_t;
 

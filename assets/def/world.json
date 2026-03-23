@@ -1,0 +1,18 @@
+{
+  "size": [5, 5],
+  "#comment": "Note the size of the world when placing entities. 0,0 is the top left corner of the world.",
+  "entities": [
+    {
+      "id": "rock",
+      "type": "resource",
+      "item": "stone",
+      "position": [24, 16]
+    },
+    {
+      "id": "tree",
+      "type": "resource",
+      "item": "wood",
+      "position": [24, 24]
+    }
+  ]
+}

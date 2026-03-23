@@ -7,6 +7,7 @@
 #include "client/gf2d_graphics.h"
 #include "client/gf2d_sprite.h"
 #include "client/ui/overlay.h"
+#include "common/def.h"
 #include "common/logger.h"
 #include "common/game/enemy.h"
 #include "common/game/entity.h"
@@ -20,14 +21,26 @@
 
 extern uint8_t __DEBUG_LINES;
 
+void world_load_entities(world_t *world, def_data_t *worldDef);
 void world_tower_options_draw(overlay_element_t *element);
 
-world_t *world_create(const int width, const int height, const uint8_t local) {
-    int i, j;
+world_t *world_create(def_manager_t *defManager, const char *file, const uint8_t local) {
+    int i, j, width, height;
+    GFC_Vector2I size;
     world_t *world = malloc(sizeof(world_t));
     if (!world) {
         return NULL;
     }
+
+    def_data_t *worldDef = def_load(defManager, file);
+    if (!worldDef) {
+        log_error("Failed to load world definition from file: %s", file);
+        free(world);
+        return NULL;
+    }
+
+    def_data_get_vector2i(worldDef, "size", &size);
+    width = size.x; height = size.y;
 
     world->chunks = gfc_allocate_array(sizeof(chunk_t), width * height);
     if (!world->chunks) {
@@ -44,12 +57,61 @@ world_t *world_create(const int width, const int height, const uint8_t local) {
     world->size.x = width; world->size.y = height;
     world->local = local;
 
+    world_load_entities(world, worldDef);
+
     if (g_game.role == GAME_ROLE_CLIENT) {
         world->selected_tower = NULL;
         world_create_chunk_texture(world);
     }
 
     return world;
+}
+
+void world_load_entities(world_t *world, def_data_t *worldDef) {
+    def_data_t *entitiesDef = def_data_get_array(worldDef, "entities");
+    if (!entitiesDef) {
+        log_error("World definition is missing 'entities' array");
+        return;
+    }
+
+    int entityCount;
+    world_object_type_t type;
+    GFC_Vector2D pos;
+    const char *str;
+    char imagePath[64];
+    def_data_array_get_count(entitiesDef, &entityCount);
+    for (int i = 0; i < entityCount; i++) {
+        def_data_t *entityDef = def_data_array_get_nth(entitiesDef, i);
+        if (!entityDef) {
+            log_error("Failed to get entity definition at index %d", i);
+            continue;
+        }
+
+        str = def_data_get_string(entityDef, "type");
+        type = world_type_from_string(str);
+        if (type == WORLD_OBJECT_NONE) {
+            log_error("Unknown entity type '%s' in world definition", str);
+            continue;
+        }
+
+        def_data_get_vector2d(entityDef, "position", &pos);
+        gfc_vector2d_scale(pos, pos, TILE_SIZE); // Convert from tile coordinates to world coordinates
+        if (type == WORLD_OBJECT_RESOURCE) {
+            item_def_t *itemDef = item_def_get(g_game.itemDefManager, def_data_get_string(entityDef, "item"));
+            if (!itemDef) {
+                log_error("Failed to find item definition for resource entity: %s", def_data_get_string(entityDef, "item"));
+                continue;
+            }
+
+            str = def_data_get_string(entityDef, "id");
+            if (g_game.role == GAME_ROLE_CLIENT) {
+                snprintf(imagePath, sizeof(imagePath), "images/map/%s.svg", str);
+            } else {
+                imagePath[0] = '\0';
+            }
+            world_object_resource_spawn(world, pos, item_create(itemDef, 0), imagePath);
+        }
+    }
 }
 
 void world_create_chunk_texture(world_t *world) {
@@ -376,6 +438,42 @@ int world_remove_entity(world_t *world, entity_t *ent) {
     }
 
     return 0; // Entity position is out of world bounds
+}
+
+world_object_type_t world_type_from_string(const char *typeStr) {
+    if (strcmp(typeStr, "tower") == 0) {
+        return WORLD_OBJECT_TOWER;
+    } else if (strcmp(typeStr, "enemy") == 0) {
+        return WORLD_OBJECT_ENEMY;
+    } else if (strcmp(typeStr, "resource") == 0) {
+        return WORLD_OBJECT_RESOURCE;
+    }
+    return WORLD_OBJECT_NONE;
+}
+
+struct entity_s * world_object_resource_spawn(world_t *world, GFC_Vector2D pos, item_t *resource, const char *image) {
+    if (!world || !resource) {
+        return NULL;
+    }
+
+    entity_t *ent;
+    if (g_game.role == GAME_ROLE_CLIENT) {
+        ent = entity_new(g_client.entityManager, -1);
+    } else {
+        ent = entity_new(g_server.entityManager, entity_next_id(g_server.entityManager));
+    }
+
+    ent->position = pos;
+    ent->boundingBox = gfc_rect(0, 0, 144, 144); // Example bounding box, adjust as needed
+    ent->layers = ENT_LAYER_RESOURCE;
+    ent->data = resource; // Store item data in entity for later use
+
+    if (image && strlen(image) > 0) {
+        ent->model = gf2d_sprite_load_image(image);
+    }
+
+    world_add_entity(world, ent);
+    return ent;
 }
 
 void world_tower_options_draw(overlay_element_t *element) {

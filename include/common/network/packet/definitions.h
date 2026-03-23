@@ -54,6 +54,7 @@ typedef struct player_input_command_s {
     int8_t axisX;
     int8_t axisY;
     uint8_t attack;
+    float rotation;
 } player_input_command_t;
 
 typedef struct c2s_player_input_snapshot_packet_s {

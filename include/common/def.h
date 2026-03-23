@@ -134,4 +134,6 @@ int def_data_array_get_count(def_data_t *array, int *count);
 
 int def_data_get_vector2d(def_data_t *def, const char *key, GFC_Vector2D *output);
 
+int def_data_get_vector2i(def_data_t *def, const char *key, GFC_Vector2I *output);
+
 #endif /* DEF_H */

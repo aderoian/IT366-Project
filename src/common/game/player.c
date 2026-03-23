@@ -10,6 +10,7 @@
 #include "client/animation.h"
 #include "client/camera.h"
 #include "client/client.h"
+#include "client/gf2d_draw.h"
 #include "client/gf2d_sprite.h"
 #include "common/game/collision.h"
 #include "common/game/tower.h"
@@ -22,7 +23,7 @@
 #define PLAYER_ATTACK_COOLDOWN 0.5f
 #define PLAYER_ATTACK_STRENGTH 60.0f
 
-extern uint8_t __INF_RESOURCES;
+extern uint8_t __INF_RESOURCES, __DEBUG_LINES;
 
 typedef struct player_snapshot_s {
     GFC_Vector2D position;
@@ -109,7 +110,7 @@ GFC_Vector2D player_input_apply(player_t *player, const GFC_Vector2D position, c
     dirY = (actions->down ? 1 : 0) - (actions->up ? 1 : 0);
     GFC_Vector2D direction = gfc_vector2d(dirX, dirY);
 
-    if (direction.x == 0.0f && direction.y == 0.0f && !actions->attack) {
+    if (direction.x == 0.0f && direction.y == 0.0f && !actions->attack && player->entity->rotation == actions->rotation) {
         return position; // No input, skip processing
     }
 
@@ -122,7 +123,8 @@ GFC_Vector2D player_input_apply(player_t *player, const GFC_Vector2D position, c
                 .tickNumber = g_game.tickNumber,
                 .axisX = dirX, // Scale to fit in int8 range
                 .axisY = dirY,
-                .attack = actions->attack
+                .attack = actions->attack,
+                .rotation = actions->rotation
             }
         };
         buf_spsc_ring_push(player->inputBuffer, &snapshot);
@@ -144,9 +146,10 @@ void player_input_process(player_t *player, const player_input_command_t *cmd, c
     direction = gfc_vector2d((float)cmd->axisX, (float)cmd->axisY);
     player->position = player_move(player, g_game.world, player->position, direction, PLAYER_SPEED, deltaTime);
 
-    if (cmd->attack && player->attackCooldown <= 0.0f) {
-        player->attackCooldown = PLAYER_ATTACK_COOLDOWN;
-        // TODO: Implement attack logic, e.g. check for nearby enemies and apply damage
+    player->entity->rotation = cmd->rotation;
+
+    if (cmd->attack) {
+        player_attack(player, g_game.world);
     }
 
     player->lastProcessedInputTick = cmd->tickNumber;
@@ -222,6 +225,42 @@ GFC_Vector2D player_move(player_t *player, world_t *world, GFC_Vector2D position
     }
 
     return newPosition;
+}
+
+void player_attack(player_t *player, struct world_s *world) {
+    GFC_Vector2D endPos;
+    GFC_List *list;
+    uint32_t i;
+    item_t *item;
+    if (!player || !world) {
+        return;
+    }
+
+    if (player->attackCooldown > 0.0f) {
+        return;
+    }
+
+    player->attackCooldown = PLAYER_ATTACK_COOLDOWN;
+    endPos = gfc_vector2d_from_angle((player->entity->rotation - 180.0f) * M_PI / 180.0f);
+    gfc_vector2d_scale(endPos, endPos, 50); // TODO: range based on tool
+    gfc_vector2d_add(endPos, player->position, endPos);
+
+    list = gfc_list_new();
+
+    collision_raycast_world(world, player->entity, player->position, endPos, list);
+
+    for (i = 0; i < gfc_list_count(list); i++) {
+        entity_t *hitEnt = (entity_t *)gfc_list_nth(list, i);
+        if (hitEnt->layers & ENT_LAYER_RESOURCE) {
+            item = (item_t *)hitEnt->data;
+            item = item_clone(item);
+            item->quantity = 2;
+
+            inventory_transaction_t *trans = inventory_transaction_create(1, 1);
+            inventory_transaction_add_item(trans, item);
+            player_inventory_transaction(player, trans);
+        }
+    }
 }
 
 int player_inventory_transaction(player_t *player, inventory_transaction_t *transaction) {
@@ -316,13 +355,13 @@ void player_update(const entity_manager_t *entityManager, entity_t *ent, float d
 
         position = player->position;
         camera_get_mouse_world_position(&g_camera, &mousePosition);
-        ent->rotation = atan2f(mousePosition.y - position.y, mousePosition.x - position.x) * 180.0f / M_PI + 90.0f;
+        actions.rotation = atan2f(mousePosition.y - position.y, mousePosition.x - position.x) * 180.0f / M_PI + 90.0f;
 
         player->position = player_input_apply(player, player->position, &actions, deltaTime, 1);
+        ent->rotation = actions.rotation;
 
         if (actions.attack && player->attackCooldown <= 0.0f) {
             player->attackCooldown = PLAYER_ATTACK_COOLDOWN;
-            // TODO: implement attack logic, e.g. check for enemies in range and apply damage
         }
     } else if (player->processedInput) {
         player->processedInput = 0;
@@ -357,6 +396,16 @@ void player_draw(const entity_manager_t *entityManager, entity_t *ent) {
     }
 
     gf2d_sprite_draw(ent->model, position,NULL, &centerPos, NULL, NULL, NULL, 0);
+
+    if (__DEBUG_LINES) {
+        GFC_Vector2D endPos;
+        endPos = gfc_vector2d_from_angle((player->entity->rotation - 180.0f) * M_PI / 180.0f);
+        gfc_vector2d_scale(endPos, endPos, 50); // TODO: range based on tool
+        gfc_vector2d_add(endPos, player->position, endPos);
+        gfc_vector2d_sub(endPos, endPos, g_camera.position);
+
+        gf2d_draw_line(position, endPos, GFC_COLOR_DARKMAGENTA);
+    }
 }
 
 uint32_t player_collides_with(entity_t *ent, entity_t *other) {
@@ -364,7 +413,7 @@ uint32_t player_collides_with(entity_t *ent, entity_t *other) {
         return COLLISION_NONE;
     }
 
-    if (other->layers & ENT_LAYER_TOWER) {
+    if (other->layers & (ENT_LAYER_TOWER | ENT_LAYER_RESOURCE)) {
         return COLLISION_SOLID;
     }
 

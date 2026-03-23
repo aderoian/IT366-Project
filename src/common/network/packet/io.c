@@ -187,6 +187,7 @@ void write_player_input_command(buffer_t buffer, buffer_offset_t *offset, const 
     write_int8(buffer, offset, cmd->axisX);
     write_int8(buffer, offset, cmd->axisY);
     write_int8(buffer, offset, cmd->attack);
+    write_float(buffer, offset, cmd->rotation);
 }
 
 void write_item(buffer_t buffer, buffer_offset_t *offset, const item_t *item) {
@@ -217,6 +218,7 @@ void read_player_input_command(buffer_t buffer, buffer_offset_t *offset, player_
     cmd->axisX = read_int8(buffer, offset);
     cmd->axisY = read_int8(buffer, offset);
     cmd->attack = read_int8(buffer, offset);
+    cmd->rotation = read_float(buffer, offset);
 }
 
 void read_item(buffer_t buffer, buffer_offset_t *offset, item_t *item) {
@@ -511,7 +513,7 @@ void create_s2c_player_join_response(s2c_player_join_response_packet_t *pkt, uin
 
 void create_c2s_player_input_snapshot(c2s_player_input_snapshot_packet_t *pkt, player_input_command_t *inputCommand) {
     pkt->packetID = PACKET_C2S_PLAYER_INPUT_SNAPSHOT;
-    pkt->length = sizeof(inputCommand->tickNumber) + sizeof(inputCommand->axisX) + sizeof(inputCommand->axisY) + sizeof(inputCommand->attack);
+    pkt->length = sizeof(inputCommand->tickNumber) + sizeof(inputCommand->axisX) + sizeof(inputCommand->axisY) + sizeof(inputCommand->attack) + sizeof(inputCommand->rotation);
     pkt->inputCommand = *inputCommand;
 }
 

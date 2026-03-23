@@ -3,12 +3,21 @@
 
 #include "chunk.h"
 #include "gfc_vector.h"
+#include "common/game/item.h"
 
 #define TILE_SIZE 48
 #define CHUNK_TILE_SIZE 16
 
+struct def_manager_s;
 struct entity_s;
 struct overlay_element_s;
+
+typedef enum world_object_type_e {
+    WORLD_OBJECT_NONE,
+    WORLD_OBJECT_TOWER,
+    WORLD_OBJECT_ENEMY,
+    WORLD_OBJECT_RESOURCE
+} world_object_type_t;
 
 typedef struct selected_tower_s {
     struct entity_s *tower;
@@ -26,7 +35,7 @@ typedef struct world_s {
     selected_tower_t *selected_tower;
 } world_t;
 
-world_t *world_create(int width, int height, uint8_t local);
+world_t *world_create(struct def_manager_s *defManager, const char* file, uint8_t local);
 
 void world_create_chunk_texture(world_t *world);
 
@@ -43,8 +52,14 @@ void world_clear(world_t *world);
 void world_draw(const world_t *world);
 
 int world_add_entity(world_t *world, struct entity_s *ent);
+
 int world_move_entity(world_t *world, struct entity_s *ent, GFC_Vector2D newPos);
+
 int world_remove_entity(world_t *world, struct entity_s *ent);
+
+world_object_type_t world_type_from_string(const char *typeStr);
+
+struct entity_s *world_object_resource_spawn(world_t *world, GFC_Vector2D pos, item_t *resource, const char *image);
 
 #define pos_to_chunk_coord(pos) ((int)(((int) (pos)) / (CHUNK_TILE_SIZE * TILE_SIZE)))
 
