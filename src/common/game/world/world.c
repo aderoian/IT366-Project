@@ -1,13 +1,17 @@
 #include "common/game/world/world.h"
 
 #include "client/camera.h"
+#include "client/client.h"
 #include "client/gf2d_draw.h"
+#include "client/gf2d_font.h"
 #include "client/gf2d_graphics.h"
 #include "client/gf2d_sprite.h"
+#include "client/ui/overlay.h"
 #include "common/logger.h"
 #include "common/game/enemy.h"
 #include "common/game/entity.h"
 #include "common/game/game.h"
+#include "common/game/tower.h"
 #include "common/game/world/chunk.h"
 #include "common/network/udp.h"
 #include "common/network/packet/definitions.h"
@@ -15,6 +19,8 @@
 #include "server/server.h"
 
 extern uint8_t __DEBUG_LINES;
+
+void world_tower_options_draw(overlay_element_t *element);
 
 world_t *world_create(const int width, const int height, const uint8_t local) {
     int i, j;
@@ -39,6 +45,7 @@ world_t *world_create(const int width, const int height, const uint8_t local) {
     world->local = local;
 
     if (g_game.role == GAME_ROLE_CLIENT) {
+        world->selected_tower = NULL;
         world_create_chunk_texture(world);
     }
 
@@ -107,19 +114,19 @@ void world_spawn_wave(world_t *world) {
     pos.x -= 100; // Spawn enemies 100 units to the left of the stash
 
     // TODO: Implement wave spawning logic, e.g. create enemies based on current wave number and add them to the world
-    entity_t *entity = enemy_spawn(g_server.entityManager, enemy_def_get_by_index(g_server.enemyManager, 0), pos);
-
-    s2c_enemy_snapshot_packet_t *pkt = gfc_allocate_array(sizeof(s2c_enemy_snapshot_packet_t), 1);
-    enemy_snapshot_data_t eventData = {
-        .spawnData = {
-            .enemyDefIndex = 0, // Placeholder, should be set based on enemy type
-            .xPos = pos.x,
-            .yPos = pos.y,
-            .rotation = entity->rotation
-        }
-    };
-    create_s2c_enemy_snapshot(pkt, entity->id, ENEMY_EVENT_SPAWN, &eventData);
-    server_broadcast_packet_batch(&g_server, pkt);
+    // entity_t *entity = enemy_spawn(g_server.entityManager, enemy_def_get_by_index(g_server.enemyManager, 0), pos);
+    //
+    // s2c_enemy_snapshot_packet_t *pkt = gfc_allocate_array(sizeof(s2c_enemy_snapshot_packet_t), 1);
+    // enemy_snapshot_data_t eventData = {
+    //     .spawnData = {
+    //         .enemyDefIndex = 0, // Placeholder, should be set based on enemy type
+    //         .xPos = pos.x,
+    //         .yPos = pos.y,
+    //         .rotation = entity->rotation
+    //     }
+    // };
+    // create_s2c_enemy_snapshot(pkt, entity->id, ENEMY_EVENT_SPAWN, &eventData);
+    // server_broadcast_packet_batch(&g_server, pkt);
 }
 
 void world_update(world_t *world, float deltaTime) {
@@ -152,14 +159,89 @@ void world_update(world_t *world, float deltaTime) {
 
 int world_on_click(world_t *world, uint32_t mouseButton, int x, int y) {
     GFC_Vector2D worldPos;
+    int i;
     if (!world) {
-        return;
+        return 0;
     }
 
     // Convert screen coordinates to world coordinates
     camera_get_mouse_world_position(&g_camera, &worldPos);
 
-    // TODO: Implement click handling logic, e.g. selecting entities, placing towers, etc. based on current game phase and mouse button
+    // Check button press
+    if (world->selected_tower && (mouseButton & SDL_BUTTON(SDL_BUTTON_LEFT))) {
+        // Check if click is outside the tower options overlay
+        overlay_element_t *element = world->selected_tower->element;
+        GFC_Rect buttonRect = gfc_rect(element->position.x + 20, element->position.y + 148, 300, 30);
+        int pressed = gfc_point_in_rect(worldPos, buttonRect);
+        if (pressed) {
+            // TODO: handle tower upgrade
+            log_info("Upgrade button pressed for tower at position (%.2f, %.2f)", world->selected_tower->tower->position.x, world->selected_tower->tower->position.y);
+        } else {
+            buttonRect.y += 34;
+            pressed = gfc_point_in_rect(worldPos, buttonRect);
+            if (pressed) {
+                // TODO: handle tower sell
+                log_info("Sell button pressed for tower at position (%.2f, %.2f)", world->selected_tower->tower->position.x, world->selected_tower->tower->position.y);
+            }
+        }
+
+        if (pressed) {
+            world->selected_tower->element->destroy(world->selected_tower->element);
+            free(world->selected_tower->element);
+            free(world->selected_tower);
+            world->selected_tower = NULL;
+            return 1; // Click handled
+        }
+    }
+
+    chunk_t *chunk = world_get_chunk(world, pos_to_chunk_coord(worldPos.x), pos_to_chunk_coord(worldPos.y));
+    if (chunk) {
+        // Check if an entity was clicked
+        for (i = 0; i < gfc_list_count(chunk->entities); i++) {
+            entity_t *ent = gfc_list_get_nth(chunk->entities, i);
+            GFC_Rect rect = gfc_rect(
+                ent->position.x + ent->boundingBox.x,
+                ent->position.y + ent->boundingBox.y,
+                ent->boundingBox.w,
+                ent->boundingBox.h);
+
+            if (!(ent->layers & (ENT_LAYER_TOWER))) {
+                continue; // Skip entities that aren't interactable
+            }
+
+            if (!gfc_point_in_rect(worldPos, rect)) {
+                if (world->selected_tower) {
+                    world->selected_tower->element->destroy(world->selected_tower->element);
+                    free(world->selected_tower->element);
+                    free(world->selected_tower);
+                    world->selected_tower = NULL;
+                }
+                continue; // Skip if click is outside entity bounds
+            }
+
+            if (world->selected_tower) {
+                if (world->selected_tower->tower != ent) {
+                    world->selected_tower->element->destroy(world->selected_tower->element);
+                    free(world->selected_tower->element);
+                    free(world->selected_tower);
+                    world->selected_tower = NULL;
+                }
+            }
+
+            if (!world->selected_tower && (ent->layers & ENT_LAYER_TOWER) && gfc_point_in_rect(worldPos, rect)) {
+                // Handle tower click, e.g. show upgrade/sell options
+
+                selected_tower_t *selected = malloc(sizeof(selected_tower_t));
+                selected->tower = ent;
+                selected->upgradeLevel = ((tower_state_t *)ent->data)->level;
+                selected->element = overlay_create_simple_element(TYPE_TOWER_OPTIONS, gfc_vector2d(ent->position.x - 170, ent->position.y - 280), gfc_vector2d(340, 220), 0, "images/ui/overlay/tower_options.png");
+                selected->element->draw = world_tower_options_draw;
+                world->selected_tower = selected;
+
+                return 1; // Click handled
+            }
+        }
+    }
 }
 
 void world_clear(world_t *world) {
@@ -205,6 +287,10 @@ void world_draw(const world_t *world) {
             };
             SDL_RenderCopy(gf2d_graphics_get_renderer(), world->chunkTexture, NULL, &destRect);
         }
+    }
+
+    if (world->selected_tower && world->selected_tower->element) {
+        world->selected_tower->element->draw(world->selected_tower->element);
     }
 
     if (__DEBUG_LINES) {
@@ -291,4 +377,46 @@ int world_remove_entity(world_t *world, entity_t *ent) {
     }
 
     return 0; // Entity position is out of world bounds
+}
+
+void world_tower_options_draw(overlay_element_t *element) {
+    GFC_Vector2D pos;
+    char buffer[128];
+    if (!element || !element->sprite) {
+        return;
+    }
+
+    gfc_vector2d_sub(pos, element->position, g_camera.position);
+
+    tower_state_t *state = (tower_state_t *)g_game.world->selected_tower->tower->data;
+
+    gf2d_sprite_draw(element->sprite, pos, NULL, NULL, NULL, NULL, NULL, 0);
+    gf2d_font_draw_text(20, state->def->name, gfc_vector2d(pos.x + 10, pos.y + 8));
+    gf2d_font_draw_textf(18, "Tier %d tower", gfc_vector2d(pos.x + 10, pos.y + 28), state->level + 1);
+
+    gf2d_font_draw_textf(14, "Health: %.2f", gfc_vector2d(pos.x + 10, pos.y + 50), state->def->maxHealth[state->level]);
+    if (state->def->numWeapons > 0) {
+        const tower_weapon_def_t *weaponDef = &state->def->weaponDefs[0];
+        gf2d_font_draw_textf(14, "Damage: %.2f", gfc_vector2d(pos.x + 10, pos.y + 70), weaponDef->damage[state->level]);
+        gf2d_font_draw_textf(14, "Range: %.2f", gfc_vector2d(pos.x + 10, pos.y + 90), weaponDef->range[state->level]);
+        gf2d_font_draw_textf(14, "Fire Rate: %.2f", gfc_vector2d(pos.x + 10, pos.y + 110), weaponDef->fireRate[state->level]);
+        gf2d_font_draw_textf(14, "Bullet Speed: %.2f", gfc_vector2d(pos.x + 10, pos.y + 130), weaponDef->fireRate[state->level]);
+    }
+
+    if (state->level + 1 < TOWER_MAX_LEVEL) {
+        gf2d_font_draw_textf(14, "Health: %.2f", gfc_vector2d(pos.x + 200, pos.y + 50), state->def->maxHealth[state->level + 1]);
+        if (state->def->numWeapons > 0) {
+            const tower_weapon_def_t *weaponDef = &state->def->weaponDefs[0];
+            gf2d_font_draw_textf(14, "Damage: %.2f", gfc_vector2d(pos.x + 200, pos.y + 70), weaponDef->damage[state->level + 1]);
+            gf2d_font_draw_textf(14, "Range: %.2f", gfc_vector2d(pos.x + 200, pos.y + 90), weaponDef->range[state->level + 1]);
+            gf2d_font_draw_textf(14, "Fire Rate: %.2f", gfc_vector2d(pos.x + 200, pos.y + 110), weaponDef->fireRate[state->level + 1]);
+            gf2d_font_draw_textf(14, "Bullet Speed: %.2f", gfc_vector2d(pos.x + 200, pos.y + 130), weaponDef->fireRate[state->level + 1]);
+        }
+        overlay_get_tower_upgrade_cost(state->def, state->level + 1, buffer);
+    } else {
+        strcpy(buffer, "Max tier reached\0");
+    }
+
+    gf2d_font_draw_text_centeredf(14, "Upgrade: %s", gfc_vector2d(pos.x + 170, pos.y + 154), buffer);
+    gf2d_font_draw_text_centered(14, "Sell", gfc_vector2d(pos.x + 170, pos.y + 188));
 }

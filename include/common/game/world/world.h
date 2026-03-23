@@ -8,6 +8,13 @@
 #define CHUNK_TILE_SIZE 16
 
 struct entity_s;
+struct overlay_element_s;
+
+typedef struct selected_tower_s {
+    struct entity_s *tower;
+    int upgradeLevel;
+    struct overlay_element_s *element;
+} selected_tower_t;
 
 typedef struct world_s {
     GFC_Vector2I size;
@@ -16,6 +23,7 @@ typedef struct world_s {
     struct chunk_s *chunks;
 
     SDL_Texture *chunkTexture; // Client-side texture for rendering chunks
+    selected_tower_t *selected_tower;
 } world_t;
 
 world_t *world_create(int width, int height, uint8_t local);

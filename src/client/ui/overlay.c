@@ -274,7 +274,6 @@ void hudbar_tower_hover_create(overlay_element_t *hoveredElement) {
 
 void hudbar_tower_draw(overlay_element_t *element) {
     char buffer[128] = "";
-    int i;
 
     if (!element) {
         return;
@@ -285,23 +284,7 @@ void hudbar_tower_draw(overlay_element_t *element) {
         return;
     }
 
-    int added = 0; // Flag to track if we've added any cost
-    for (i = 0; i < 3; i++) {
-        const item_t *cost = &def->cost[0][i];
-        if (cost->quantity > 0) {
-            if (added) {
-                strcat(buffer, ", ");  // add comma separator for subsequent items
-            }
-            char piece[32];
-            sprintf(piece, "%s: %d", cost->def->name, cost->quantity);
-            strcat(buffer, piece);
-            added = 1;
-        }
-    }
-
-    if (!added) {
-        strcpy(buffer, "Free");
-    }
+    overlay_get_tower_upgrade_cost(def, 0, buffer);
 
     gf2d_sprite_draw(element->sprite, element->position, NULL, NULL, NULL, NULL, NULL, 0);
 
@@ -325,6 +308,44 @@ overlay_element_type_t overlay_element_type_from_string(const char *typeStr) {
 
     OVERLAY_ELEMENTS(OVERLAY_CREATION)
     return TYPE_NONE;
+}
+
+overlay_element_t * overlay_create_simple_element(overlay_element_type_t type, GFC_Vector2D position, GFC_Vector2D size,
+    int data, const char *sprite) {
+    overlay_element_t *element = gfc_allocate_array(sizeof(overlay_element_t), 1);
+    element->type = type;
+    element->position = position;
+    element->size = size;
+    element->data = data;
+    element->bounds = gfc_rect(position.x, position.y, size.x, size.y);
+    element->visible = 1;
+    element->draw = element_simple_draw;
+    element->update = NULL;
+    element->destroy = element_simple_destroy;
+    element->sprite = gf2d_sprite_load_image(sprite);
+    return element;
+}
+
+void overlay_get_tower_upgrade_cost(const tower_def_t *def, const int level, char *buffer) {
+    int i;
+    int added = 0; // Flag to track if we've added any cost
+
+    for (i = 0; i < 3; i++) {
+        const item_t *cost = &def->cost[level][i];
+        if (cost->quantity > 0) {
+            if (added) {
+                strcat(buffer, ", ");  // add comma separator for subsequent items
+            }
+            char piece[32];
+            sprintf(piece, "%s: %d", cost->def->name, cost->quantity);
+            strcat(buffer, piece);
+            added = 1;
+        }
+    }
+
+    if (!added) {
+        strcpy(buffer, "Free");
+    }
 }
 #undef OVERLAY_CREATION
 
