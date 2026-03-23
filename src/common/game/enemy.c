@@ -351,6 +351,8 @@ void enemy_draw(const entity_manager_t *entityManager, entity_t *ent) {
     gf2d_sprite_draw(handsSprite, position, NULL, &heldItemOffset, &ent->rotation, NULL, NULL, 0);
     gf2d_sprite_draw(headSprite, position,NULL, &centerPos, NULL, NULL, NULL, 0);
 
+    entity_draw_health_bar(ent->position, gfc_vector2d(40, 10), state->health / state->def->maxHealth[state->level], GFC_COLOR_DARKRED);
+
     if (__DEBUG_LINES) {
         GFC_Vector2D direction, rayCastEnd;
 

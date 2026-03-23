@@ -259,6 +259,18 @@ void entity_draw_all(const entity_manager_t *manager) {
     }
 }
 
+void entity_draw_health_bar(GFC_Vector2D position, GFC_Vector2D size, float healthPercent, GFC_Color color) {
+    GFC_Vector2D barPos, barSize;
+    barSize.x = size.x * healthPercent;
+    barSize.y = size.y;
+
+    gfc_vector2d_sub(barPos, position, g_camera.position);
+    barPos.x -= size.x / 2;
+    barPos.y -= size.y / 2 - 20; // Position the health bar
+    gf2d_draw_rect_filled(gfc_rect(barPos.x, barPos.y, size.x, size.y), GFC_COLOR_DARKGREY);
+    gf2d_draw_rect_filled(gfc_rect(barPos.x, barPos.y, barSize.x, barSize.y), color);
+}
+
 void entity_draw_debug(const entity_manager_t *entityManager, entity_t *ent) {
     if (!ent || !__DEBUG_LINES) return;
 

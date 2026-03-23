@@ -60,6 +60,8 @@ void entity_think_all(const entity_manager_t *manager);
 void entity_update_all(const entity_manager_t *manager, float deltaTime);
 void entity_draw_all(const entity_manager_t *manager);
 
+void entity_draw_health_bar(GFC_Vector2D position, GFC_Vector2D size, float healthPercent, GFC_Color color);
+
 void entity_draw_debug(const entity_manager_t *entityManager, entity_t *ent);
 
 #endif /* ENTITY_H */

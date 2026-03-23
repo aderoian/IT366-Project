@@ -114,19 +114,19 @@ void world_spawn_wave(world_t *world) {
     pos.x -= 100; // Spawn enemies 100 units to the left of the stash
 
     // TODO: Implement wave spawning logic, e.g. create enemies based on current wave number and add them to the world
-    // entity_t *entity = enemy_spawn(g_server.entityManager, enemy_def_get_by_index(g_server.enemyManager, 0), pos);
-    //
-    // s2c_enemy_snapshot_packet_t *pkt = gfc_allocate_array(sizeof(s2c_enemy_snapshot_packet_t), 1);
-    // enemy_snapshot_data_t eventData = {
-    //     .spawnData = {
-    //         .enemyDefIndex = 0, // Placeholder, should be set based on enemy type
-    //         .xPos = pos.x,
-    //         .yPos = pos.y,
-    //         .rotation = entity->rotation
-    //     }
-    // };
-    // create_s2c_enemy_snapshot(pkt, entity->id, ENEMY_EVENT_SPAWN, &eventData);
-    // server_broadcast_packet_batch(&g_server, pkt);
+    entity_t *entity = enemy_spawn(g_server.entityManager, enemy_def_get_by_index(g_server.enemyManager, 0), pos);
+
+    s2c_enemy_snapshot_packet_t *pkt = gfc_allocate_array(sizeof(s2c_enemy_snapshot_packet_t), 1);
+    enemy_snapshot_data_t eventData = {
+        .spawnData = {
+            .enemyDefIndex = 0, // Placeholder, should be set based on enemy type
+            .xPos = pos.x,
+            .yPos = pos.y,
+            .rotation = entity->rotation
+        }
+    };
+    create_s2c_enemy_snapshot(pkt, entity->id, ENEMY_EVENT_SPAWN, &eventData);
+    server_broadcast_packet_batch(&g_server, pkt);
 }
 
 void world_update(world_t *world, float deltaTime) {
@@ -388,6 +388,9 @@ void world_tower_options_draw(overlay_element_t *element) {
     gfc_vector2d_sub(pos, element->position, g_camera.position);
 
     tower_state_t *state = (tower_state_t *)g_game.world->selected_tower->tower->data;
+    if (!state || !state->def) {
+        return;
+    }
 
     gf2d_sprite_draw(element->sprite, pos, NULL, NULL, NULL, NULL, NULL, 0);
     gf2d_font_draw_text(20, state->def->name, gfc_vector2d(pos.x + 10, pos.y + 8));
