@@ -36,18 +36,22 @@ void inventory_resize(inventory_t *inventory, const uint32_t newCapacity) {
 }
 
 uint8_t inventory_has_item(const inventory_t *inventory, const item_t *item) {
-        uint32_t i;
-        if (!inventory) {
-            return 0;
-        }
-
-        for (i = 0; i < inventory->numItems; i++) {
-            if (item_compare(&inventory->items[i], item) && inventory->items[i].quantity >= item->quantity) {
-                return 1;
-            }
-        }
-
+    uint32_t i;
+    if (!inventory) {
         return 0;
+    }
+
+    if (item->quantity == 0) {
+        return 1; // If we're checking for 0 quantity, we consider it as having the item
+    }
+
+    for (i = 0; i < inventory->numItems; i++) {
+        if (item_compare(&inventory->items[i], item) && inventory->items[i].quantity >= item->quantity) {
+            return 1;
+        }
+    }
+
+    return 0;
 }
 
 void inventory_add_item(inventory_t *inventory, const item_t *item) {
