@@ -21,7 +21,7 @@ void projectile_destroy(const entity_manager_t *entityManager, entity_t *ent);
 uint32_t projectile_collides_with(entity_t *ent, entity_t *other);
 uint32_t projectile_on_collide(entity_t *ent, entity_t *other, uint32_t collisionType);
 
-int projectile_spawn(const entity_manager_t *entityManager, const float speed, const float damage, const float range,
+int projectile_spawn(const entity_manager_t *entityManager, const float speed, const float damage, const float range, uint8_t areaDamage,
                         const GFC_Vector2D direction, const char *spriteModel, struct tower_state_s *sourceTower) {
     projectile_state_t *projectile;
     entity_t *ent;
@@ -48,6 +48,7 @@ int projectile_spawn(const entity_manager_t *entityManager, const float speed, c
     projectile->speed = speed;
     projectile->damage = damage;
     projectile->range = range;
+    projectile->areaDamage = areaDamage;
     gfc_vector2d_copy(projectile->direction, direction);
     projectile->distanceTraveled.x = 0; projectile->distanceTraveled.y = 0;
     projectile->sourceTower = sourceTower;
@@ -84,9 +85,7 @@ void projectile_think(const entity_manager_t *entityManager, entity_t *ent) {
         return;
     }
 
-    if (g_game.role == GAME_ROLE_SERVER) {
-        collision_check_world(g_game.world, ent, ent->position);
-    }
+    collision_check_world(g_game.world, ent, ent->position);
 }
 
 void projectile_update(const entity_manager_t *entityManager, entity_t *ent, const float deltaTime) {
@@ -142,6 +141,7 @@ uint32_t projectile_collides_with(entity_t *ent, entity_t *other) {
 }
 
 uint32_t projectile_on_collide(entity_t *ent, entity_t *other, uint32_t collisionType) {
+    int i;
     if (!ent || !other || !ent->data) {
         return 0;
     }
@@ -150,14 +150,35 @@ uint32_t projectile_on_collide(entity_t *ent, entity_t *other, uint32_t collisio
 
     if (collisionType & COLLISION_EVENT) {
         // Apply damage to the enemy
-        if (other->data) {
+        if (other->data && g_game.role == GAME_ROLE_SERVER) {
             enemy_state_t *enemy = (enemy_state_t *)other->data;
-            enemy->health -= projectile->damage;
-            if (__INF_DAMAGE) {
-                enemy->health = 0; // Instantly kill the enemy for testing purposes
+
+            if (projectile->areaDamage) {
+                GFC_List *enemyList = collision_get_entities_in_range(g_game.world, ent->position, projectile->range, ENT_LAYER_ENEMY);
+                for (i = 0; i < gfc_list_count(enemyList); i++) {
+                    entity_t *areaEnemyEnt = (entity_t *)gfc_list_nth(enemyList, i);
+                    if (!areaEnemyEnt || !areaEnemyEnt->data) {
+                        continue;
+                    }
+                    enemy_state_t *areaEnemy = (enemy_state_t *)areaEnemyEnt->data;
+                    if (__INF_DAMAGE) {
+                        areaEnemy->health = 0; // Instantly kill the enemy for testing purposes
+                    } else {
+                        areaEnemy->health -= projectile->damage;
+                    }
+                    areaEnemy->dirtyFlags |= ENEMY_DIRTY_HEALTH; // Mark enemy health as dirty to trigger update
+                }
+            } else {
+                // If not area damage, only apply to the first enemy hit
+                if (__INF_DAMAGE) {
+                    enemy->health = 0; // Instantly kill the enemy for testing purposes
+                }
+                enemy->health -= projectile->damage;
             }
+
             enemy->dirtyFlags |= ENEMY_DIRTY_HEALTH; // Mark enemy health as dirty to trigger update
         }
+
         // Destroy the projectile after hitting an enemy
         ent->think = entity_free;
     }

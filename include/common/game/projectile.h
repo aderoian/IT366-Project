@@ -10,12 +10,13 @@ typedef struct projectile_state_s {
     float speed;
     float damage;
     float range;
+    uint8_t areaDamage;
     GFC_Vector2D direction;
     GFC_Vector2D distanceTraveled;
     struct tower_state_s *sourceTower;
     struct entity_s *entity;
 } projectile_state_t;
 
-int projectile_spawn(const entity_manager_t *entityManager, float speed, float damage, float range, GFC_Vector2D direction, const char *spriteModel, struct tower_state_s *sourceTower);
+int projectile_spawn(const entity_manager_t *entityManager, float speed, float damage, float range, uint8_t areaDamage, GFC_Vector2D direction, const char *spriteModel, struct tower_state_s *sourceTower);
 
 #endif /* PROJECTILE_H */

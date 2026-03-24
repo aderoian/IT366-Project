@@ -54,7 +54,7 @@
           "projectileSprite": "images/tower/bomb/bomb_tower_projectile.svg",
           "directional": false,
           "piercing": false,
-          "areaEffect": false,
+          "areaEffect": true,
           "direction": [1, 0],
           "enemyTypes": ["*", "ground", "air"]
         }
@@ -86,7 +86,7 @@
           "projectileSprite": "images/tower/cannon/cannon_tower_projectile.svg",
           "directional": false,
           "piercing": false,
-          "areaEffect": false,
+          "areaEffect": true,
           "direction": [1, 0],
           "enemyTypes": ["*", "ground", "air"]
         }

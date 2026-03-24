@@ -495,6 +495,7 @@ void tower_shoot(const entity_manager_t *entityManager, entity_t *entity, int we
         weaponDef->bulletSpeed[level],
         weaponDef->damage[level],
         weaponDef->range[level],
+        weaponDef->flags & TOWER_WEAPON_FLAG_AREA_EFFECT,
         direction,
         weaponDef->projectileSprite,
         tower
