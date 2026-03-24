@@ -367,12 +367,12 @@ void write_s2c_enemy_snapshot(buffer_t buf, buffer_offset_t *off, const s2c_enem
         write_float(buf, off, pkt->eventData.spawnData.rotation);
     } else if (pkt->eventID == ENEMY_EVENT_DESPAWN) {
         // No additional data for despawn
-    } else if (pkt->eventID == ENEMY_EVENT_MOVE) {
-        write_float(buf, off, pkt->eventData.moveData.xPos);
-        write_float(buf, off, pkt->eventData.moveData.yPos);
-        write_float(buf, off, pkt->eventData.moveData.rotation);
-    } else if (pkt->eventID == ENEMY_EVENT_ATTACK) {
-        // No additional data for attack
+    } else if (pkt->eventID == ENEMY_EVENT_UPDATE) {
+        write_float(buf, off, pkt->eventData.updateData.xPos);
+        write_float(buf, off, pkt->eventData.updateData.yPos);
+        write_float(buf, off, pkt->eventData.updateData.rotation);
+        write_float(buf, off, pkt->eventData.updateData.health);
+        write_uint8(buf, off, pkt->eventData.updateData.attack);
     }
 }
 
@@ -482,12 +482,12 @@ void read_s2c_enemy_snapshot(buffer_t buf, buffer_offset_t *off, s2c_enemy_snaps
         pkt->eventData.spawnData.rotation = read_float(buf, off);
     } else if (pkt->eventID == ENEMY_EVENT_DESPAWN) {
         // No additional data for despawn
-    } else if (pkt->eventID == ENEMY_EVENT_MOVE) {
-        pkt->eventData.moveData.xPos = read_float(buf, off);
-        pkt->eventData.moveData.yPos = read_float(buf, off);
-        pkt->eventData.moveData.rotation = read_float(buf, off);
-    } else if (pkt->eventID == ENEMY_EVENT_ATTACK) {
-        // No additional data for attack
+    } else if (pkt->eventID == ENEMY_EVENT_UPDATE) {
+        pkt->eventData.updateData.xPos = read_float(buf, off);
+        pkt->eventData.updateData.yPos = read_float(buf, off);
+        pkt->eventData.updateData.rotation = read_float(buf, off);
+        pkt->eventData.updateData.health = read_float(buf, off);
+        pkt->eventData.updateData.attack = read_uint8(buf, off);
     }
 }
 
@@ -589,8 +589,8 @@ void create_s2c_enemy_snapshot(s2c_enemy_snapshot_packet_t *pkt, int64_t enemyID
 
     if (eventID == ENEMY_EVENT_SPAWN) {
         pkt->length += sizeof(uint32_t) + sizeof(float) + sizeof(float) + sizeof(float);
-    } else if (eventID == ENEMY_EVENT_MOVE) {
-        pkt->length += sizeof(float) + sizeof(float) + sizeof(float);
+    } else if (eventID == ENEMY_EVENT_UPDATE) {
+        pkt->length += sizeof(float) + sizeof(float) + sizeof(float) + sizeof(float) + sizeof(uint8_t);
     }
 
     pkt->enemyID = enemyID;

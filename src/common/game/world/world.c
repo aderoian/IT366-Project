@@ -166,29 +166,62 @@ chunk_t * world_get_chunk(const world_t *world, const int x, const int y) {
     return &world->chunks[x * world->size.y + y];
 }
 
+GFC_Vector2D random_point_in_radius(GFC_Vector2D center, float min_r, float max_r) {
+    float angle = rand_float(0.0f, 2.0f * M_PI);
+
+    // sqrt for uniform distribution (important!)
+    float r = sqrtf(rand_float(0.0f, 1.0f)) * (max_r - min_r) + min_r;
+
+    GFC_Vector2D result;
+    result.x = center.x + cosf(angle) * r;
+    result.y = center.y + sinf(angle) * r;
+
+    return result;
+}
+
 void world_spawn_wave(world_t *world) {
-    GFC_Vector2D pos;
+    GFC_Vector2D pos, spawnPos;
+    int count, i;
+    const enemy_def_t *enemyDefs;
+    wave_t *wave;
+    entity_t *entity;
+    s2c_enemy_snapshot_packet_t *pkt;
     if (!world) {
         return;
     }
 
     pos = g_game.state.stashPosition;
-    pos.x -= 100; // Spawn enemies 100 units to the left of the stash
 
-    // TODO: Implement wave spawning logic, e.g. create enemies based on current wave number and add them to the world
-    entity_t *entity = enemy_spawn(g_server.entityManager, enemy_def_get_by_index(g_server.enemyManager, 0), pos);
+    enemyDefs = enemy_def_get_all(g_server.enemyManager, &count);
+    wave_generate(enemyDefs, count, g_game.state.waveNumber, &g_game.state.currentWave);
 
-    s2c_enemy_snapshot_packet_t *pkt = gfc_allocate_array(sizeof(s2c_enemy_snapshot_packet_t), 1);
-    enemy_snapshot_data_t eventData = {
-        .spawnData = {
-            .enemyDefIndex = 0, // Placeholder, should be set based on enemy type
-            .xPos = pos.x,
-            .yPos = pos.y,
-            .rotation = entity->rotation
-        }
-    };
-    create_s2c_enemy_snapshot(pkt, entity->id, ENEMY_EVENT_SPAWN, &eventData);
-    server_broadcast_packet_batch(&g_server, pkt);
+    wave = &g_game.state.currentWave;
+
+    if (wave->count == 0) {
+        log_warn("Generated wave has no enemies, skipping spawn");
+        return;
+    }
+
+    float minSpawnRadius = CHUNK_TILE_SIZE * TILE_SIZE;
+    float maxSpawnRadius = minSpawnRadius * 2;
+
+    for (i = 0; i < wave->count; i++) {
+        spawnPos = random_point_in_radius(pos, minSpawnRadius, maxSpawnRadius);
+
+        entity = enemy_spawn(g_server.entityManager, wave->enemies[i], spawnPos);
+
+        pkt = gfc_allocate_array(sizeof(s2c_enemy_snapshot_packet_t), 1);
+        enemy_snapshot_data_t eventData = {
+            .spawnData = {
+                .enemyDefIndex = wave->enemies[i]->index,
+                .xPos = spawnPos.x,
+                .yPos = spawnPos.y,
+                .rotation = entity->rotation
+            }
+        };
+        create_s2c_enemy_snapshot(pkt, entity->id, ENEMY_EVENT_SPAWN, &eventData);
+        server_broadcast_packet_batch(&g_server, pkt);
+    }
 }
 
 void world_update(world_t *world, float deltaTime) {

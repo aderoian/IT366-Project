@@ -1,17 +1,183 @@
 {
+  "sizeProfiles": [
+    {
+      "name": "small",
+      "healthMult": 1.0,
+      "damageMult": 1.0,
+      "speedMult": 1.2,
+      "rangeMult": 1.0,
+      "rewardMult": 1.0
+    },
+    {
+      "name": "medium",
+      "healthMult": 1.5,
+      "damageMult": 1.5,
+      "speedMult": 1.0,
+      "rangeMult": 1.1,
+      "rewardMult": 1.2
+    },
+    {
+      "name": "large",
+      "healthMult": 3.0,
+      "damageMult": 2.5,
+      "speedMult": 0.8,
+      "rangeMult": 1.2,
+      "rewardMult": 1.4
+    },
+    {
+      "name": "massive",
+      "healthMult": 5.0,
+      "damageMult": 4.0,
+      "speedMult": 0.6,
+      "rangeMult": 1.5,
+      "rewardMult": 2.0
+    }
+  ],
   "enemies": [
     {
-      "name": "Example",
+      "name": "Crawler",
       "type": "ground",
-      "maxHealth": [100, 120, 140, 160, 180],
-      "speed": [50, 60, 70, 80, 90],
-      "damage": [10, 12, 14, 16, 18],
-      "attackCooldown": [1.0, 0.9, 0.8, 0.7, 0.6],
-      "range": [50, 2, 2, 2, 2],
-      "reward": [10, 12, 14, 16, 18],
+      "size": "small",
+      "maxHealth": 80,
+      "speed": 110,
+      "damage": 8,
+      "attackCooldown": 0.8,
+      "range": 40,
+      "reward": 1,
+      "minWave": 1,
+      "maxWave": 8,
       "model": {
-        "body": "images/enemy/zombie_basic_t%d_head.svg",
-        "hands": "images/enemy/zombie_basic_t%d_hands.svg",
+        "body": "images/enemy/crawler_base.svg",
+        "hands": "images/enemy/crawler_weapon.svg",
+        "boundingBox": [-16, -16, 32, 32]
+      }
+    },
+    {
+      "name": "Shambler",
+      "type": "ground",
+      "size": "small",
+      "maxHealth": 120,
+      "speed": 45,
+      "damage": 12,
+      "attackCooldown": 1.2,
+      "range": 50,
+      "reward": 2,
+      "minWave": 1,
+      "maxWave": 12,
+      "model": {
+        "body": "images/enemy/shambler_base.svg",
+        "hands": "images/enemy/shambler_weapon.svg",
+        "boundingBox": [-16, -16, 32, 32]
+      }
+    },
+
+    {
+      "name": "Runner",
+      "type": "ground",
+      "size": "medium",
+      "maxHealth": 160,
+      "speed": 85,
+      "damage": 15,
+      "attackCooldown": 0.9,
+      "range": 55,
+      "reward": 3,
+      "minWave": 3,
+      "maxWave": 15,
+      "model": {
+        "body": "images/enemy/runner_base.svg",
+        "hands": "images/enemy/runner_weapon.svg",
+        "boundingBox": [-16, -16, 32, 32]
+      }
+    },
+    {
+      "name": "Soldier",
+      "type": "ground",
+      "size": "medium",
+      "maxHealth": 250,
+      "speed": 55,
+      "damage": 20,
+      "attackCooldown": 1.1,
+      "range": 60,
+      "reward": 4,
+      "minWave": 4,
+      "maxWave": 20,
+      "model": {
+        "body": "images/enemy/soldier_base.svg",
+        "hands": "images/enemy/soldier_weapon.svg",
+        "boundingBox": [-16, -16, 32, 32]
+      }
+    },
+
+    {
+      "name": "Brute",
+      "type": "ground",
+      "size": "large",
+      "maxHealth": 500,
+      "speed": 40,
+      "damage": 35,
+      "attackCooldown": 1.6,
+      "range": 65,
+      "reward": 6,
+      "minWave": 6,
+      "maxWave": 25,
+      "model": {
+        "body": "images/enemy/brute_base.svg",
+        "hands": "images/enemy/brute_weapon.svg",
+        "boundingBox": [-16, -16, 32, 32]
+      }
+    },
+    {
+      "name": "Crusher",
+      "type": "ground",
+      "size": "large",
+      "maxHealth": 700,
+      "speed": 35,
+      "damage": 50,
+      "attackCooldown": 2.0,
+      "range": 70,
+      "reward": 8,
+      "minWave": 8,
+      "maxWave": 30,
+      "model": {
+        "body": "images/enemy/crusher_base.svg",
+        "hands": "images/enemy/crusher_weapon.svg",
+        "boundingBox": [-16, -16, 32, 32]
+      }
+    },
+
+    {
+      "name": "Behemoth",
+      "type": "ground",
+      "size": "massive",
+      "maxHealth": 1500,
+      "speed": 25,
+      "damage": 80,
+      "attackCooldown": 2.5,
+      "range": 80,
+      "reward": 12,
+      "minWave": 10,
+      "maxWave": -1,
+      "model": {
+        "body": "images/enemy/behemoth_base.svg",
+        "hands": "images/enemy/behemoth_weapon.svg",
+        "boundingBox": [-16, -16, 32, 32]
+      }
+    },
+    {
+      "name": "Titan",
+      "type": "ground",
+      "size": "massive",
+      "maxHealth": 2500,
+      "speed": 20,
+      "damage": 120,
+      "attackCooldown": 3.0,
+      "range": 90,
+      "reward": 20,
+      "minWave": 15,
+      "maxWave": -1,
+      "model": {
+        "body": "images/enemy/titan_base.svg",
+        "hands": "images/enemy/titan_weapon.svg",
         "boundingBox": [-16, -16, 32, 32]
       }
     }

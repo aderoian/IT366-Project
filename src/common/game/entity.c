@@ -90,6 +90,7 @@ entity_t *entity_new(entity_manager_t *manager, const int64_t id) {
         return ent;
     }
 
+    log_error("No free entity slots available");
     return NULL;
 }
 
@@ -105,7 +106,6 @@ entity_t *entity_new_animated(const entity_manager_t *manager, const int64_t id)
 }
 
 void entity_free(const entity_manager_t *entityManager, entity_t* ent) {
-    uint64_t generation;
     if (!ent) return;
 
      // Clear ID to slot mapping if applicable

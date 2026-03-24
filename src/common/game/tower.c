@@ -652,7 +652,7 @@ void tower_entity_destroy(const entity_manager_t *entityManager, entity_t *ent) 
             game_state_t *state = &g_game.state;
             state->phase = GAME_PHASE_EXPLORING;
             state->stashPosition = gfc_vector2d(0, 0);
-            state->waveNumber = 0;
+            state->waveNumber = 1;
 
             s2c_game_state_snapshot_packet_t statePkt;
             create_s2c_game_state_snapshot(&statePkt, state);

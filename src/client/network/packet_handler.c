@@ -99,18 +99,25 @@ void handle_s2c_enemy_snapshot(const s2c_enemy_snapshot_packet_t *pkt, void *cli
     }
 
     if (pkt->eventID == ENEMY_EVENT_SPAWN) {
-        entity_t * ent = enemy_spawn(g_client.entityManager, enemy_def_get_by_index(g_client.enemyManager, 0), gfc_vector2d(pkt->eventData.spawnData.xPos, pkt->eventData.spawnData.yPos));
+        entity_t * ent = enemy_spawn(g_client.entityManager, enemy_def_get_by_index(g_client.enemyManager, pkt->eventData.spawnData.enemyDefIndex), gfc_vector2d(pkt->eventData.spawnData.xPos, pkt->eventData.spawnData.yPos));
         entity_set_id(g_client.entityManager, ent, pkt->enemyID);
-    } else if (pkt->eventID == ENEMY_EVENT_MOVE) {
+    } else if (pkt->eventID == ENEMY_EVENT_UPDATE) {
         entity_t *enemy = entity_get(g_client.entityManager, pkt->enemyID);
         if (!enemy) {
             log_error("Received move event for non-existent enemy ID: %lld", pkt->enemyID);
             return;
         }
-        enemy->position.x = pkt->eventData.moveData.xPos;
-        enemy->position.y = pkt->eventData.moveData.yPos;
-        enemy->rotation = pkt->eventData.moveData.rotation;
-    } else if (pkt->eventID == ENEMY_EVENT_ATTACK) {
+
+        enemy->position.x = pkt->eventData.updateData.xPos;
+        enemy->position.y = pkt->eventData.updateData.yPos;
+        enemy->rotation = pkt->eventData.updateData.rotation;
+
+        enemy_state_t *state = (enemy_state_t *)enemy->data;
+        state->health = pkt->eventData.updateData.health;
+
+        if (pkt->eventData.updateData.attack) {
+            state->attackCooldownTimer = state->def->attackCooldown; // Reset attack cooldown on attack event
+        }
     } else if (pkt->eventID == ENEMY_EVENT_DESPAWN) {
         entity_t *enemy = entity_get(g_client.entityManager, pkt->enemyID);
         if (!enemy) {

@@ -147,8 +147,7 @@ typedef struct s2c_game_state_snapshot_packet_s {
 typedef enum {
     ENEMY_EVENT_SPAWN,
     ENEMY_EVENT_DESPAWN,
-    ENEMY_EVENT_MOVE,
-    ENEMY_EVENT_ATTACK
+    ENEMY_EVENT_UPDATE
 } enemy_event_id_t;
 
 typedef union enemy_snapshot_data_u {
@@ -162,7 +161,9 @@ typedef union enemy_snapshot_data_u {
         float xPos;
         float yPos;
         float rotation;
-    } moveData;
+        float health;
+        uint8_t attack;
+    } updateData;
 } enemy_snapshot_data_t;
 
 typedef struct s2c_enemy_snapshot_packet_s {

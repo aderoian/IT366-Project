@@ -6,14 +6,14 @@
 #include "common/network/packet/io.h"
 #include "common/game/player.h"
 #include "common/game/game.h"
+#include "common/game/collision.h"
+#include "common/game/tower.h"
 
 #include "client/animation.h"
 #include "client/camera.h"
 #include "client/client.h"
 #include "client/gf2d_draw.h"
 #include "client/gf2d_sprite.h"
-#include "common/game/collision.h"
-#include "common/game/tower.h"
 
 #include "server/server.h"
 #include "server/network/network_session.h"

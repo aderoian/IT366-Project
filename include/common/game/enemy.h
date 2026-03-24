@@ -21,6 +21,22 @@ typedef enum enemy_type_e {
     ENEMY_TYPE_AIR = 1,
 } enemy_type_t;
 
+typedef enum enemy_size_e {
+    ENEMY_SIZE_SMALL = 0,
+    ENEMY_SIZE_MEDIUM = 1,
+    ENEMY_SIZE_LARGE = 2,
+    ENEMY_SIZE_MASSIVE = 3,
+    ENEMY_SIZE_COUNT
+} enemy_size_t;
+
+typedef struct {
+    float health_mult;
+    float damage_mult;
+    float speed_mult;
+    float range_mult;
+    float reward_mult;
+} enemy_size_profile_t;
+
 typedef struct enemy_model_def_s {
     char bodySpritePath[64];
     char handsSpritePath[64];
@@ -30,13 +46,22 @@ typedef struct enemy_model_def_s {
 typedef struct enemy_def_s {
     uint32_t index;
     char name[32];
+
     enemy_type_t type;
-    float maxHealth[ENEMY_MAX_LEVEL];
-    float speed[ENEMY_MAX_LEVEL];
-    float damage[ENEMY_MAX_LEVEL];
-    float attackCooldown[ENEMY_MAX_LEVEL];
-    float range[ENEMY_MAX_LEVEL];
-    int reward[ENEMY_MAX_LEVEL];
+    enemy_size_t size;
+
+    float maxHealth;
+    float speed;
+    float damage;
+    float attackCooldown;
+    float range;
+    int reward;
+
+    float cost;
+    int minWave;
+    int maxWave;
+    float weight;
+
     enemy_model_def_t modelDef;
 } enemy_def_t;
 
@@ -66,13 +91,20 @@ const enemy_def_t *enemy_def_get(const enemy_def_manager_t *enemyManager, const 
 
 const enemy_def_t *enemy_def_get_by_index(const enemy_def_manager_t *enemyManager, int index);
 
+const enemy_def_t *enemy_def_get_all(const enemy_def_manager_t *enemyManager, int *outCount);
+
 entity_t *enemy_create_by_def(const struct entity_manager_s *entityManager, const enemy_def_t *def, GFC_Vector2D pos);
 
 entity_t *enemy_create_by_name(const struct entity_manager_s *entityManager, const enemy_def_manager_t *enemyManager, const char* name, GFC_Vector2D pos);
 
 entity_t *enemy_spawn(const struct entity_manager_s *entityManager, const enemy_def_t *def, GFC_Vector2D pos);
 
+float enemy_compute_power(const struct enemy_def_manager_s *enemyDefManager, const enemy_def_t *def);
+float enemy_compute_cost(const enemy_def_manager_t *enemyDefManager, const enemy_def_t *def);
+float enemy_compute_weight(const enemy_def_t *def);
+
 enemy_type_t enemy_type_from_string(const char *str);
+enemy_size_t enemy_size_from_string(const char *str);
 
 void enemy_think(const entity_manager_t *entityManager, entity_t *ent);
 void enemy_update(const entity_manager_t *entityManager, entity_t *ent, float deltaTime);

@@ -12,6 +12,8 @@
 #include "common/game/game.h"
 #include "server/server.h"
 
+extern uint8_t __INF_DAMAGE;
+
 void projectile_think(const entity_manager_t *entityManager, entity_t *ent);
 void projectile_update(const entity_manager_t *entityManager, entity_t *ent, float deltaTime);
 void projectile_draw(const entity_manager_t *entityManager, entity_t *ent);
@@ -151,6 +153,10 @@ uint32_t projectile_on_collide(entity_t *ent, entity_t *other, uint32_t collisio
         if (other->data) {
             enemy_state_t *enemy = (enemy_state_t *)other->data;
             enemy->health -= projectile->damage;
+            if (__INF_DAMAGE) {
+                enemy->health = 0; // Instantly kill the enemy for testing purposes
+            }
+            enemy->dirtyFlags |= ENEMY_DIRTY_HEALTH; // Mark enemy health as dirty to trigger update
         }
         // Destroy the projectile after hitting an enemy
         ent->think = entity_free;
