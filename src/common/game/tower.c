@@ -634,6 +634,14 @@ void tower_entity_update(const entity_manager_t *entityManager, entity_t *ent, f
             tower_shoot_all(entityManager, ent);
         }
 
+        if (tower->health < tower->def->maxHealth[tower->level] && g_game.state.phase == GAME_PHASE_BUILDING) {
+            tower->health += 100 * deltaTime; // Regenerate health at a rate of 5 HP per second during building phase
+            if (tower->health > tower->def->maxHealth[tower->level]) {
+                tower->health = tower->def->maxHealth[tower->level];
+            }
+            tower->dirtyFlags |= TOWER_DIRTY_HEALTH;
+        }
+
         if (tower->dirtyFlags & TOWER_DIRTY_HEALTH) {
             s2c_tower_snapshot_packet_t *towerPkt = gfc_allocate_array(sizeof(s2c_tower_snapshot_packet_t), 1);
             tower_snapshot_data_t towerData = {
