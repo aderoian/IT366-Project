@@ -54,6 +54,7 @@ int client_main(void) {
     animation_manager_init(256);
     window_init(32, 256, 256);
     overlay_init(g_client.defManager, &g_client.overlay, 32, "def/overlay.json");
+    overlay_hide(&g_client.overlay);
     g_client.entityManager = entity_init(1024);
     //phys_init(1024);
     g_game.itemDefManager = item_init(g_client.defManager, "def/items.json");
@@ -137,6 +138,8 @@ int client_begin_singleplayer(Client *client) {
     if (!client) {
         return -1;
     }
+
+    overlay_show(&client->overlay);
 
     mutex_lock(&client->lock);
     client->mode = CLIENT_MODE_SINGLEPLAYER;
@@ -228,15 +231,17 @@ void client_tickLoop(Client* client) {
             gfc_input_update();
             network_tick(&client->network->baseNetwork);
 
-            client_on_mouse(g_game.deltaTime);
-            window_handle_keyboard();
-            window_update_all(g_game.deltaTime);
-            overlay_update(&g_client.overlay, g_game.deltaTime);
+            world_update(g_game.world, g_game.deltaTime);
+
+            camera_update(&g_camera);
 
             entity_think_all(g_client.entityManager);
             entity_update_all(g_client.entityManager, g_game.deltaTime);
 
-            camera_update(&g_camera);
+            client_on_mouse(g_game.deltaTime);
+            window_handle_keyboard();
+            window_update_all(g_game.deltaTime);
+            overlay_update(&g_client.overlay, g_game.deltaTime);
 
             build_mode_update();
 

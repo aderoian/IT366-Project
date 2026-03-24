@@ -233,7 +233,7 @@ void world_update(world_t *world, float deltaTime) {
     game_phase_t state = g_game.state.phase;
     if (state != GAME_PHASE_PAUSED && state != GAME_PHASE_EXPLORING) {
         g_game.state.cycleTime -= deltaTime;
-        if (g_game.state.cycleTime <= 0) {
+        if (g_game.state.cycleTime <= 0 && g_game.role == GAME_ROLE_SERVER) {
             if (state == GAME_PHASE_BUILDING) {
                 g_game.state.phase = GAME_PHASE_WAVE;
                 log_info("Transitioning to WAVE phase");

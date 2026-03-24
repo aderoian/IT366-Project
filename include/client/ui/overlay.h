@@ -12,7 +12,9 @@
 
 #define OVERLAY_ELEMENTS(X) \
 X(tower_hudbar, TOWER_HUDBAR, SIMPLE) \
-X(tower_hb_tower, TOWER_HB_TOWER, SIMPLE)
+X(tower_hb_tower, TOWER_HB_TOWER, SIMPLE) \
+X(cycle_container, CYCLE_CONTAINER, SIMPLE)
+
 
 #define OVERLAY_CREATION(name, cap_name, type) TYPE_##cap_name,
 typedef enum overlay_element_type_e {
@@ -54,6 +56,10 @@ void overlay_destroy(overlay_t *overlay);
 void overlay_add_element(overlay_t *overlay, overlay_element_t *element);
 
 void overlay_remove_element(overlay_t *overlay, overlay_element_t *element);
+
+void overlay_show(overlay_t *overlay);
+
+void overlay_hide(overlay_t *overlay);
 
 void overlay_draw(const overlay_t *overlay);
 

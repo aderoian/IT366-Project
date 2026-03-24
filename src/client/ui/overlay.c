@@ -7,6 +7,7 @@
 
 #include "gfc_input.h"
 #include "client/client.h"
+#include "client/gf2d_draw.h"
 #include "client/gf2d_font.h"
 #include "client/game/build.h"
 #include "client/ui/window.h"
@@ -121,6 +122,20 @@ void overlay_remove_element(overlay_t *overlay, overlay_element_t *element) {
     }
 }
 
+void overlay_show(overlay_t *overlay) {
+    if (!overlay) {
+        return;
+    }
+    overlay->visible = 1;
+}
+
+void overlay_hide(overlay_t *overlay) {
+    if (!overlay) {
+        return;
+    }
+    overlay->visible = 0;
+}
+
 void overlay_draw(const overlay_t *overlay) {
     size_t i;
     if (!overlay || !overlay->visible) {
@@ -135,6 +150,15 @@ void overlay_draw(const overlay_t *overlay) {
 
     if (overlay->hoveredElement) {
         overlay->hoveredElement->draw(overlay->hoveredElement);
+    }
+
+    float time = g_game.state.cycleTime;
+    if (g_game.state.phase == GAME_PHASE_BUILDING) {
+        gf2d_draw_rect_filled(gfc_rect(28, 650, 170, 20), GFC_COLOR_MAGENTA);
+        gf2d_draw_rect_filled(gfc_rect(28 + 85 * (time / HALF_CYCLE_TIME), 650, 85, 20), GFC_COLOR_YELLOW);
+    } else {
+        gf2d_draw_rect_filled(gfc_rect(28, 650, 170, 20), GFC_COLOR_YELLOW);
+        gf2d_draw_rect_filled(gfc_rect(28 + 85 * (time / HALF_CYCLE_TIME), 650, 85, 20), GFC_COLOR_MAGENTA);
     }
 }
 
