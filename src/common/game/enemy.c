@@ -453,6 +453,10 @@ uint32_t enemy_collides_with(entity_t *ent, entity_t *other) {
     }
 
     if (other->layers & ENT_LAYER_TOWER) {
+        tower_state_t *towerState = (tower_state_t *)other->data;
+        if (strcmp(towerState->def->name, "Slow Trap") == 0) {
+            return COLLISION_NONE;
+        }
         return COLLISION_SOLID;
     }
 

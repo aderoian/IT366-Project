@@ -428,7 +428,7 @@ uint32_t player_on_collide(entity_t *ent, entity_t *other, uint32_t collisionTyp
 
     if (collisionType == COLLISION_SOLID && (other->layers & ENT_LAYER_TOWER)) {
         tower_state_t *tower = (tower_state_t *)other->data;
-        if (tower->def->type == TOWER_TYPE_PASSIVE && strcmp(tower->def->name, "Door") == 0) {
+        if (tower->def->type == TOWER_TYPE_PASSIVE && (strcmp(tower->def->name, "Door") == 0 || strcmp(tower->def->name, "Slow Trap") == 0)) {
             collisionType = COLLISION_NONE; // Allow passing through doors
         }
     }

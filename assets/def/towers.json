@@ -16,9 +16,9 @@
       "weapons": [
         {
           "damage": [10, 20, 30, 40, 50],
-          "range": [200, 240, 280, 320, 360],
-          "fireRate": [1.0, 0.9, 0.8, 0.7, 0.6],
-          "bulletSpeed": [200, 220, 240, 260, 280],
+          "range": [500, 540, 580, 520, 560],
+          "fireRate": [0.5, 0.4, 0.3, 0.2, 0.1],
+          "bulletSpeed": [600, 620, 640, 660, 680],
           "projectileSprite": "images/tower/arrow/arrow_tower_projectile.svg",
           "directional": false,
           "piercing": false,
@@ -48,9 +48,9 @@
       "weapons": [
         {
           "damage": [10, 20, 30, 40, 50],
-          "range": [200, 240, 280, 320, 360],
-          "fireRate": [1.0, 0.9, 0.8, 0.7, 0.6],
-          "bulletSpeed": [200, 220, 240, 260, 280],
+          "range": [700, 800, 900, 1000, 700],
+          "fireRate": [2.2, 1.9, 1.8, 1.7, 1.65],
+          "bulletSpeed": [100, 120, 140, 160, 180],
           "projectileSprite": "images/tower/bomb/bomb_tower_projectile.svg",
           "directional": false,
           "piercing": false,
@@ -80,8 +80,8 @@
       "weapons": [
         {
           "damage": [10, 20, 30, 40, 50],
-          "range": [200, 240, 280, 320, 360],
-          "fireRate": [1.0, 0.9, 0.8, 0.7, 0.6],
+          "range": [300, 340, 380, 320, 360],
+          "fireRate": [1.4, 1.3, 1.2, 1.1, 1.0],
           "bulletSpeed": [200, 220, 240, 260, 280],
           "projectileSprite": "images/tower/cannon/cannon_tower_projectile.svg",
           "directional": false,
@@ -129,9 +129,9 @@
       "weapons": [
         {
           "damage": [10, 20, 30, 40, 50],
-          "range": [200, 240, 280, 320, 360],
-          "fireRate": [1.0, 0.9, 0.8, 0.7, 0.6],
-          "bulletSpeed": [200, 220, 240, 260, 280],
+          "range": [100, 100, 100, 100, 100],
+          "fireRate": [0.15, 0.14, 0.13, 0.12, 0.11],
+          "bulletSpeed": [500, 500, 500, 500, 500],
           "projectileSprite": "images/tower/melee/melee_tower_projectile.svg",
           "directional": false,
           "piercing": false,
@@ -143,25 +143,6 @@
       "model": {
         "base": "images/tower/melee/melee_tower_t%d_base.svg",
         "head": "images/tower/melee/melee_tower_t%d_head.svg"
-      }
-    },
-    {
-      "name": "Gold Stash",
-      "description": "The heart of your base. Protect it at all costs! If it is destroyed, you lose the game.",
-      "type": "stash",
-      "size": 2.0,
-      "maxHealth": [100, 120, 140, 160, 180],
-      "cost": [
-        [0, 0, 0],
-        [50, 0, 0],
-        [100, 0, 0],
-        [150, 0, 0],
-        [200, 0, 0]
-      ],
-      "productionRate": [5, 4, 2, 1, 0.5],
-      "productionAmount": [10, 20, 30, 40, 50],
-      "model": {
-        "base": "images/tower/stash/gold_stash_t%d_base.svg"
       }
     },
     {
@@ -182,6 +163,197 @@
       "model": {
         "base": "images/tower/mine/gold_mine_t%d_base.svg",
         "head": "images/tower/mine/gold_mine_t%d_head.svg"
+      }
+    },
+    {
+      "name": "Mage Tower",
+      "description": "A tower that attacks enemies in all directions. Effective against groups of enemies.",
+      "type": "defensive",
+      "size": 2.0,
+      "maxHealth": [100, 120, 140, 160, 180],
+      "cost": [
+        [50, 0, 0],
+        [50, 0, 0],
+        [100, 0, 0],
+        [150, 0, 0],
+        [200, 0, 0]
+      ],
+      "weapons": [
+        {
+          "damage": [40, 60, 80, 100, 120],
+          "range": [500, 540, 580, 520, 560],
+          "fireRate": [0.7, 0.6, 0.5, 0.4, 0.3],
+          "bulletSpeed": [450, 460, 470, 480, 500],
+          "projectileSprite": "images/tower/mage/mage_tower_projectile.svg",
+          "directional": true,
+          "piercing": false,
+          "areaEffect": false,
+          "direction": [1, 0],
+          "enemyTypes": ["*", "ground", "air"]
+        },
+        {
+          "damage": [40, 60, 80, 100, 120],
+          "range": [500, 540, 580, 520, 560],
+          "fireRate": [0.7, 0.6, 0.5, 0.4, 0.3],
+          "bulletSpeed": [450, 460, 470, 480, 500],
+          "projectileSprite": "images/tower/mage/mage_tower_projectile.svg",
+          "directional": true,
+          "piercing": false,
+          "areaEffect": false,
+          "direction": [0, 1],
+          "enemyTypes": ["*", "ground", "air"]
+        },
+        {
+          "damage": [40, 60, 80, 100, 120],
+          "range": [500, 540, 580, 520, 560],
+          "fireRate": [0.7, 0.6, 0.5, 0.4, 0.3],
+          "bulletSpeed": [450, 460, 470, 480, 500],
+          "projectileSprite": "images/tower/mage/mage_tower_projectile.svg",
+          "directional": true,
+          "piercing": false,
+          "areaEffect": false,
+          "direction": [-1, 0],
+          "enemyTypes": ["*", "ground", "air"]
+        },
+        {
+          "damage": [40, 60, 80, 100, 120],
+          "range": [500, 540, 580, 520, 560],
+          "fireRate": [0.7, 0.6, 0.5, 0.4, 0.3],
+          "bulletSpeed": [450, 460, 470, 480, 500],
+          "projectileSprite": "images/tower/mage/mage_tower_projectile.svg",
+          "directional": true,
+          "piercing": false,
+          "areaEffect": false,
+          "direction": [0, -1],
+          "enemyTypes": ["*", "ground", "air"]
+        },
+        {
+          "damage": [40, 60, 80, 100, 120],
+          "range": [500, 540, 580, 520, 560],
+          "fireRate": [0.7, 0.6, 0.5, 0.4, 0.3],
+          "bulletSpeed": [450, 460, 470, 480, 500],
+          "projectileSprite": "images/tower/mage/mage_tower_projectile.svg",
+          "directional": true,
+          "piercing": false,
+          "areaEffect": false,
+          "direction": [1, 1],
+          "enemyTypes": ["*", "ground", "air"]
+        },
+        {
+          "damage": [40, 60, 80, 100, 120],
+          "range": [500, 540, 580, 520, 560],
+          "fireRate": [0.7, 0.6, 0.5, 0.4, 0.3],
+          "bulletSpeed": [450, 460, 470, 480, 500],
+          "projectileSprite": "images/tower/mage/mage_tower_projectile.svg",
+          "directional": true,
+          "piercing": false,
+          "areaEffect": false,
+          "direction": [1, -1],
+          "enemyTypes": ["*", "ground", "air"]
+        },
+        {
+          "damage": [40, 60, 80, 100, 120],
+          "range": [500, 540, 580, 520, 560],
+          "fireRate": [0.7, 0.6, 0.5, 0.4, 0.3],
+          "bulletSpeed": [450, 460, 470, 480, 500],
+          "projectileSprite": "images/tower/mage/mage_tower_projectile.svg",
+          "directional": true,
+          "piercing": false,
+          "areaEffect": false,
+          "direction": [-1, 1],
+          "enemyTypes": ["*", "ground", "air"]
+        },
+        {
+          "damage": [40, 60, 80, 100, 120],
+          "range": [500, 540, 580, 520, 560],
+          "fireRate": [0.7, 0.6, 0.5, 0.4, 0.3],
+          "bulletSpeed": [450, 460, 470, 480, 500],
+          "projectileSprite": "images/tower/mage/mage_tower_projectile.svg",
+          "directional": true,
+          "piercing": false,
+          "areaEffect": false,
+          "direction": [-1, -1],
+          "enemyTypes": ["*", "ground", "air"]
+        }
+      ],
+      "model": {
+        "base": "images/tower/mage/mage_tower_t%d_base.svg",
+        "head": "images/tower/mage/mage_tower_t%d_head.svg"
+      }
+    },
+    {
+      "name": "Harvester Tower",
+      "description": "Harvest resources for adjacent resource nodes.",
+      "type": "gathering",
+      "size": 2.0,
+      "maxHealth": [100, 120, 140, 160, 180],
+      "cost": [
+        [50, 0, 0],
+        [50, 0, 0],
+        [100, 0, 0],
+        [150, 0, 0],
+        [200, 0, 0]
+      ],
+      "productionRate": [5, 4, 2, 1, 0.5],
+      "productionAmount": [10, 20, 30, 40, 50],
+      "model": {
+        "base": "images/tower/harvester/harvester_t%d_base.svg",
+        "head": "images/tower/harvester/harvester_t%d_head.svg"
+      }
+    },
+    {
+      "name": "Wall",
+      "description": "A wall that can be placed on the path to block enemies. Can be upgraded to increase its health.",
+      "type": "passive",
+      "size": 1.0,
+      "maxHealth": [100, 120, 140, 160, 180],
+      "cost": [
+        [50, 0, 0],
+        [50, 0, 0],
+        [100, 0, 0],
+        [150, 0, 0],
+        [200, 0, 0]
+      ],
+      "weapons": [],
+      "model": {
+        "base": "images/tower/wall/wall_t%d_base.svg"
+      }
+    },
+    {
+      "name": "Slow Trap",
+      "description": "A trap that slows down enemies that pass over it. Can be placed on the path to hinder enemy movement.",
+      "type": "defensive",
+      "size": 1.0,
+      "maxHealth": [100, 120, 140, 160, 180],
+      "cost": [
+        [50, 0, 0],
+        [50, 0, 0],
+        [100, 0, 0],
+        [150, 0, 0],
+        [200, 0, 0]
+      ],
+      "weapons": [],
+      "model": {
+        "base": "images/tower/slow_trap/slow_trap_t%d_base.svg"
+      }
+    },
+    {
+      "name": "Gold Stash",
+      "description": "The heart of your base. Protect it at all costs! If it is destroyed, you lose the game.",
+      "type": "stash",
+      "size": 2.0,
+      "maxHealth": [1500, 2000, 3000, 4500, 5500],
+      "cost": [
+        [0, 0, 0],
+        [50, 0, 0],
+        [100, 0, 0],
+        [150, 0, 0],
+        [200, 0, 0]
+      ],
+      "productionRate": [5, 4, 2, 1, 0.5],
+      "productionAmount": [10, 20, 30, 40, 50],
+      "model": {
+        "base": "images/tower/stash/gold_stash_t%d_base.svg"
       }
     }
   ]

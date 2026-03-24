@@ -72,7 +72,9 @@ typedef struct tower_state_s {
     struct entity_s *entity;
     Sprite *baseSprite;
     Sprite *weaponSprite;
+
     GFC_Vector2D shootDirection;
+    const item_def_t *producingResource; // For gathering towers, the type of resource being gathered
     uint8_t canShoot;
     uint32_t dirtyFlags;
 } tower_state_t;

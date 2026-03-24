@@ -580,8 +580,10 @@ void tower_entity_think(const entity_manager_t *entityManager, entity_t *ent) {
         return;
     }
 
-    if (tower->def->type == TOWER_TYPE_DEFENSIVE) {
-        GFC_List *enemiesInRange = collision_get_entities_in_range(g_game.world, ent->position, tower->def->weaponDefs[0].range[tower->level], ENT_LAYER_ENEMY);
+    if (tower->def->type == TOWER_TYPE_DEFENSIVE || tower->def->type == TOWER_TYPE_GATHERING) {
+        float range = tower->def->type == TOWER_TYPE_DEFENSIVE ? tower->def->weaponDefs[0].range[tower->level] : TILE_SIZE*3; // Defensive towers use weapon range, gathering towers have fixed range
+        GFC_List *enemiesInRange = collision_get_entities_in_range(g_game.world, ent->position, range, ENT_LAYER_ENEMY | ENT_LAYER_RESOURCE);
+        item_t *item = NULL;
         c = gfc_list_count(enemiesInRange);
         if (c == 0) {
             tower->canShoot = 0;
@@ -590,11 +592,14 @@ void tower_entity_think(const entity_manager_t *entityManager, entity_t *ent) {
 
         for (i = 0; i < c; i++) {
             entity_t *enemy = (entity_t *)gfc_list_get_nth(enemiesInRange, i);
-            if (enemy) {
+            if (enemy && enemy->layers & (tower->def->type == TOWER_TYPE_DEFENSIVE ? ENT_LAYER_ENEMY : ENT_LAYER_RESOURCE)) {
                 enmyDist = gfc_vector2d_magnitude_between_squared(ent->position, enemy->position);
                 if (enmyDist < dist) {
                     dist = enmyDist;
                     targetPos = enemy->position;
+                    if (tower->def->type == TOWER_TYPE_GATHERING) {
+                        item = (item_t *)enemy->data;
+                    }
                 }
             }
         }
@@ -602,6 +607,7 @@ void tower_entity_think(const entity_manager_t *entityManager, entity_t *ent) {
         gfc_vector2d_sub(pos, targetPos, ent->position);
         gfc_vector2d_normalize(&pos);
         tower->shootDirection = pos;
+        if (item) tower->producingResource = item->def;
         tower->canShoot = 1;
     } else if ((tower->def->type == TOWER_TYPE_GOLD_PRODUCTION || tower->def->type == TOWER_TYPE_STASH) && tower->productionCooldown <= 0) {
         tower->productionCooldown = tower->def->productionRate[tower->level];
@@ -620,18 +626,27 @@ void tower_entity_update(const entity_manager_t *entityManager, entity_t *ent, f
     tower_state_t *tower = (tower_state_t *)ent->data;
 
     if (g_game.role == GAME_ROLE_SERVER) {
-        if (tower->canShoot && tower_try_shoot(ent, deltaTime)) {
-
-            s2c_tower_snapshot_packet_t *towerPkt = gfc_allocate_array(sizeof(s2c_tower_snapshot_packet_t), 1);
-            tower_snapshot_data_t towerData = {
-                .shootData = {
-                    .xDir = tower->shootDirection.x,
-                    .yDir = tower->shootDirection.y
-                }
-            };
-            create_s2c_tower_snapshot(towerPkt, tower->id, TOWER_EVENT_SHOOT, &towerData);
-            server_broadcast_packet_batch(&g_server, towerPkt);
-            tower_shoot_all(entityManager, ent);
+        if (tower->canShoot) {
+            if (tower->def->type == TOWER_TYPE_DEFENSIVE && tower_try_shoot(ent, deltaTime)) {
+                s2c_tower_snapshot_packet_t *towerPkt = gfc_allocate_array(sizeof(s2c_tower_snapshot_packet_t), 1);
+                tower_snapshot_data_t towerData = {
+                    .shootData = {
+                        .xDir = tower->shootDirection.x,
+                        .yDir = tower->shootDirection.y
+                    }
+                };
+                create_s2c_tower_snapshot(towerPkt, tower->id, TOWER_EVENT_SHOOT, &towerData);
+                server_broadcast_packet_batch(&g_server, towerPkt);
+                tower_shoot_all(entityManager, ent);
+            } else if (tower->def->type == TOWER_TYPE_GATHERING && tower->productionCooldown <= 0) {
+                tower->productionCooldown = tower->def->productionRate[tower->level];
+                item_t *producedItem = item_create(tower->producingResource, tower->def->productionAmount[tower->level]);
+                inventory_transaction_t *trans = inventory_transaction_create(1, 1);
+                inventory_transaction_add_item(trans, producedItem);
+                player_t *player = player_manager_get(g_server.playerManager, 0); //TODO: make this for non singleplayer
+                player_inventory_transaction(player, trans);
+                free(producedItem);
+            }
         }
 
         if (tower->health < tower->def->maxHealth[tower->level] && g_game.state.phase == GAME_PHASE_BUILDING) {

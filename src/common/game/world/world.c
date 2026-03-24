@@ -203,7 +203,7 @@ void world_spawn_wave(world_t *world) {
     }
 
     float minSpawnRadius = CHUNK_TILE_SIZE * TILE_SIZE;
-    float maxSpawnRadius = minSpawnRadius * 2;
+    float maxSpawnRadius = minSpawnRadius;
 
     for (i = 0; i < wave->count; i++) {
         spawnPos = random_point_in_radius(pos, minSpawnRadius, maxSpawnRadius);

@@ -55,10 +55,10 @@ int client_main(void) {
     window_init(32, 256, 256);
     overlay_init(g_client.defManager, &g_client.overlay, 32, "def/overlay.json");
     overlay_hide(&g_client.overlay);
-    g_client.entityManager = entity_init(1024);
+    g_client.entityManager = entity_init(1024*5);
     //phys_init(1024);
     g_game.itemDefManager = item_init(g_client.defManager, "def/items.json");
-    g_client.towerManager = tower_init(tower_load_defs(g_client.defManager, "def/towers.json"), 32);
+    g_client.towerManager = tower_init(tower_load_defs(g_client.defManager, "def/towers.json"), 128);
     g_client.enemyManager = enemy_load_defs(g_client.defManager, "def/enemies.json");
 
     camera_init(&g_camera);

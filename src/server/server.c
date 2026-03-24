@@ -82,7 +82,7 @@ int server_startup(Server *server) {
     log_info("Server network started successfully.");
 
     server->defManager = def_init(32);
-    server->entityManager = entity_init(1024);
+    server->entityManager = entity_init(1024*5);
     g_game.itemDefManager = item_init(server->defManager, "def/items.json");
     server->towerManager = tower_init(tower_load_defs(server->defManager, "def/towers.json"), 128);
     server->enemyManager = enemy_load_defs(server->defManager, "def/enemies.json");
