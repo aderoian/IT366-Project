@@ -35,6 +35,8 @@ void inventory_add_item(inventory_t *inventory, const item_t *item);
 
 void inventory_remove_item(inventory_t *inventory, const item_t *item);
 
+const item_t *inventory_get_item(const inventory_t *inventory, const item_def_t *def);
+
 void inventory_set_item_quantity(inventory_t *inventory, const item_t *item);
 
 void inventory_clear(inventory_t *inventory);

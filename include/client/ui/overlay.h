@@ -13,7 +13,8 @@
 #define OVERLAY_ELEMENTS(X) \
 X(tower_hudbar, TOWER_HUDBAR, SIMPLE) \
 X(tower_hb_tower, TOWER_HB_TOWER, SIMPLE) \
-X(cycle_container, CYCLE_CONTAINER, SIMPLE)
+X(cycle_container, CYCLE_CONTAINER, SIMPLE) \
+X(info_container, INFO_CONTAINER, SIMPLE)
 
 
 #define OVERLAY_CREATION(name, cap_name, type) TYPE_##cap_name,

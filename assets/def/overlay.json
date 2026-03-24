@@ -88,6 +88,12 @@
       "position": [23, 633],
       "size": [180, 51],
       "sprite": "images/ui/overlay/cycle_container.png"
+    },
+    {
+      "type": "info_container",
+      "position": [997, 567],
+      "size": [180, 110],
+      "sprite": "images/ui/overlay/info_container.png"
     }
   ]
 }

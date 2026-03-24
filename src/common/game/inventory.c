@@ -89,6 +89,21 @@ void inventory_remove_item(inventory_t *inventory, const item_t *item) {
     }
 }
 
+const item_t * inventory_get_item(const inventory_t *inventory, const item_def_t *def) {
+    uint32_t i;
+    if (!inventory || !def) {
+        return NULL;
+    }
+
+    for (i = 0; i < inventory->numItems; i++) {
+        if (inventory->items[i].def == def) {
+            return &inventory->items[i];
+        }
+    }
+
+    return NULL;
+}
+
 void inventory_set_item_quantity(inventory_t *inventory, const item_t *item) {
     uint32_t i;
     if (!inventory || !item) {

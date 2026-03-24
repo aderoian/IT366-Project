@@ -160,6 +160,21 @@ void overlay_draw(const overlay_t *overlay) {
         gf2d_draw_rect_filled(gfc_rect(28, 650, 170, 20), GFC_COLOR_YELLOW);
         gf2d_draw_rect_filled(gfc_rect(28 + 85 * (time / HALF_CYCLE_TIME), 650, 85, 20), GFC_COLOR_MAGENTA);
     }
+
+    player_t *player = g_client.player;
+    if (!player) return;
+
+    inventory_t *inv = &player->inventory;
+    if (!inv) return;
+
+    const item_t *item = inventory_get_item(inv, item_def_get(g_game.itemDefManager, "wood"));
+    gf2d_font_draw_textf(20, "Wood: %d", gfc_vector2d(1006, 574), item ? item->quantity : 0);
+    item = inventory_get_item(inv, item_def_get(g_game.itemDefManager, "stone"));
+    gf2d_font_draw_textf(20, "Stone: %d", gfc_vector2d(1006, 594), item ? item->quantity : 0);
+    item = inventory_get_item(inv, item_def_get(g_game.itemDefManager, "gold"));
+    gf2d_font_draw_textf(20, "Gold: %d", gfc_vector2d(1006, 614), item ? item->quantity : 0);
+    gf2d_font_draw_textf(20, "Wave: %d", gfc_vector2d(1006, 634), g_game.state.waveNumber);
+
 }
 
 int overlay_hover(overlay_t *overlay, overlay_element_t *element) {
