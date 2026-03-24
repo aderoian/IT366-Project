@@ -105,7 +105,8 @@ typedef struct c2s_tower_request_packet_s {
 typedef enum tower_snapshot_id_e {
     TOWER_SNAPSHOT_CREATE,
     TOWER_SNAPSHOT_SHOOT,
-    TOWER_SNAPSHOT_CHANGE,
+    TOWER_SNAPSHOT_UPGRADE,
+    TOWER_SNAPSHOT_UPDATE,
     TOWER_SNAPSHOT_DESTROY
 } tower_snapshot_id_t;
 
@@ -123,7 +124,10 @@ typedef union tower_snapshot_data_u {
     } shootData;
     struct {
         int level;
-    } changeData;
+    } upgradeData;
+    struct {
+        float health;
+    } updateData;
 } tower_snapshot_data_t;
 
 typedef struct s2c_tower_snapshot_packet_s {

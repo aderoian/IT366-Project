@@ -17,6 +17,8 @@
 
 #define TOWER_EVENT_SHOOT 0x01 // Event ID for when a tower shoots
 
+#define TOWER_DIRTY_HEALTH 0x01
+
 struct def_manager_s;
 struct entity_manager_s;
 struct player_s;
@@ -72,6 +74,7 @@ typedef struct tower_state_s {
     Sprite *weaponSprite;
     GFC_Vector2D shootDirection;
     uint8_t canShoot;
+    uint32_t dirtyFlags;
 } tower_state_t;
 
 typedef struct tower_def_manager_s tower_def_manager_t;
@@ -221,7 +224,7 @@ void tower_shoot(const struct entity_manager_s *entityManager, entity_t *entity,
  */
 void tower_shoot_all(const struct entity_manager_s *entityManager, entity_t *entity);
 
-void tower_entity_draw_full(float size, GFC_Vector2D pos, Sprite *baseSprite, Sprite *weaponSprite, float rotation);
+void tower_entity_draw_full(float size, GFC_Vector2D pos, Sprite *baseSprite, Sprite *weaponSprite, float rotation, float healthPercent);
 
 inventory_transaction_t *tower_get_cost_transaction(const tower_def_t *def, int level);
 

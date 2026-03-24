@@ -334,8 +334,10 @@ void write_s2c_tower_snapshot(buffer_t buf, buffer_offset_t *off, const s2c_towe
     } else if (pkt->snapshotID == TOWER_SNAPSHOT_SHOOT) {
         write_float(buf, off, pkt->snapshotData.shootData.xDir);
         write_float(buf, off, pkt->snapshotData.shootData.yDir);
-    } else if (pkt->snapshotID == TOWER_SNAPSHOT_CHANGE) {
-        write_int32(buf, off, pkt->snapshotData.changeData.level);
+    } else if (pkt->snapshotID == TOWER_SNAPSHOT_UPGRADE) {
+        write_int32(buf, off, pkt->snapshotData.upgradeData.level);
+    } else if (pkt->snapshotID == TOWER_SNAPSHOT_UPDATE) {
+        write_float(buf, off, pkt->snapshotData.updateData.health);
     } else if (pkt->snapshotID == TOWER_SNAPSHOT_DESTROY) {
         // No additional data for destroy snapshot
     }
@@ -449,8 +451,10 @@ void read_s2c_tower_snapshot(buffer_t buf, buffer_offset_t *off, s2c_tower_snaps
     } else if (pkt->snapshotID == TOWER_SNAPSHOT_SHOOT) {
         pkt->snapshotData.shootData.xDir = read_float(buf, off);
         pkt->snapshotData.shootData.yDir = read_float(buf, off);
-    } else if (pkt->snapshotID == TOWER_SNAPSHOT_CHANGE) {
-        pkt->snapshotData.changeData.level = read_int32(buf, off);
+    } else if (pkt->snapshotID == TOWER_SNAPSHOT_UPGRADE) {
+        pkt->snapshotData.upgradeData.level = read_int32(buf, off);
+    } else if (pkt->snapshotID == TOWER_SNAPSHOT_UPDATE) {
+        pkt->snapshotData.updateData.health = read_float(buf, off);
     } else if (pkt->snapshotID == TOWER_SNAPSHOT_DESTROY) {
         // No additional data for destroy snapshot
     }
@@ -558,8 +562,10 @@ void create_s2c_tower_snapshot(s2c_tower_snapshot_packet_t *pkt, uint32_t towerI
         pkt->length += sizeof(eventData->createData.xPos) + sizeof(eventData->createData.yPos) + sizeof(eventData->createData.towerDefIndex) + sizeof(eventData->createData.towerID) + sizeof(eventData->createData.entityID);
     } else if (snapshotID == TOWER_SNAPSHOT_SHOOT) {
         pkt->length += sizeof(eventData->shootData.xDir) + sizeof(eventData->shootData.yDir);
-    } else if (snapshotID == TOWER_SNAPSHOT_CHANGE) {
-        pkt->length += sizeof(eventData->changeData.level);
+    } else if (snapshotID == TOWER_SNAPSHOT_UPGRADE) {
+        pkt->length += sizeof(eventData->upgradeData.level);
+    } else if (snapshotID == TOWER_SNAPSHOT_UPDATE) {
+        pkt->length += sizeof(eventData->updateData.health);
     } else if (snapshotID == TOWER_SNAPSHOT_DESTROY) {
         // No additional data for destroy snapshot
     }

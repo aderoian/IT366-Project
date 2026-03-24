@@ -402,11 +402,11 @@ void tower_upgrade(const struct entity_manager_s *entityManager, tower_manager_t
     } else {
         s2c_tower_snapshot_packet_t packet;
         tower_snapshot_data_t snapshotData = {
-            .changeData = {
+            .upgradeData = {
                 .level = tower->level
             }
         };
-        create_s2c_tower_snapshot(&packet, tower->id, TOWER_SNAPSHOT_CHANGE, &snapshotData);
+        create_s2c_tower_snapshot(&packet, tower->id, TOWER_SNAPSHOT_UPGRADE, &snapshotData);
         server_broadcast_packet(&g_server, &packet, NET_UDP_FLAG_RELIABLE);
     }
 }
@@ -514,7 +514,7 @@ void tower_shoot_all(const entity_manager_t *entityManager, entity_t *entity) {
     }
 }
 
-void tower_entity_draw_full(float size, GFC_Vector2D pos, Sprite *baseSprite, Sprite *weaponSprite, float rotation) {
+void tower_entity_draw_full(float size, GFC_Vector2D pos, Sprite *baseSprite, Sprite *weaponSprite, float rotation, float healthPercent) {
     GFC_Vector2D drawPos, headPos, centerPos;
     gfc_vector2d_sub(drawPos, pos, g_camera.position);
     gf2d_sprite_draw_centered(baseSprite, drawPos, NULL, NULL, NULL, NULL, NULL, 0);
@@ -522,6 +522,8 @@ void tower_entity_draw_full(float size, GFC_Vector2D pos, Sprite *baseSprite, Sp
     headPos.x = drawPos.x + (size * TILE_SIZE / 2) - ((float)weaponSprite->frame_w / 2);
     headPos.y = drawPos.y + (size * TILE_SIZE / 2) - ((float)weaponSprite->frame_h / 2);
     gf2d_sprite_draw_centered(weaponSprite, drawPos, NULL, NULL, &rotation, NULL, NULL, 0);
+
+    if (healthPercent < 1.0) entity_draw_health_bar(pos, gfc_vector2d(80, 10), healthPercent, GFC_COLOR_GREEN);
 }
 
 inventory_transaction_t * tower_get_cost_transaction(const tower_def_t *def, int level) {
@@ -632,6 +634,18 @@ void tower_entity_update(const entity_manager_t *entityManager, entity_t *ent, f
             tower_shoot_all(entityManager, ent);
         }
 
+        if (tower->dirtyFlags & TOWER_DIRTY_HEALTH) {
+            s2c_tower_snapshot_packet_t *towerPkt = gfc_allocate_array(sizeof(s2c_tower_snapshot_packet_t), 1);
+            tower_snapshot_data_t towerData = {
+                .updateData = {
+                    .health = tower->health
+                }
+            };
+            create_s2c_tower_snapshot(towerPkt, tower->id, TOWER_SNAPSHOT_UPDATE, &towerData);
+            server_broadcast_packet_batch(&g_server, towerPkt);
+            tower->dirtyFlags &= ~TOWER_DIRTY_HEALTH; // Clear dirty flag
+        }
+
         tower->productionCooldown -= deltaTime;
     }
 }
@@ -639,7 +653,7 @@ void tower_entity_update(const entity_manager_t *entityManager, entity_t *ent, f
 void tower_entity_draw(const entity_manager_t *entityManager, entity_t *ent) {
     if (!ent || !ent->data) return;
     tower_state_t *tower = (tower_state_t *)ent->data;
-    tower_entity_draw_full(tower->def->size, ent->position, tower->baseSprite, tower->weaponSprite, gfc_vector2d_angle(tower->shootDirection) * 180.0f / M_PI - 90.0f);
+    tower_entity_draw_full(tower->def->size, ent->position, tower->baseSprite, tower->weaponSprite, gfc_vector2d_angle(tower->shootDirection) * 180.0f / M_PI - 90.0f, tower->health / tower->def->maxHealth[tower->level]);
 }
 
 void tower_entity_destroy(const entity_manager_t *entityManager, entity_t *ent) {

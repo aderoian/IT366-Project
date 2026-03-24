@@ -368,6 +368,7 @@ void enemy_update(const entity_manager_t *entityManager, entity_t *ent, float de
             }
             tower_state_t *towerState = (tower_state_t *)target->data;
             towerState->health -= state->def->damage;
+            towerState->dirtyFlags |= TOWER_DIRTY_HEALTH;
         }
 
         state->attackCooldownTimer = state->def->attackCooldown;

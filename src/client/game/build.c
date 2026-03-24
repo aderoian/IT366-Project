@@ -109,7 +109,7 @@ int build_mode_handle_click(uint32_t mouseButton, int x, int y) {
 
 void build_mode_render(void) {
     if (build_mode && build_mode->towerDef) {
-        tower_entity_draw_full(build_mode->towerDef->size, build_mode->position, build_mode->previewSpriteBase, build_mode->previewSpriteHead, 0);
+        tower_entity_draw_full(build_mode->towerDef->size, build_mode->position, build_mode->previewSpriteBase, build_mode->previewSpriteHead, 0, 1.0f);
         if (__DEBUG_LINES) {
             GFC_Rect towerRect = gfc_rect(build_mode->position.x + 2.5 - (build_mode->towerDef->size * TILE_SIZE / 2.0f) - g_camera.position.x, build_mode->position.y + 2.5 - (build_mode->towerDef->size * TILE_SIZE / 2.0f) - g_camera.position.y, (build_mode->towerDef->size * TILE_SIZE) - 5, (build_mode->towerDef->size * TILE_SIZE) - 5);
             gf2d_draw_rect(towerRect, GFC_COLOR_DARKBLUE);

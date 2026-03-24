@@ -62,14 +62,21 @@ void handle_s2c_tower_snapshot(const s2c_tower_snapshot_packet_t *pkt, void *cli
         tower_state_t *tower = (tower_state_t *)entity->data;
         tower->shootDirection = gfc_vector2d(pkt->snapshotData.shootData.xDir, pkt->snapshotData.shootData.yDir);
         tower_shoot_all(g_client.entityManager, entity);
-    } else if (pkt->snapshotID == TOWER_SNAPSHOT_CHANGE) {
+    } else if (pkt->snapshotID == TOWER_SNAPSHOT_UPGRADE) {
         entity_t *entity = tower_get_by_id(g_client.towerManager, pkt->towerID);
         if (!entity) {
             log_error("Received tower change packet for non-existent tower ID: %u", pkt->towerID);
             return;
         }
-        tower_upgrade(g_client.entityManager, g_client.towerManager, entity, pkt->snapshotData.changeData.level);
-        log_info("Tower with ID: %u upgraded to level %d", pkt->towerID, pkt->snapshotData.changeData.level);
+        tower_upgrade(g_client.entityManager, g_client.towerManager, entity, pkt->snapshotData.upgradeData.level);
+    } else if (pkt->snapshotID == TOWER_SNAPSHOT_UPDATE) {
+        entity_t *entity = tower_get_by_id(g_client.towerManager, pkt->towerID);
+        if (!entity) {
+            log_error("Received tower update packet for non-existent tower ID: %u", pkt->towerID);
+            return;
+        }
+        tower_state_t *tower = (tower_state_t *)entity->data;
+        tower->health = pkt->snapshotData.updateData.health;
     } else if (pkt->snapshotID == TOWER_SNAPSHOT_DESTROY) {
         entity_t *entity = tower_get_by_id(g_client.towerManager, pkt->towerID);
         entity_free(g_client.entityManager, entity);
