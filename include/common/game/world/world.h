@@ -6,7 +6,6 @@
 #include "common/game/item.h"
 
 #define TILE_SIZE 48
-#define CHUNK_TILE_SIZE 16
 
 struct def_manager_s;
 struct entity_s;
@@ -31,13 +30,14 @@ typedef struct world_s {
 
     struct chunk_s *chunks;
 
-    SDL_Texture *chunkTexture; // Client-side texture for rendering chunks
     selected_tower_t *selected_tower;
 } world_t;
 
-world_t *world_create(struct def_manager_s *defManager, const char* file, uint8_t local);
+world_t *world_create_empty(int width, int height);
 
-void world_create_chunk_texture(world_t *world);
+world_t *world_create_from_file(const char* file);
+
+void world_save(world_t *world, const char* file);
 
 void world_destroy(world_t *world);
 

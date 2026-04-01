@@ -20,6 +20,7 @@
 #include "client/ui/types/windows.h"
 #include "common/game/enemy.h"
 #include "common/game/item.h"
+#include "common/game/world/tile.h"
 #include "common/network/packet/definitions.h"
 #include "common/network/packet/io.h"
 #include "server/server.h"
@@ -49,17 +50,17 @@ int client_main(void) {
         0);
     gf2d_graphics_set_frame_delay(16);
     gf2d_sprite_init(1024);
+    g_game.defManager = def_init(32);
+    g_game.entityManager = entity_init(1024*5);
+    g_game.itemDefManager = item_init(g_game.defManager, "def/items.json");
+    g_game.towerManager = tower_init(tower_load_defs(g_game.defManager, "def/towers.json"), 128);
+    g_game.enemyManager = enemy_load_defs(g_game.defManager, "def/enemies.json");
+    g_game.tileManager = tile_manager_init("def/tiles.json");
     gf2d_font_init("fonts/SourceSansPro-Regular.otf", GFC_COLOR_WHITE);
-    g_client.defManager = def_init(32);
     animation_manager_init(256);
     window_init(32, 256, 256);
-    overlay_init(g_client.defManager, &g_client.overlay, 32, "def/overlay.json");
+    overlay_init(g_game.defManager, &g_client.overlay, 32, "def/overlay.json");
     overlay_hide(&g_client.overlay);
-    g_client.entityManager = entity_init(1024*5);
-    //phys_init(1024);
-    g_game.itemDefManager = item_init(g_client.defManager, "def/items.json");
-    g_client.towerManager = tower_init(tower_load_defs(g_client.defManager, "def/towers.json"), 128);
-    g_client.enemyManager = enemy_load_defs(g_client.defManager, "def/enemies.json");
 
     camera_init(&g_camera);
 
@@ -82,7 +83,7 @@ int client_main(void) {
 
     g_client.renderState.background = gf2d_sprite_load_image("images/backgrounds/bg_flat.png");
 
-    window_t *mainMenu = window_load_from_json(g_client.defManager, "def/window/main_menu.json");
+    window_t *mainMenu = window_load_from_json(g_game.defManager, "def/window/main_menu.json");
     mainMenu->on_button_click = window_main_on_button_click;
     window_show(mainMenu);
 
@@ -235,8 +236,8 @@ void client_tickLoop(Client* client) {
 
             camera_update(&g_camera);
 
-            entity_think_all(g_client.entityManager);
-            entity_update_all(g_client.entityManager, g_game.deltaTime);
+            entity_think_all(g_game.entityManager);
+            entity_update_all(g_game.entityManager, g_game.deltaTime);
 
             client_on_mouse(g_game.deltaTime);
             window_handle_keyboard();
@@ -262,7 +263,7 @@ void client_render(Client* client, uint64_t alpha) {
     gf2d_graphics_clear_screen();
 
     if (g_game.world) world_draw(g_game.world);
-    entity_draw_all(g_client.entityManager);
+    entity_draw_all(g_game.entityManager);
     overlay_draw(&g_client.overlay);
     build_mode_render();
     window_draw_all();

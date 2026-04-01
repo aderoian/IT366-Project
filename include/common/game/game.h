@@ -33,7 +33,12 @@ typedef struct game_s {
     uint8_t role; // 0 = none, 1 = server, 2 = client
     uint8_t isLocal; // 1 if this instance is running in the same process as the server (for client), 0 otherwise
 
+    struct def_manager_s *defManager;
     struct item_def_manager_s *itemDefManager;
+    struct tile_manager_s *tileManager;
+    struct entity_manager_s *entityManager;
+    struct tower_manager_s *towerManager;
+    struct enemy_def_manager_s *enemyManager;
     struct world_s *world; // Pointer to the game world (server and client will have their own instances)
 
     game_state_t state;

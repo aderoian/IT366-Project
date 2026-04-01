@@ -70,7 +70,7 @@ void handle_c2s_tower_request(const c2s_tower_request_packet_t *pkt, void *peer)
     }
 
     if (pkt->requestID == TOWER_REQUEST_BUILD) {
-        towerDef = tower_def_get_by_index(g_server.towerManager, pkt->requestData.buildData.towerDefIndex);
+        towerDef = tower_def_get_by_index(g_game.towerManager, pkt->requestData.buildData.towerDefIndex);
         if (!towerDef) {
             log_warn("Received tower build request with invalid tower definition index %u from player ID %u", pkt->requestData.buildData.towerDefIndex, player->id);
             return;
@@ -82,12 +82,12 @@ void handle_c2s_tower_request(const c2s_tower_request_packet_t *pkt, void *peer)
             log_info("Player ID %u successfully built tower at position (%f, %f) with definition index %u", player->id, pkt->requestData.buildData.xPos, pkt->requestData.buildData.yPos, pkt->requestData.buildData.towerDefIndex);
         }
     } else if (pkt->requestID == TOWER_REQUEST_UPGRADE) {
-        entity_t *tower = tower_get_by_id(g_server.towerManager, pkt->requestData.upgradeData.towerID);
+        entity_t *tower = tower_get_by_id(g_game.towerManager, pkt->requestData.upgradeData.towerID);
         if (!tower) {
             log_warn("Received tower upgrade request for non-existent tower ID %u from player ID %u", pkt->requestData.upgradeData.towerID, player->id);
             return;
         }
 
-        tower_try_upgrade(g_server.entityManager, g_server.towerManager, player, tower);
+        tower_try_upgrade(g_game.entityManager, g_game.towerManager, player, tower);
     }
 }

@@ -24,25 +24,16 @@ extern uint8_t __DEBUG_LINES;
 void world_load_entities(world_t *world, def_data_t *worldDef);
 void world_tower_options_draw(overlay_element_t *element);
 
-world_t *world_create(def_manager_t *defManager, const char *file, const uint8_t local) {
-    int i, j, width, height;
-    GFC_Vector2I size;
+world_t * world_create_empty(int width, int height) {
+    int i, j;
     world_t *world = malloc(sizeof(world_t));
     if (!world) {
         return NULL;
     }
 
-    def_data_t *worldDef = def_load(defManager, file);
-    if (!worldDef) {
-        log_error("Failed to load world definition from file: %s", file);
-        free(world);
-        return NULL;
-    }
-
-    def_data_get_vector2i(worldDef, "size", &size);
-    width = size.x; height = size.y;
-
-    world->chunks = gfc_allocate_array(sizeof(chunk_t), width * height);
+    world->size.x = width;
+    world->size.y = height;
+    world->chunks = malloc(sizeof(chunk_t) * width * height);
     if (!world->chunks) {
         free(world);
         return NULL;
@@ -50,21 +41,127 @@ world_t *world_create(def_manager_t *defManager, const char *file, const uint8_t
 
     for (i = 0; i < width; i++) {
         for (j = 0; j < height; j++) {
-            chunk_initialize(&world->chunks[i * height + j], i, j);
+            chunk_initialize(&world->chunks[i * height + j], i, j, NULL);
         }
     }
 
-    world->size.x = width; world->size.y = height;
-    world->local = local;
+    return world;
+}
 
-    world_load_entities(world, worldDef);
+world_t *world_create_from_file(const char *file) {
+    uint32_t *chunkData = NULL;
+    int i, j;
+    FILE *f = NULL;
+    world_t *world = malloc(sizeof(world_t));
 
-    if (g_game.role == GAME_ROLE_CLIENT) {
-        world->selected_tower = NULL;
-        world_create_chunk_texture(world);
+    if (!world || !file) {
+        goto error;
     }
 
+    f = fopen(file, "rb");
+    if (!f) {
+        log_error("Failed to open world file for loading: %s", file);
+        goto error;
+    }
+
+    struct {
+        int32_t height;
+        int32_t width;
+        uint64_t numChunks;
+        uint64_t numEntities;
+    } header;
+
+    if (fread(&header, sizeof(header), 1, f) != 1) {
+        log_error("Failed to read world header from file: %s", file);
+        goto error;
+    }
+
+    world->size.x = header.height;
+    world->size.y = header.width;
+
+    chunkData = malloc(sizeof(uint32_t) * CHUNK_TILE_SIZE * CHUNK_TILE_SIZE * header.numChunks);
+    if (!chunkData) {
+        log_error("Failed to allocate memory for chunk data");
+        goto error;
+    }
+
+    if (fread(chunkData, sizeof(uint32_t) * CHUNK_TILE_SIZE * CHUNK_TILE_SIZE, header.numChunks, f) != header.numChunks) {
+        log_error("Failed to read chunk data from file: %s", file);
+        goto error;
+    }
+
+    for (i = 0; i < world->size.x; i++) {
+        for (j = 0; j < world->size.y; j++) {
+            chunk_initialize(&world->chunks[i * world->size.y + j], i, j, &chunkData[(i * world->size.y + j) * CHUNK_TILE_SIZE * CHUNK_TILE_SIZE]);
+        }
+    }
+
+    free(chunkData);
     return world;
+
+    error:
+        if (f) {
+            fclose(f);
+        }
+        if (chunkData) {
+            free(chunkData);
+        }
+        if (world) {
+            free(world);
+        }
+        return NULL;
+}
+
+void world_save(world_t *world, const char *file) {
+    uint32_t *chunkData = NULL;
+    int i, j;
+    FILE *f = NULL;
+
+    if (!world || !file) {
+        goto error;
+    }
+
+    f = fopen(file, "wb");
+    if (!f) {
+        log_error("Failed to open world file for writing: %s", file);
+        goto error;
+    }
+
+    struct {
+        int32_t height;
+        int32_t width;
+        uint64_t numChunks;
+        uint64_t numEntities;
+    } header;
+
+    header.height = world->size.y;
+    header.width = world->size.x;
+    header.numChunks = world->size.x * world->size.y;
+
+    if (fwrite(&header, sizeof(header), 1, f) != 1) {
+        log_error("Failed to write world header to file: %s", file);
+        goto error;
+    }
+
+    chunkData = malloc(sizeof(uint32_t) * CHUNK_TILE_SIZE * CHUNK_TILE_SIZE * header.numChunks);
+    if (!chunkData) {
+        log_error("Failed to allocate memory for chunk data");
+        goto error;
+    }
+
+    for (i = 0; i < world->size.x; i++) {
+        for (j = 0; j < world->size.y; j++) {
+            chunk_serialize(&world->chunks[i * world->size.y + j], &chunkData[(i * world->size.y + j) * CHUNK_TILE_SIZE * CHUNK_TILE_SIZE]);
+        }
+    }
+
+    free(chunkData);
+    return;
+
+    error:
+        if (f) {
+            fclose(f);
+        }
 }
 
 void world_load_entities(world_t *world, def_data_t *worldDef) {
@@ -111,37 +208,6 @@ void world_load_entities(world_t *world, def_data_t *worldDef) {
             }
             world_object_resource_spawn(world, pos, item_create(itemDef, 0), imagePath);
         }
-    }
-}
-
-void world_create_chunk_texture(world_t *world) {
-    if (!world) {
-        return;
-    }
-
-    // Create a simple checkerboard texture for chunks
-    int textureSize = CHUNK_TILE_SIZE * TILE_SIZE;
-    SDL_Surface *surface = gf2d_graphics_create_surface(textureSize, textureSize);
-    if (!surface) {
-        log_error("Failed to create chunk surface: %s", SDL_GetError());
-        return;
-    }
-
-    //SDL_LockSurface(surface);
-    Sprite *tileSprite = gf2d_sprite_load_all("images/map/map-grass.png", -1, -1, -1, true);
-    for (int y = 0; y < textureSize; y+=TILE_SIZE) {
-        for (int x = 0; x < textureSize; x+=TILE_SIZE) {
-            gf2d_sprite_draw_to_surface(tileSprite, gfc_vector2d((float)x, (float)y), NULL, NULL, 0, surface);
-        }
-    }
-   // SDL_UnlockSurface(surface);
-    gf2d_sprite_free(tileSprite);
-
-    world->chunkTexture = SDL_CreateTextureFromSurface(gf2d_graphics_get_renderer(), surface);
-    SDL_FreeSurface(surface);
-
-    if (!world->chunkTexture) {
-        log_error("Failed to create chunk texture: %s", SDL_GetError());
     }
 }
 
@@ -192,7 +258,7 @@ void world_spawn_wave(world_t *world) {
 
     pos = g_game.state.stashPosition;
 
-    enemyDefs = enemy_def_get_all(g_server.enemyManager, &count);
+    enemyDefs = enemy_def_get_all(g_game.enemyManager, &count);
     wave_generate(enemyDefs, count, g_game.state.waveNumber, &g_game.state.currentWave);
 
     wave = &g_game.state.currentWave;
@@ -208,7 +274,7 @@ void world_spawn_wave(world_t *world) {
     for (i = 0; i < wave->count; i++) {
         spawnPos = random_point_in_radius(pos, minSpawnRadius, maxSpawnRadius);
 
-        entity = enemy_spawn(g_server.entityManager, wave->enemies[i], spawnPos);
+        entity = enemy_spawn(g_game.entityManager, wave->enemies[i], spawnPos);
 
         pkt = gfc_allocate_array(sizeof(s2c_enemy_snapshot_packet_t), 1);
         enemy_snapshot_data_t eventData = {
@@ -269,7 +335,7 @@ int world_on_click(world_t *world, uint32_t mouseButton, int x, int y) {
         GFC_Rect buttonRect = gfc_rect(element->position.x + 20, element->position.y + 148, 300, 30);
         int pressed = gfc_point_in_rect(worldPos, buttonRect);
         if (pressed) {
-            tower_request_upgrade(g_client.entityManager, g_client.towerManager, world->selected_tower->tower);
+            tower_request_upgrade(g_game.entityManager, g_game.towerManager, world->selected_tower->tower);
         } else {
             buttonRect.y += 34;
             pressed = gfc_point_in_rect(worldPos, buttonRect);
@@ -373,13 +439,18 @@ void world_draw(const world_t *world) {
     // Draw chunks
     for (int y = startChunkY; y <= endChunkY; y++) {
         for (int x = startChunkX; x <= endChunkX; x++) {
+            chunk_t *chunk = world_get_chunk(world, x, y);
+            if (!chunk) {
+                continue;
+            }
+
             SDL_Rect destRect = {
                 .x = x * CHUNK_TILE_SIZE * TILE_SIZE - g_camera.position.x,
                 .y = y * CHUNK_TILE_SIZE * TILE_SIZE - g_camera.position.y,
                 .w = CHUNK_TILE_SIZE * TILE_SIZE,
                 .h = CHUNK_TILE_SIZE * TILE_SIZE
             };
-            SDL_RenderCopy(gf2d_graphics_get_renderer(), world->chunkTexture, NULL, &destRect);
+            SDL_RenderCopy(gf2d_graphics_get_renderer(), chunk->texture, NULL, &destRect);
         }
     }
 
@@ -491,9 +562,9 @@ struct entity_s * world_object_resource_spawn(world_t *world, GFC_Vector2D pos, 
 
     entity_t *ent;
     if (g_game.role == GAME_ROLE_CLIENT) {
-        ent = entity_new(g_client.entityManager, -1);
+        ent = entity_new(g_game.entityManager, -1);
     } else {
-        ent = entity_new(g_server.entityManager, entity_next_id(g_server.entityManager));
+        ent = entity_new(g_game.entityManager, entity_next_id(g_game.entityManager));
     }
 
     ent->position = pos;

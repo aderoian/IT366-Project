@@ -1,0 +1,17 @@
+{
+  "tile_sheet": {
+    "path": "images/map/map-grass.png",
+    "tile_width": 48,
+    "tile_height": 48,
+    "columns": 1
+  },
+  "tiles": [
+    {
+      "id": 0,
+      "name": "grass",
+      "properties": {
+        "walkable": true
+      }
+    }
+  ]
+}

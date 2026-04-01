@@ -232,25 +232,25 @@ void overlay_update(overlay_t *overlay, const float deltaTime) {
     }
 
     if (gfc_input_key_pressed("1")) {
-        build_mode_enter(tower_def_get_by_index(g_client.towerManager, 0));
+        build_mode_enter(tower_def_get_by_index(g_game.towerManager, 0));
     } else if (gfc_input_key_pressed("2")) {
-        build_mode_enter(tower_def_get_by_index(g_client.towerManager, 1));
+        build_mode_enter(tower_def_get_by_index(g_game.towerManager, 1));
     } else if (gfc_input_key_pressed("3")) {
-        build_mode_enter(tower_def_get_by_index(g_client.towerManager, 2));
+        build_mode_enter(tower_def_get_by_index(g_game.towerManager, 2));
     } else if (gfc_input_key_pressed("4")) {
-        build_mode_enter(tower_def_get_by_index(g_client.towerManager, 3));
+        build_mode_enter(tower_def_get_by_index(g_game.towerManager, 3));
     } else if (gfc_input_key_pressed("5")) {
-        build_mode_enter(tower_def_get_by_index(g_client.towerManager, 4));
+        build_mode_enter(tower_def_get_by_index(g_game.towerManager, 4));
     } else if (gfc_input_key_pressed("6")) {
-        build_mode_enter(tower_def_get_by_index(g_client.towerManager, 5));
+        build_mode_enter(tower_def_get_by_index(g_game.towerManager, 5));
     } else if (gfc_input_key_pressed("7")) {
-        build_mode_enter(tower_def_get_by_index(g_client.towerManager, 6));
+        build_mode_enter(tower_def_get_by_index(g_game.towerManager, 6));
     } else if (gfc_input_key_pressed("8")) {
-        build_mode_enter(tower_def_get_by_index(g_client.towerManager, 7));
+        build_mode_enter(tower_def_get_by_index(g_game.towerManager, 7));
     } else if (gfc_input_key_pressed("9")) {
-        build_mode_enter(tower_def_get_by_index(g_client.towerManager, 8));
+        build_mode_enter(tower_def_get_by_index(g_game.towerManager, 8));
     } else if (gfc_input_key_pressed("0")) {
-        build_mode_enter(tower_def_get_by_index(g_client.towerManager, 9));
+        build_mode_enter(tower_def_get_by_index(g_game.towerManager, 9));
     }
 }
 
@@ -261,7 +261,7 @@ int overlay_on_click(overlay_t *overlay, uint32_t mouseButton, int x, int y) {
 
     if (overlay->hoveredElement && overlay->hoveredElement->type == TYPE_TOWER_HB_TOWER) {
         if (mouseButton & SDL_BUTTON(SDL_BUTTON_LEFT)) {
-            build_mode_enter(tower_def_get_by_index(g_client.towerManager, overlay->hoveredElement->data));
+            build_mode_enter(tower_def_get_by_index(g_game.towerManager, overlay->hoveredElement->data));
 
             overlay->hoveredElement->destroy(overlay->hoveredElement);
             free(overlay->hoveredElement);
@@ -318,7 +318,7 @@ void hudbar_tower_draw(overlay_element_t *element) {
         return;
     }
 
-    const tower_def_t *def = tower_def_get_by_index(g_client.towerManager, element->data);
+    const tower_def_t *def = tower_def_get_by_index(g_game.towerManager, element->data);
     if (!def) {
         return;
     }

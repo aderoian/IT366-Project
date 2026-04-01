@@ -702,7 +702,7 @@ void tower_entity_destroy(const entity_manager_t *entityManager, entity_t *ent) 
         create_s2c_tower_snapshot(towerPkt, tower->id, TOWER_SNAPSHOT_DESTROY, &towerData);
         server_broadcast_packet_batch(&g_server, towerPkt);
 
-        tower_destroy(g_server.towerManager, ent);
+        tower_destroy(g_game.towerManager, ent);
     } else {
         if (tower->baseSprite) {
             gf2d_sprite_free(tower->baseSprite);
@@ -713,7 +713,7 @@ void tower_entity_destroy(const entity_manager_t *entityManager, entity_t *ent) 
             tower->weaponSprite = NULL;
         }
 
-        tower_destroy(g_client.towerManager, ent);
+        tower_destroy(g_game.towerManager, ent);
     }
     world_remove_entity(g_game.world, ent);
     ent->data = NULL; // Clear data pointer to avoid dangling reference

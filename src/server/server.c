@@ -19,6 +19,7 @@
 #include "../../include/server/network/server_network.h"
 #include "client/client.h"
 #include "common/game/enemy.h"
+#include "common/game/world/tile.h"
 #include "server/network/network_session.h"
 Server g_server = {0};
 
@@ -81,13 +82,13 @@ int server_startup(Server *server) {
     }
     log_info("Server network started successfully.");
 
-    server->defManager = def_init(32);
-    server->entityManager = entity_init(1024*5);
-    g_game.itemDefManager = item_init(server->defManager, "def/items.json");
-    server->towerManager = tower_init(tower_load_defs(server->defManager, "def/towers.json"), 128);
-    server->enemyManager = enemy_load_defs(server->defManager, "def/enemies.json");
-
-    g_game.world = world_create(server->defManager, "def/world.json", 0);
+    g_game.defManager = def_init(32);
+    g_game.entityManager = entity_init(1024*5);
+    g_game.itemDefManager = item_init(g_game.defManager, "def/items.json");
+    g_game.towerManager = tower_init(tower_load_defs(g_game.defManager, "def/towers.json"), 128);
+    g_game.enemyManager = enemy_load_defs(g_game.defManager, "def/enemies.json");
+    g_game.tileManager = tile_manager_init("def/tiles.json");
+    g_game.world = world_create_empty(5, 5);
 
     log_info("Server started successfully.");
     return 1;
@@ -159,8 +160,8 @@ void server_tick(Server *server, float deltaTime) {
 
     server_network_tick(server->network);
     world_update(g_game.world, deltaTime);
-    entity_think_all(server->entityManager);
-    entity_update_all(server->entityManager, deltaTime);
+    entity_think_all(g_game.entityManager);
+    entity_update_all(g_game.entityManager, deltaTime);
 
     server->currentTps = fmin(SERVER_TARGET_TICKRATE, 1000.0 / deltaTime);
     server->currentUse = fmin(1.0, deltaTime / SERVER_TARGET_TICK_TIME_MS);
@@ -279,7 +280,7 @@ entity_t * server_spawn_player_entity(struct player_s *player, GFC_Vector2D pos)
         return NULL;
     }
 
-    return player_entity_spawn(g_server.entityManager, player, pos, NULL);
+    return player_entity_spawn(g_game.entityManager, player, pos, NULL);
 }
 
 void server_send_packet(Server* server, const player_t *player, void *context, const uint32_t flags) {

@@ -29,11 +29,6 @@ typedef enum ServerState_E {
 } ServerState;
 
 typedef struct Server_S {
-    struct def_manager_s *defManager;
-    struct entity_manager_s *entityManager;
-    struct tower_manager_s *towerManager;
-    struct enemy_def_manager_s *enemyManager;
-
     ServerState state;
     mutex_t lock;
     thread_t thread;

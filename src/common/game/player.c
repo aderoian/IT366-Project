@@ -293,7 +293,7 @@ int player_try_build_tower(player_t *player, const struct tower_def_s *towerDef,
         return 0;
     }
 
-    entity = tower_create_by_def(g_server.entityManager, g_server.towerManager, towerDef, position);
+    entity = tower_create_by_def(g_game.entityManager, g_game.towerManager, towerDef, position);
     tower = (tower_state_t *) entity->data;
 
     if (entity) {
