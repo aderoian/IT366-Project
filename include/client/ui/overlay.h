@@ -21,6 +21,7 @@ X(info_container, INFO_CONTAINER, SIMPLE)
 typedef enum overlay_element_type_e {
     OVERLAY_ELEMENTS(OVERLAY_CREATION)
     TYPE_TOWER_OPTIONS,
+    TYPE_INPUT,
     TYPE_NONE
 } overlay_element_type_t;
 #undef OVERLAY_CREATION
@@ -33,6 +34,7 @@ typedef struct overlay_element_s {
     GFC_Vector2D size;
     GFC_Rect bounds;
     int data;
+    void *dataPtr;
     Sprite *sprite;
     uint8_t _inuse;
     uint8_t visible;
@@ -52,9 +54,11 @@ typedef struct overlay_s {
 
 void overlay_init(const struct def_manager_s *defManager, overlay_t *overlay, size_t initialCapacity, const char *config);
 
+overlay_t *overlay_create(size_t initialCapacity, uint8_t visible);
+
 void overlay_destroy(overlay_t *overlay);
 
-void overlay_add_element(overlay_t *overlay, overlay_element_t *element);
+overlay_element_t *overlay_add_element(overlay_t *overlay, overlay_element_t *element);
 
 void overlay_remove_element(overlay_t *overlay, overlay_element_t *element);
 

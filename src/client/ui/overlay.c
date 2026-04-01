@@ -1,14 +1,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "client/gf2d_sprite.h"
+#include "common/render/gf2d_sprite.h"
 
 #include "client/ui/overlay.h"
 
 #include "gfc_input.h"
 #include "client/client.h"
-#include "client/gf2d_draw.h"
-#include "client/gf2d_font.h"
+#include "common/render/gf2d_draw.h"
+#include "common/render/gf2d_font.h"
 #include "client/game/build.h"
 #include "client/ui/window.h"
 #include "common/def.h"
@@ -74,6 +74,26 @@ void overlay_init(const def_manager_t *defManager, overlay_t *overlay, const siz
     }
 }
 
+overlay_t * overlay_create(const size_t initialCapacity, const uint8_t visible) {
+    overlay_t *overlay = gfc_allocate_array(sizeof(overlay_t), 1);
+    if (!overlay) {
+        log_error("Failed to allocate memory for overlay");
+        return NULL;
+    }
+
+    overlay->elements = gfc_allocate_array(sizeof(overlay_element_t), initialCapacity);
+    if (!overlay->elements) {
+        log_error("Failed to allocate memory for overlay elements");
+        free(overlay);
+        return NULL;
+    }
+
+    overlay->maxElements = initialCapacity;
+    overlay->visible = visible;
+
+    return overlay;
+}
+
 void overlay_destroy(overlay_t *overlay) {
     if (!overlay || !overlay->elements) {
         return;
@@ -89,17 +109,17 @@ void overlay_destroy(overlay_t *overlay) {
     overlay->maxElements = 0;
 }
 
-void overlay_add_element(overlay_t *overlay, overlay_element_t *element) {
+overlay_element_t *overlay_add_element(overlay_t *overlay, overlay_element_t *element) {
     size_t i;
     if (!overlay || !element) {
-        return;
+        return NULL;
     }
 
     for (i = 0; i < overlay->maxElements; i++) {
         if (!overlay->elements[i]._inuse) {
             overlay->elements[i] = *element;
             overlay->elements[i]._inuse = 1;
-            return;
+            return &overlay->elements[i];
         }
     }
 }

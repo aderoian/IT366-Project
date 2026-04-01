@@ -6,7 +6,7 @@
 #include "client/client.h"
 #include "common/game/tower.h"
 
-#include "client/gf2d_sprite.h"
+#include "../../../include/common/render/gf2d_sprite.h"
 #include "common/game/collision.h"
 #include "common/game/enemy.h"
 #include "common/game/game.h"

@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include "client/gf2d_sprite.h"
+#include "../../render/gf2d_sprite.h"
 
 typedef struct tile_s {
     uint32_t id;

@@ -1,6 +1,6 @@
 #ifndef BUILD_H
 #define BUILD_H
-#include "client/gf2d_sprite.h"
+#include "../../common/render/gf2d_sprite.h"
 #include "common/game/tower.h"
 
 /**

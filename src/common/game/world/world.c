@@ -2,10 +2,10 @@
 
 #include "client/camera.h"
 #include "client/client.h"
-#include "client/gf2d_draw.h"
-#include "client/gf2d_font.h"
-#include "client/gf2d_graphics.h"
-#include "client/gf2d_sprite.h"
+#include "common/render/gf2d_draw.h"
+#include "common/render/gf2d_font.h"
+#include "common/render/gf2d_graphics.h"
+#include "common/render/gf2d_sprite.h"
 #include "client/ui/overlay.h"
 #include "common/def.h"
 #include "common/logger.h"
@@ -78,6 +78,7 @@ world_t *world_create_from_file(const char *file) {
 
     world->size.x = header.height;
     world->size.y = header.width;
+    world->chunks = gfc_allocate_array(sizeof(chunk_t), header.numChunks);
 
     chunkData = malloc(sizeof(uint32_t) * CHUNK_TILE_SIZE * CHUNK_TILE_SIZE * header.numChunks);
     if (!chunkData) {
@@ -154,6 +155,9 @@ void world_save(world_t *world, const char *file) {
             chunk_serialize(&world->chunks[i * world->size.y + j], &chunkData[(i * world->size.y + j) * CHUNK_TILE_SIZE * CHUNK_TILE_SIZE]);
         }
     }
+
+    fwrite(chunkData, sizeof(uint32_t) * CHUNK_TILE_SIZE * CHUNK_TILE_SIZE, header.numChunks, f);
+    fclose(f);
 
     free(chunkData);
     return;

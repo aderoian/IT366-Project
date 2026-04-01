@@ -115,13 +115,13 @@
             ]
         },
         {
-            "command":"openmap",
+            "command":"editor_sprint",
             "trigger":"any",
             "inputs":
             [
                 {
                     "type":"key",
-                    "name":"m"
+                    "name":"LSHIFT"
                 }
             ]
         },

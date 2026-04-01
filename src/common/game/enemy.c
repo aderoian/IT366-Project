@@ -9,8 +9,8 @@
 #include "common/game/enemy.h"
 
 #include "client/camera.h"
-#include "client/gf2d_draw.h"
-#include "client/gf2d_sprite.h"
+#include "common/render/gf2d_draw.h"
+#include "common/render/gf2d_sprite.h"
 
 #include "server/server.h"
 

@@ -3,7 +3,7 @@
 
 #include "common/def.h"
 
-#include "client/gf2d_sprite.h"
+#include "../../../common/render/gf2d_sprite.h"
 #include "client/ui/widget.h"
 
 /**

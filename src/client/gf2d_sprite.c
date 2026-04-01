@@ -6,9 +6,8 @@
 #include "gfc_shape.h"
 #include "gfc_text.h"
 
-#include "client/gf2d_graphics.h"
-
-#include "client/gf2d_sprite.h"
+#include "common/render/gf2d_graphics.h"
+#include "common/render/gf2d_sprite.h"
 
 typedef struct {
     Uint32 max_sprites;

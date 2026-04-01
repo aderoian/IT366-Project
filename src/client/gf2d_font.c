@@ -3,8 +3,8 @@
 #include <stdio.h>
 
 #include "gfc_color.h"
-#include "client/gf2d_graphics.h"
-#include "client/gf2d_font.h"
+#include "common/render/gf2d_graphics.h"
+#include "common/render/gf2d_font.h"
 
 #define ASCII_SIZE 128
 #define MAX_FONT_SIZES 16

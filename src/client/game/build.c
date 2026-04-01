@@ -2,7 +2,7 @@
 
 #include "client/camera.h"
 #include "client/client.h"
-#include "client/gf2d_draw.h"
+#include "../../../include/common/render/gf2d_draw.h"
 #include "common/game/collision.h"
 #include "common/network/udp.h"
 #include "common/network/packet/definitions.h"

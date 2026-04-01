@@ -4,7 +4,7 @@
 #include "entity.h"
 #include "gfc_vector.h"
 #include "inventory.h"
-#include "client/gf2d_sprite.h"
+#include "../render/gf2d_sprite.h"
 #include "common/buffer/ring.h"
 #include "common/network/packet/definitions.h"
 

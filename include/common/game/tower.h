@@ -7,7 +7,7 @@
 #include "gfc_vector.h"
 #include "inventory.h"
 #include "item.h"
-#include "client/gf2d_sprite.h"
+#include "../render/gf2d_sprite.h"
 
 #define TOWER_MAX_LEVEL 5
 

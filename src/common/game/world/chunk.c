@@ -1,7 +1,7 @@
 #include "common/game/world/chunk.h"
 
-#include "client/gf2d_graphics.h"
-#include "client/gf2d_sprite.h"
+#include "common/render/gf2d_graphics.h"
+#include "common/render/gf2d_sprite.h"
 #include "common/logger.h"
 #include "common/game/game.h"
 #include "common/game/world/tile.h"

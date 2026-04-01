@@ -9,11 +9,12 @@
 #include "common/def.h"
 
 #include "client/animation.h"
-#include "client/gf2d_graphics.h"
-#include "client/gf2d_sprite.h"
+#include "common/render/gf2d_graphics.h"
+#include "common/render/gf2d_sprite.h"
 #include "client/client.h"
 #include "client/camera.h"
-#include "client/gf2d_font.h"
+#include "client/editor/editor.h"
+#include "common/render/gf2d_font.h"
 #include "client/game/build.h"
 #include "client/ui/overlay.h"
 #include "client/ui/window.h"
@@ -32,7 +33,9 @@ Client g_client = {0};
 
 void client_run(void);
 
-int client_main(void) {
+int client_main(int argc, char *argv[]) {
+    int i;
+
     log_info("Initializing client...");
     gfc_input_init("def/input.json");
     gfc_config_def_init();
@@ -58,11 +61,17 @@ int client_main(void) {
     g_game.tileManager = tile_manager_init("def/tiles.json");
     gf2d_font_init("fonts/SourceSansPro-Regular.otf", GFC_COLOR_WHITE);
     animation_manager_init(256);
+    camera_init(&g_camera);
     window_init(32, 256, 256);
+
+    for (i = 0; i < argc; i++) {
+        if (strcmp(argv[i], "--world-editor") == 0) {
+            return editor_main(argc, argv);
+        }
+    }
+
     overlay_init(g_game.defManager, &g_client.overlay, 32, "def/overlay.json");
     overlay_hide(&g_client.overlay);
-
-    camera_init(&g_camera);
 
     // Init network
     g_client.network = client_network_create(&(network_settings_t){
@@ -80,8 +89,6 @@ int client_main(void) {
     mutex_lock(&g_client.lock);
     g_client.state = CLIENT_RUNNING;
     mutex_unlock(&g_client.lock);
-
-    g_client.renderState.background = gf2d_sprite_load_image("images/backgrounds/bg_flat.png");
 
     window_t *mainMenu = window_load_from_json(g_game.defManager, "def/window/main_menu.json");
     mainMenu->on_button_click = window_main_on_button_click;

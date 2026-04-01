@@ -1,6 +1,6 @@
 #include "simple_logger.h"
 
-#include "client/gf2d_sprite.h"
+#include "../../include/common/render/gf2d_sprite.h"
 
 #include "client/animation.h"
 

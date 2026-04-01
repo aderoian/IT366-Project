@@ -1,6 +1,6 @@
 #include "client/camera.h"
 
-#include "client/gf2d_graphics.h"
+#include "../../include/common/render/gf2d_graphics.h"
 #include "common/logger.h"
 
 camera_t g_camera = {0};

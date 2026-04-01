@@ -44,7 +44,7 @@ typedef struct Client_S {
 
 extern Client g_client;
 
-int client_main(void);
+int client_main(int argc, char * argv[]);
 void client_close(void);
 
 int client_connect(Client* client, const char *serverIP, const char *serverPort);

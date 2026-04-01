@@ -2,8 +2,8 @@
 
 #include "gfc_list.h"
 
-#include "client/gf2d_draw.h"
-#include "client/gf2d_graphics.h"
+#include "common/render/gf2d_draw.h"
+#include "common/render/gf2d_graphics.h"
 
 void gf2d_draw_shape(GFC_Shape shape,GFC_Color color,GFC_Vector2D offset)
 {

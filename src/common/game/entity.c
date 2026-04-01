@@ -1,10 +1,10 @@
 #include "../../../include/common/game/entity.h"
 
 #include "client/animation.h"
-#include "client/gf2d_sprite.h"
+#include "common/render/gf2d_sprite.h"
 
 #include "client/camera.h"
-#include "client/gf2d_draw.h"
+#include "common/render/gf2d_draw.h"
 #include "common/logger.h"
 #include "common/game/game.h"
 

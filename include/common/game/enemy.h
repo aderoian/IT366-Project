@@ -5,7 +5,7 @@
 
 #include "entity.h"
 #include "gfc_shape.h"
-#include "client/gf2d_sprite.h"
+#include "../render/gf2d_sprite.h"
 
 #define ENEMY_MAX_LEVEL 5
 

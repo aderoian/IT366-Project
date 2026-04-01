@@ -23,7 +23,7 @@ int main(int argc, char * argv[]) {
         server_main();
     } else {
         log_info("Starting in CLIENT mode");
-        client_main();
+        client_main(argc, argv);
     }
 
     log_info("---==== END ====---");
