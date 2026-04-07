@@ -4,6 +4,7 @@
 #include "client/camera.h"
 #include "client/editor/editor_camera.h"
 #include "client/editor/editor_overlay.h"
+#include "client/editor/tile_mode.h"
 #include "client/ui/window.h"
 #include "common/logger.h"
 #include "common/render/gf2d_font.h"
@@ -28,6 +29,10 @@ int editor_main(int argc, char *argv[]) {
 
     //g_game.world = world_create_empty(5, 5);
 
+    g_tile_mode.tileId = 1;
+    g_tile_mode.mode = TILE_MODE_SINGLE;
+    g_tile_mode.active = 1;
+
     entity_t * cameraEntity = editor_camera_spawn(gfc_vector2d(0, 0));
     camera_set_target(&g_camera, cameraEntity);
 
@@ -37,7 +42,7 @@ int editor_main(int argc, char *argv[]) {
 }
 
 void editor_on_mouse(float deltaTime) {
-
+    tile_mode_process_mouse(&g_tile_mode, SDL_GetMouseState(NULL, NULL));
 }
 
 void editor_tick_loop(Client* client) {
@@ -89,6 +94,7 @@ void editor_tick_loop(Client* client) {
             window_handle_keyboard();
             window_update_all(g_game.deltaTime);
             overlay_update(g_editorOverlay, g_game.deltaTime);
+            tile_mode_update(&g_tile_mode, g_game.deltaTime);
 
             accumulator -= dt;
 
@@ -107,6 +113,7 @@ void editor_render(Client* client, uint64_t alpha) {
 
     if (g_game.world) world_draw(g_game.world);
     entity_draw_all(g_game.entityManager);
+    tile_mode_draw(&g_tile_mode);
     overlay_draw(g_editorOverlay);
     window_draw_all();
 

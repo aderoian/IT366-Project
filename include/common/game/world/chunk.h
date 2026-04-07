@@ -33,6 +33,4 @@ void chunk_remove_entity(chunk_t *chunk, const void *entity);
 
 SDL_Texture *chunk_create_texture(const chunk_t *chunk, SDL_Renderer *renderer);
 
-void chunk_draw(const chunk_t *chunk);
-
 #endif /* CHUNK_H */

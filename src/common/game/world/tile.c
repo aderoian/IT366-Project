@@ -52,6 +52,7 @@ tile_manager_t * tile_manager_init(const char *file) {
         manager->tiles[i].id = i;
         manager->tiles[i].flags = 0;
         manager->tiles[i].sprite = tileSheetSprite;
+        manager->tiles[i].spriteFrame = i;
     }
 
     return manager;
