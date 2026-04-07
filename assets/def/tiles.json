@@ -10,14 +10,16 @@
       "id": 0,
       "name": "grass",
       "properties": {
-        "walkable": true
+        "walkable": true,
+        "flyable": true
       }
     },
     {
       "id": 1,
       "name": "test",
       "properties": {
-        "walkable": true
+        "walkable": true,
+        "flyable": true
       }
     }
   ]

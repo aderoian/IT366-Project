@@ -16,6 +16,7 @@ tile_manager_t * tile_manager_init(const char *file) {
     def_data_t *tileSheet, *tilesArray, *tileDef, *tileProperties;
     Sprite *tileSheetSprite;
     int32_t width, height, columns, count, i;
+    tile_t *tile;
     if (!tileDefs) {
         log_error("Failed to load tile definitions from file: %s", file);
         return NULL;
@@ -48,11 +49,23 @@ tile_manager_t * tile_manager_init(const char *file) {
     for (i = 0; i < manager->numTiles; i++) {
         tileDef = def_data_array_get_nth(tilesArray, i);
         tileProperties = def_data_get_obj(tileDef, "properties");
+        tile = &manager->tiles[i];
+        sj_object_get_bool(tileProperties, "walkable", &tile->properties.walkable);
+        sj_object_get_bool(tileProperties, "flyable", &tile->properties.flyable);
+        sj_object_get_bool(tileProperties, "buildable", &tile->properties.buildable);
+        sj_object_get_bool(tileProperties, "harmful", &tile->properties.harmful);
+        sj_object_get_bool(tileProperties, "speed_modifier", &tile->properties.speed_modifier);
 
-        manager->tiles[i].id = i;
-        manager->tiles[i].flags = 0;
-        manager->tiles[i].sprite = tileSheetSprite;
-        manager->tiles[i].spriteFrame = i;
+        if (tile->properties.harmful) {
+            def_data_get_float(tileProperties, "damage_amount", &tile->properties.damageAmount);
+        }
+        if (tile->properties.speed_modifier) {
+            def_data_get_float(tileProperties, "speed_modifier", &tile->properties.speedModifier);
+        }
+
+        tile->id = i;
+        tile->sprite = tileSheetSprite;
+        tile->spriteFrame = i;
     }
 
     return manager;

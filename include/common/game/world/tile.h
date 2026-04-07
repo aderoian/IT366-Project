@@ -5,9 +5,20 @@
 
 #include "../../render/gf2d_sprite.h"
 
+typedef struct tile_properties_s {
+    short walkable;
+    short flyable;
+    short buildable;
+    short harmful;
+    short speed_modifier;
+
+    float damageAmount;
+    float speedModifier;
+} tile_properties_t;
+
 typedef struct tile_s {
     uint32_t id;
-    uint64_t flags;
+    tile_properties_t properties;
     Sprite *sprite;
     uint32_t spriteFrame;
 } tile_t;
