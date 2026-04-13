@@ -31,7 +31,7 @@ typedef enum {
 
 typedef struct c2s_player_join_request_packet_s {
     PACKET_HEADER
-    char *name;
+    char name[16];
 } c2s_player_join_request_packet_t;
 
 typedef struct s2c_player_join_response_packet_s {

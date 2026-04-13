@@ -152,34 +152,34 @@ double read_double(buffer_t buffer, buffer_offset_t *offset) {
     return v.d;
 }
 
-char *read_string(buffer_t buffer, buffer_offset_t *offset, uint16_t *outCount, const uint16_t maxLen) {
+char *read_string(buffer_t buffer, buffer_offset_t *offset, char* out, uint16_t *outCount, const uint16_t maxLen) {
     uint16_t len = read_uint16(buffer, offset);
     if (len > maxLen) {
         len = maxLen - 1; // Prevent overflow
     }
 
-    char *str = malloc(len + 1);
-    if (!str) {
+    if (!out) {
         if (outCount) {
             *outCount = 0;
         }
         return NULL; // Allocation failed
     }
 
-    memcpy(str, buffer + *offset, len);
-    str[len] = '\0'; // Null-terminate the string
+    memcpy(out, buffer + *offset, len);
+    out[len] = '\0'; // Null-terminate the string
     *offset += len;
 
     if (outCount) {
         *outCount = len;
     }
-    return str;
+    return out;
 }
 
 void write_game_state(buffer_t buffer, buffer_offset_t *offset, const game_state_t *state) {
     write_uint8(buffer, offset, state->phase);
     write_float(buffer, offset, state->cycleTime);
     write_uint64(buffer, offset, state->waveNumber);
+    write_string(buffer, offset, state->world, 64);
 }
 
 void write_player_input_command(buffer_t buffer, buffer_offset_t *offset, const player_input_command_t *cmd) {
@@ -211,6 +211,7 @@ void read_game_state(buffer_t buffer, buffer_offset_t *offset, game_state_t *sta
     state->phase = read_uint8(buffer, offset);
     state->cycleTime = read_float(buffer, offset);
     state->waveNumber = read_uint64(buffer, offset);
+    read_string(buffer, offset, state->world, NULL, 64);
 }
 
 void read_player_input_command(buffer_t buffer, buffer_offset_t *offset, player_input_command_t *cmd) {
@@ -381,7 +382,7 @@ void write_s2c_enemy_snapshot(buffer_t buf, buffer_offset_t *off, const s2c_enem
 void read_c2s_player_join_request(buffer_t buf, buffer_offset_t *off, c2s_player_join_request_packet_t *pkt) {
     pkt->packetID = read_uint8(buf, off);
     pkt->length = read_uint64(buf, off);
-    pkt->name = read_string(buf, off, NULL, MAX_STRING_LENGTH);
+    read_string(buf, off, pkt->name, NULL, 16);
 }
 
 void read_s2c_player_join_response(buffer_t buf, buffer_offset_t *off, s2c_player_join_response_packet_t *pkt) {
@@ -498,13 +499,13 @@ void read_s2c_enemy_snapshot(buffer_t buf, buffer_offset_t *off, s2c_enemy_snaps
 void create_c2s_player_join_request(c2s_player_join_request_packet_t *pkt, char *name) {
     pkt->packetID = PACKET_C2S_PLAYER_JOIN_REQUEST;
     pkt->length = sizeof(uint16_t) + strnlen(name, MAX_STRING_LENGTH);
-    pkt->name = name;
+    strncpy(pkt->name, name, 16);
 }
 
 void create_s2c_player_join_response(s2c_player_join_response_packet_t *pkt, uint8_t success, uint32_t playerID, int64_t entityID,
                                      int32_t worldL, int32_t worldW, float spawnX, float spawnY, game_state_t *initialGameState) {
     pkt->packetID = PACKET_S2C_PLAYER_JOIN_RESPONSE;
-    pkt->length = sizeof(success) + sizeof(playerID) + sizeof(entityID) + sizeof(worldL) + sizeof(worldW) + sizeof(spawnX) + sizeof(spawnY) + (sizeof(uint8_t) + sizeof(float) + sizeof(uint64_t));
+    pkt->length = sizeof(success) + sizeof(playerID) + sizeof(entityID) + sizeof(worldL) + sizeof(worldW) + sizeof(spawnX) + sizeof(spawnY) + (sizeof(uint8_t) + sizeof(float) + sizeof(uint64_t) + 2 + strlen(initialGameState->world));
     pkt->success = success;
     pkt->playerID = playerID;
     pkt->entityID = entityID;

@@ -30,6 +30,64 @@ typedef struct player_snapshot_s {
     player_input_command_t cmd;
 } player_snapshot_t;
 
+static uint8_t player_tile_allows_movement(const player_t *player, const GFC_Vector2D worldPos) {
+    tile_t *tile;
+    if (!g_game.world) {
+        return 0;
+    }
+
+    tile = world_get_tile_at_position(g_game.world, worldPos, NULL);
+    if (!tile) {
+        return 0;
+    }
+
+    if (player && player->canFly) {
+        return tile->properties.flyable;
+    }
+
+    return tile->properties.walkable;
+}
+
+static float player_tile_speed_multiplier(const GFC_Vector2D worldPos) {
+    tile_t *tile;
+    if (!g_game.world) {
+        return 1.0f;
+    }
+
+    tile = world_get_tile_at_position(g_game.world, worldPos, NULL);
+    if (!tile || !tile->properties.speed_modifier) {
+        return 1.0f;
+    }
+
+    return fmaxf(0.0f, tile->properties.speedModifier);
+}
+
+static void player_apply_tile_effects(player_t *player, const GFC_Vector2D worldPos, const float deltaTime) {
+    tile_t *tile;
+    uint32_t tileId = 0;
+    if (!player || !g_game.world) {
+        return;
+    }
+
+    player->onHarmfulTile = 0;
+    player->harmfulTileFeedbackTimer = fmaxf(0.0f, player->harmfulTileFeedbackTimer - deltaTime);
+
+    tile = world_get_tile_at_position(g_game.world, worldPos, &tileId);
+    if (!tile) {
+        return;
+    }
+
+    if (tile->properties.harmful && tile->properties.damageAmount > 0.0f) {
+        player->onHarmfulTile = 1;
+
+        // Placeholder harmful-tile effect until a player health system exists.
+        if (g_game.role == GAME_ROLE_SERVER && player->harmfulTileFeedbackTimer <= 0.0f) {
+            log_info("Player %u touched harmful tile %u (%.2f damage placeholder)", player->id, tileId, tile->properties.damageAmount);
+            player->harmfulTileFeedbackTimer = 1.0f;
+        }
+    }
+}
+
 void player_think(const entity_manager_t *entityManager, entity_t *ent);
 void player_update(const entity_manager_t *entityManager, entity_t *ent, float deltaTime);
 void player_draw(const entity_manager_t *entityManager, entity_t *ent);
@@ -48,6 +106,9 @@ player_t *player_create(uint32_t id, const char *name) {
 
     player->inputBuffer = (buf_spsc_ring_t *)malloc(sizeof(buf_spsc_ring_t));
     buf_spsc_ring_init(player->inputBuffer, 64, sizeof(player_snapshot_t));
+    player->canFly = 0;
+    player->onHarmfulTile = 0;
+    player->harmfulTileFeedbackTimer = 0.0f;
 
     return player;
 }
@@ -115,6 +176,7 @@ GFC_Vector2D player_input_apply(player_t *player, const GFC_Vector2D position, c
     }
 
     newPos = player_move(player, g_game.world, position, direction, PLAYER_SPEED, deltaTime);
+    player_apply_tile_effects(player, newPos, deltaTime);
 
     if (sync) {
         player_snapshot_t snapshot = {
@@ -145,6 +207,7 @@ void player_input_process(player_t *player, const player_input_command_t *cmd, c
 
     direction = gfc_vector2d((float)cmd->axisX, (float)cmd->axisY);
     player->position = player_move(player, g_game.world, player->position, direction, PLAYER_SPEED, deltaTime);
+    player_apply_tile_effects(player, player->position, deltaTime);
 
     player->entity->rotation = cmd->rotation;
 
@@ -207,15 +270,17 @@ void player_input_process_server(player_t *player, uint64_t tick, float xPos, fl
 
 GFC_Vector2D player_move(player_t *player, world_t *world, GFC_Vector2D position, GFC_Vector2D direction, const float speed, const float deltaTime) {
     GFC_Vector2D moveDelta, newPosition;
+    float effectiveSpeed;
     gfc_vector2d_normalize(&direction);
-    gfc_vector2d_scale(moveDelta, direction, speed * deltaTime);
+    effectiveSpeed = speed * player_tile_speed_multiplier(position);
+    gfc_vector2d_scale(moveDelta, direction, effectiveSpeed * deltaTime);
     gfc_vector2d_add(newPosition, position, moveDelta);
 
     if (newPosition.x < 0 || newPosition.y < 0 || newPosition.x >= world->size.x * CHUNK_TILE_SIZE * TILE_SIZE || newPosition.y >= world->size.y * CHUNK_TILE_SIZE * TILE_SIZE) {
         return gfc_vector2d(fmaxf(0, fminf(newPosition.x, world->size.x * CHUNK_TILE_SIZE * TILE_SIZE - 1)), fmaxf(0, fminf(newPosition.y, world->size.y * CHUNK_TILE_SIZE * TILE_SIZE - 1)));
     }
 
-    while (collision_check_world(world, player->entity, newPosition)) {
+    while (collision_check_world(world, player->entity, newPosition) || !player_tile_allows_movement(player, newPosition)) {
         gfc_vector2d_scale(moveDelta, moveDelta, 0.5f);
         gfc_vector2d_add(newPosition, position, moveDelta);
 

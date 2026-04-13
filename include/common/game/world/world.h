@@ -4,6 +4,7 @@
 #include "chunk.h"
 #include "gfc_vector.h"
 #include "common/game/item.h"
+#include "common/game/world/tile.h"
 
 #define TILE_SIZE 48
 
@@ -42,6 +43,8 @@ void world_save(world_t *world, const char* file);
 void world_destroy(world_t *world);
 
 chunk_t *world_get_chunk(const world_t *world, int x, int y);
+
+tile_t *world_get_tile_at_position(const world_t *world, GFC_Vector2D worldPos, uint32_t *outTileId);
 
 void world_update(world_t *world, float deltaTime);
 

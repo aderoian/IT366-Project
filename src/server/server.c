@@ -88,7 +88,9 @@ int server_startup(Server *server) {
     g_game.towerManager = tower_init(tower_load_defs(g_game.defManager, "def/towers.json"), 128);
     g_game.enemyManager = enemy_load_defs(g_game.defManager, "def/enemies.json");
     g_game.tileManager = tile_manager_init("def/tiles.json");
-    g_game.world = world_create_empty(5, 5);
+
+    strncpy(g_game.state.world, "worlds/test.bin", sizeof(g_game.state.world) - 1);
+    g_game.world = world_create_from_file(g_game.state.world);
 
     log_info("Server started successfully.");
     return 1;

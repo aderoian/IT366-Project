@@ -25,6 +25,8 @@ typedef struct game_state_t {
     wave_t currentWave;
     float cycleTime;
     GFC_Vector2D stashPosition;
+
+    char world[64];
 } game_state_t;
 
 typedef struct game_s {

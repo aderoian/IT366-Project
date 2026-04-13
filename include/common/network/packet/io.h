@@ -35,7 +35,7 @@ int32_t read_int32(buffer_t buffer, buffer_offset_t *offset);
 int64_t read_int64(buffer_t buffer, buffer_offset_t *offset);
 float read_float(buffer_t buffer, buffer_offset_t *offset);
 double read_double(buffer_t buffer, buffer_offset_t *offset);
-char *read_string(buffer_t buffer, buffer_offset_t *offset, uint16_t *outCount, uint16_t maxLen);
+char *read_string(buffer_t buffer, buffer_offset_t *offset, char *out, uint16_t *outCount, uint16_t maxLen);
 
 void write_game_state(buffer_t buffer, buffer_offset_t *offset, const game_state_t *state);
 void write_player_input_command(buffer_t buffer, buffer_offset_t *offset, const player_input_command_t *cmd);

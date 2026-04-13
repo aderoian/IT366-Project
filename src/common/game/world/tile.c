@@ -1,5 +1,7 @@
 #include "common/game/world/tile.h"
 
+#include <string.h>
+
 #include "common/def.h"
 #include "common/logger.h"
 #include "common/game/game.h"
@@ -50,17 +52,24 @@ tile_manager_t * tile_manager_init(const char *file) {
         tileDef = def_data_array_get_nth(tilesArray, i);
         tileProperties = def_data_get_obj(tileDef, "properties");
         tile = &manager->tiles[i];
+        memset(&tile->properties, 0, sizeof(tile_properties_t));
+
         sj_object_get_bool(tileProperties, "walkable", &tile->properties.walkable);
         sj_object_get_bool(tileProperties, "flyable", &tile->properties.flyable);
         sj_object_get_bool(tileProperties, "buildable", &tile->properties.buildable);
         sj_object_get_bool(tileProperties, "harmful", &tile->properties.harmful);
         sj_object_get_bool(tileProperties, "speed_modifier", &tile->properties.speed_modifier);
+        def_data_get_float(tileProperties, "speed_modifier", &tile->properties.speedModifier);
+
+        if (!tile->properties.speed_modifier && tile->properties.speedModifier > 0.0f) {
+            tile->properties.speed_modifier = 1;
+        }
+        if (tile->properties.speed_modifier && tile->properties.speedModifier <= 0.0f) {
+            tile->properties.speedModifier = 1.0f;
+        }
 
         if (tile->properties.harmful) {
             def_data_get_float(tileProperties, "damage_amount", &tile->properties.damageAmount);
-        }
-        if (tile->properties.speed_modifier) {
-            def_data_get_float(tileProperties, "speed_modifier", &tile->properties.speedModifier);
         }
 
         tile->id = i;
@@ -96,7 +105,8 @@ int tile_test_flag(tile_manager_t *manager, const uint32_t id, const uint64_t fl
         return 0;
     }
 
-    return (tile->flags & flag) != 0;
+    (void)flag;
+    return 0;
 }
 
 void tile_draw_tile(tile_manager_t *manager, const uint32_t id, const int x, const int y) {

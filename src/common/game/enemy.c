@@ -24,6 +24,59 @@ struct enemy_def_manager_s {
     int numEnemyDefs;
 };
 
+static uint8_t enemy_tile_allows_movement(const enemy_state_t *state, const GFC_Vector2D worldPos) {
+    tile_t *tile;
+    if (!state || !state->def || !g_game.world) {
+        return 0;
+    }
+
+    tile = world_get_tile_at_position(g_game.world, worldPos, NULL);
+    if (!tile) {
+        return 0;
+    }
+
+    if (state->def->type == ENEMY_TYPE_AIR) {
+        return tile->properties.flyable;
+    }
+
+    return tile->properties.walkable;
+}
+
+static float enemy_tile_speed_multiplier(const GFC_Vector2D worldPos) {
+    tile_t *tile;
+    if (!g_game.world) {
+        return 1.0f;
+    }
+
+    tile = world_get_tile_at_position(g_game.world, worldPos, NULL);
+    if (!tile || !tile->properties.speed_modifier) {
+        return 1.0f;
+    }
+
+    return fmaxf(0.0f, tile->properties.speedModifier);
+}
+
+static void enemy_apply_tile_effects(enemy_state_t *state, const GFC_Vector2D worldPos, const float deltaTime) {
+    tile_t *tile;
+    const float minDeltaTime = fmaxf(0.0f, deltaTime);
+    if (!state || !g_game.world) {
+        return;
+    }
+
+    tile = world_get_tile_at_position(g_game.world, worldPos, NULL);
+    if (!tile) {
+        return;
+    }
+
+    if (tile->properties.harmful && tile->properties.damageAmount > 0.0f) {
+        state->health -= tile->properties.damageAmount * minDeltaTime;
+        if (state->health < 0.0f) {
+            state->health = 0.0f;
+        }
+        state->dirtyFlags |= ENEMY_DIRTY_HEALTH;
+    }
+}
+
 enemy_def_manager_t * enemy_load_defs(const struct def_manager_s *defManager, char *filePath) {
     enemy_def_manager_t *enemyDefManager;
     def_data_t *data, *enmJson, *enmsArray, *sizeArray, *valueArray, *modelJson;
@@ -271,7 +324,7 @@ GFC_Vector2D enemy_move(entity_t *ent, float deltaTime) {
 
     enemy_state_t *state = (enemy_state_t *)ent->data;
     world_t *world = g_game.world;
-    speed = state->def->speed;
+    speed = state->def->speed * enemy_tile_speed_multiplier(ent->position);
 
     gfc_vector2d_sub(direction, g_game.state.stashPosition, ent->position);
     gfc_vector2d_normalize(&direction);
@@ -282,7 +335,7 @@ GFC_Vector2D enemy_move(entity_t *ent, float deltaTime) {
         return gfc_vector2d(fmaxf(0, fminf(newPosition.x, world->size.x * CHUNK_TILE_SIZE * TILE_SIZE - 1)), fmaxf(0, fminf(newPosition.y, world->size.y * CHUNK_TILE_SIZE * TILE_SIZE - 1)));
     }
 
-    while (collision_check_world(world, ent, newPosition)) {
+    while (collision_check_world(world, ent, newPosition) || !enemy_tile_allows_movement(state, newPosition)) {
         gfc_vector2d_scale(moveDelta, moveDelta, 0.5f);
         gfc_vector2d_add(newPosition, ent->position, moveDelta);
 
@@ -358,6 +411,7 @@ void enemy_update(const entity_manager_t *entityManager, entity_t *ent, float de
         state->dirtyFlags |= ENEMY_DIRTY_POSITION;
     }
     ent->position = newPosition;
+    enemy_apply_tile_effects(state, ent->position, deltaTime);
 
     if (state->attackCooldownTimer <= 0 && gfc_list_count(state->targets) > 0) {
 

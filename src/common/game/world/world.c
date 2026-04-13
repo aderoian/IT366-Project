@@ -236,6 +236,35 @@ chunk_t * world_get_chunk(const world_t *world, const int x, const int y) {
     return &world->chunks[x * world->size.y + y];
 }
 
+tile_t *world_get_tile_at_position(const world_t *world, const GFC_Vector2D worldPos, uint32_t *outTileId) {
+    const int chunkX = pos_to_chunk_coord(worldPos.x);
+    const int chunkY = pos_to_chunk_coord(worldPos.y);
+    const int worldTileX = (int)(worldPos.x / TILE_SIZE);
+    const int worldTileY = (int)(worldPos.y / TILE_SIZE);
+    int localTileX = worldTileX % CHUNK_TILE_SIZE;
+    int localTileY = worldTileY % CHUNK_TILE_SIZE;
+    chunk_t *chunk = world_get_chunk(world, chunkX, chunkY);
+    uint32_t tileId;
+
+    if (!chunk || !g_game.tileManager) {
+        return NULL;
+    }
+
+    if (localTileX < 0) {
+        localTileX += CHUNK_TILE_SIZE;
+    }
+    if (localTileY < 0) {
+        localTileY += CHUNK_TILE_SIZE;
+    }
+
+    tileId = chunk->tiles[localTileY][localTileX];
+    if (outTileId) {
+        *outTileId = tileId;
+    }
+
+    return tile_manager_get(g_game.tileManager, tileId);
+}
+
 GFC_Vector2D random_point_in_radius(GFC_Vector2D center, float min_r, float max_r) {
     float angle = rand_float(0.0f, 2.0f * M_PI);
 
