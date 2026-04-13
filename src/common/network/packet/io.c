@@ -586,7 +586,7 @@ void create_s2c_inventory_update(s2c_inventory_update_packet_t *pkt, uint32_t pl
 
 void create_s2c_game_state_snapshot(s2c_game_state_snapshot_packet_t *pkt, game_state_t *state) {
     pkt->packetID = PACKET_S2C_GAME_STATE_SNAPSHOT;
-    pkt->length = sizeof(uint8_t) + sizeof(state->cycleTime) + sizeof(state->waveNumber);
+    pkt->length = sizeof(uint8_t) + sizeof(state->cycleTime) + sizeof(state->waveNumber) + 2 + strlen(state->world);
     pkt->gameState = *state;
 }
 

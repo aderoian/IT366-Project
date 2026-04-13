@@ -35,7 +35,6 @@ void overlay_init(const def_manager_t *defManager, overlay_t *overlay, const siz
     def_data_t *def, *elements, *elementDef;
     int i, c, data;
     const char *sprite;
-    int16_t exists;
     overlay_element_type_t type;
     GFC_Vector2D position, size;
     overlay_element_t element;
@@ -64,8 +63,7 @@ void overlay_init(const def_manager_t *defManager, overlay_t *overlay, const siz
             if (creator) {
                 def_data_get_vector2d(elementDef, "position", &position);
                 def_data_get_vector2d(elementDef, "size", &size);
-                sj_object_get_bool(elementDef, "exists", &exists);
-                exists? def_data_get_int(elementDef, "data", &element.data) : (element.data = -1);
+                def_data_get_int(elementDef, "data", &element.data);
                 sprite = def_data_get_string(elementDef, "sprite");
                 creator(&element, position, size, element.data, sprite);
                 overlay_add_element(overlay, &element);

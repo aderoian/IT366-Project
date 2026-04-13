@@ -436,6 +436,7 @@ void tower_destroy(tower_manager_t *towerManager, entity_t *entity) {
         return;
     }
     towerManager->freeSlots[towerManager->numFreeSlots++] = index;
+    memset(&towerManager->towers[index], 0, sizeof(tower_state_t));
     tower->id = UINT32_MAX;
 }
 
