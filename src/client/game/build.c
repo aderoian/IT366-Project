@@ -1,9 +1,13 @@
 #include "client/game/build.h"
 
+#include <math.h>
+
 #include "client/camera.h"
 #include "client/client.h"
 #include "../../../include/common/render/gf2d_draw.h"
+#include "common/logger.h"
 #include "common/game/collision.h"
+#include "common/game/world/world.h"
 #include "common/network/udp.h"
 #include "common/network/packet/definitions.h"
 #include "common/network/packet/io.h"
@@ -79,6 +83,11 @@ void build_mode_update(void) {
 int build_mode_handle_click(uint32_t mouseButton, int x, int y) {
     c2s_tower_request_packet_t pkt;
     tower_request_data_t data;
+    int towerSize;
+    float halfFootprint;
+    int startTileX, startTileY, tx, ty;
+    GFC_Vector2D samplePos;
+    tile_t *tile;
 
     if (!build_mode) {
         return 0;
@@ -93,6 +102,22 @@ int build_mode_handle_click(uint32_t mouseButton, int x, int y) {
         GFC_Rect towerRect = gfc_rect(build_mode->position.x + 2.5 - (build_mode->towerDef->size * TILE_SIZE / 2.0f), build_mode->position.y + 2.5 - (build_mode->towerDef->size * TILE_SIZE / 2.0f), (build_mode->towerDef->size * TILE_SIZE) - 5, (build_mode->towerDef->size * TILE_SIZE) - 5);
         if (!collision_check_world_bounding(g_game.world, towerRect)) {
             return 0; // Can't build here, something is in the way
+        }
+        towerSize = build_mode->towerDef->size;
+        halfFootprint = (towerSize * TILE_SIZE) / 2.0f;
+        startTileX = (int)floorf((build_mode->position.x - halfFootprint) / TILE_SIZE);
+        startTileY = (int)floorf((build_mode->position.y - halfFootprint) / TILE_SIZE);
+        for (tx = startTileX; tx < startTileX + towerSize; tx++) {
+            for (ty = startTileY; ty < startTileY + towerSize; ty++) {
+                log_info("Checking tile at (%d, %d) for build validity", tx, ty);
+                samplePos = gfc_vector2d((tx + 0.5f) * TILE_SIZE, (ty + 0.5f) * TILE_SIZE);
+                tile = world_get_tile_at_position(g_game.world, samplePos, NULL);
+                log_info("Tile at (%d, %d) has ID %d", tx, ty, tile ? tile->id : -1);
+                if (!tile || !tile->properties.buildable) {
+                    log_info("Tile at (%d, %d) is not buildable", tx, ty);
+                    return 0; // Can't build here, one or more covered tiles are not buildable
+                }
+            }
         }
 
         data.buildData.xPos = build_mode->position.x;
