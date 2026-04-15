@@ -42,6 +42,8 @@ typedef struct Server_S {
     double averageUse[20];
 
     void (*onStart)(struct Server_S *server);
+    game_mode_t startupMode;
+    uint8_t nextJoinTeamID;
 } Server;
 
 extern Server g_server;

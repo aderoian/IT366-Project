@@ -17,6 +17,7 @@ struct world_s;
 
 typedef struct player_s {
     uint32_t id;
+    uint8_t teamID;
     char name[32];
     void *data;
     struct entity_s *entity;

@@ -18,6 +18,7 @@
 #define TOWER_EVENT_SHOOT 0x01 // Event ID for when a tower shoots
 
 #define TOWER_DIRTY_HEALTH 0x01
+#define TOWER_DIRTY_SELECTION 0x02
 
 struct def_manager_s;
 struct entity_manager_s;
@@ -29,6 +30,7 @@ typedef enum tower_type_e {
     TOWER_TYPE_GATHERING = 2,
     TOWER_TYPE_PASSIVE = 3,
     TOWER_TYPE_STASH = 4,
+    TOWER_TYPE_UNIT_PRODUCTION = 5,
 } tower_type_t;
 
 typedef struct tower_weapon_def_s {
@@ -63,9 +65,12 @@ typedef struct tower_def_s {
 
 typedef struct tower_state_s {
     uint32_t id;
+    uint32_t ownerPlayerID;
+    uint8_t teamID;
     const tower_def_t *def;
     float health;
     int level;
+    int selectedEnemyDefIndex;
     float attackCooldown;
     float productionCooldown;
     GFC_Vector2D worldPos;
@@ -168,6 +173,7 @@ entity_t *tower_create_by_def(const struct entity_manager_s *entityManager, towe
 entity_t *tower_place(const struct entity_manager_s *entityManager, tower_manager_t *towerManager, const tower_def_t *def, GFC_Vector2D position, uint32_t id);
 
 void tower_request_upgrade(const struct entity_manager_s *entityManager, tower_manager_t *towerManager, entity_t *entity);
+void tower_request_set_production_enemy(entity_t *entity, uint32_t enemyDefIndex);
 void tower_try_upgrade(const struct entity_manager_s *entityManager, tower_manager_t *towerManager, struct player_s *player, entity_t *entity);
 void tower_upgrade(const struct entity_manager_s *entityManager, tower_manager_t *towerManager, entity_t *entity, int newLevel);
 /**

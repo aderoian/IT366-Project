@@ -60,7 +60,7 @@ void write_s2c_player_join_response(buffer_t, buffer_offset_t *, const s2c_playe
 void read_s2c_player_join_response(buffer_t, buffer_offset_t *, s2c_player_join_response_packet_t *);
 
 void create_s2c_player_join_response(s2c_player_join_response_packet_t *pkt, uint8_t success, uint32_t playerID, int64_t entityID,
-                                     int32_t worldL, int32_t worldW, float spawnX, float spawnY, game_state_t *initialGameState);
+                                     int32_t worldL, int32_t worldW, float spawnX, float spawnY, uint8_t teamID, game_state_t *initialGameState);
 
 void write_c2s_player_input_snapshot(buffer_t, buffer_offset_t *, const c2s_player_input_snapshot_packet_t *);
 

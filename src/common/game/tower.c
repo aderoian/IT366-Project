@@ -9,6 +9,7 @@
 #include "../../../include/common/render/gf2d_sprite.h"
 #include "common/game/collision.h"
 #include "common/game/projectile.h"
+#include "common/game/enemy.h"
 #include "common/game/world/world.h"
 #include "common/network/packet/definitions.h"
 #include "common/network/packet/io.h"
@@ -35,6 +36,26 @@ void tower_entity_think(const entity_manager_t *entityManager, entity_t *ent);
 void tower_entity_update(const entity_manager_t *entityManager, entity_t *ent, float deltaTime);
 void tower_entity_draw(const entity_manager_t *entityManager, entity_t *ent);
 void tower_entity_destroy(const entity_manager_t *entityManager, entity_t *ent);
+
+static player_t *tower_get_owner_player(const tower_state_t *tower) {
+    if (!tower) {
+        return NULL;
+    }
+    return player_manager_get(g_server.playerManager, tower->ownerPlayerID);
+}
+
+static uint8_t tower_get_opponent_team_id(const tower_state_t *tower) {
+    if (!tower) {
+        return TEAM_NONE;
+    }
+    if (tower->teamID == TEAM_ONE) {
+        return TEAM_TWO;
+    }
+    if (tower->teamID == TEAM_TWO) {
+        return TEAM_ONE;
+    }
+    return TEAM_NONE;
+}
 
 tower_manager_t *tower_init(tower_def_manager_t *defManager, const uint32_t maxTowers) {
     uint32_t i;
@@ -292,6 +313,10 @@ entity_t *tower_place(const entity_manager_t *entityManager, tower_manager_t *to
     towerManager->towerIDs[tower->id] = slotIndex; // Map tower ID to index in towers array
     tower->health = def->maxHealth[0];
     tower->def = def;
+    tower->level = 0;
+    tower->ownerPlayerID = UINT32_MAX;
+    tower->teamID = TEAM_NONE;
+    tower->selectedEnemyDefIndex = 0;
 
     // TODO: create entity based on tower definition's modelDef and assign to tower->entity
     ent = entity_new(entityManager, entity_next_id(entityManager));
@@ -345,6 +370,21 @@ void tower_request_upgrade(const struct entity_manager_s *entityManager, tower_m
     };
 
     create_c2s_tower_request(&packet, TOWER_REQUEST_UPGRADE, &data);
+    client_send_to_server(&g_client, &packet, NET_UDP_FLAG_RELIABLE);
+}
+
+void tower_request_set_production_enemy(entity_t *entity, uint32_t enemyDefIndex) {
+    c2s_tower_request_packet_t packet;
+    tower_request_data_t data;
+    tower_state_t *tower;
+    if (!entity || !entity->data) {
+        return;
+    }
+
+    tower = (tower_state_t *)entity->data;
+    data.setProductionData.towerID = tower->id;
+    data.setProductionData.enemyDefIndex = enemyDefIndex;
+    create_c2s_tower_request(&packet, TOWER_REQUEST_SET_PRODUCTION_ENEMY, &data);
     client_send_to_server(&g_client, &packet, NET_UDP_FLAG_RELIABLE);
 }
 
@@ -451,6 +491,8 @@ void tower_type_from_string(const char *str, tower_type_t *outType) {
         *outType = TOWER_TYPE_PASSIVE;
     } else if (strcmp(str, "stash") == 0) {
         *outType = TOWER_TYPE_STASH;
+    } else if (strcmp(str, "unit_production") == 0) {
+        *outType = TOWER_TYPE_UNIT_PRODUCTION;
     }
 }
 
@@ -612,13 +654,24 @@ void tower_entity_think(const entity_manager_t *entityManager, entity_t *ent) {
         tower->canShoot = 1;
     } else if ((tower->def->type == TOWER_TYPE_GOLD_PRODUCTION || tower->def->type == TOWER_TYPE_STASH) && tower->productionCooldown <= 0) {
         tower->productionCooldown = tower->def->productionRate[tower->level];
-
-        player_t *player = player_manager_get(g_server.playerManager, 0); //TODO: make this for non singleplayer
-        inventory_transaction_t *trans = inventory_transaction_create(1, 1);
-        item_t *item = item_create(item_def_get(g_game.itemDefManager, "gold"), tower->def->productionAmount[tower->level]);
-        inventory_transaction_add_item(trans, item);
-        player_inventory_transaction(player, trans);
-        free(item);
+        player_t *player = tower_get_owner_player(tower);
+        if (player) {
+            inventory_transaction_t *trans = inventory_transaction_create(1, 1);
+            item_t *item = item_create(item_def_get(g_game.itemDefManager, "gold"), tower->def->productionAmount[tower->level]);
+            inventory_transaction_add_item(trans, item);
+            player_inventory_transaction(player, trans);
+            free(item);
+        }
+    } else if (tower->def->type == TOWER_TYPE_UNIT_PRODUCTION) {
+        uint8_t targetTeamID = tower_get_opponent_team_id(tower);
+        if (targetTeamID != TEAM_NONE && g_game.state.teamStashAlive[targetTeamID - TEAM_ONE]) {
+            gfc_vector2d_sub(pos, g_game.state.teamStashPositions[targetTeamID - TEAM_ONE], ent->position);
+            gfc_vector2d_normalize(&pos);
+            tower->shootDirection = pos;
+            tower->canShoot = 1;
+        } else {
+            tower->canShoot = 0;
+        }
     }
 }
 
@@ -644,9 +697,52 @@ void tower_entity_update(const entity_manager_t *entityManager, entity_t *ent, f
                 item_t *producedItem = item_create(tower->producingResource, tower->def->productionAmount[tower->level]);
                 inventory_transaction_t *trans = inventory_transaction_create(1, 1);
                 inventory_transaction_add_item(trans, producedItem);
-                player_t *player = player_manager_get(g_server.playerManager, 0); //TODO: make this for non singleplayer
-                player_inventory_transaction(player, trans);
+                player_t *player = tower_get_owner_player(tower);
+                if (player) {
+                    player_inventory_transaction(player, trans);
+                }
                 free(producedItem);
+            } else if (tower->def->type == TOWER_TYPE_UNIT_PRODUCTION &&
+                g_game.state.mode == GAME_MODE_VERSUS &&
+                g_game.state.phase == GAME_PHASE_WAVE &&
+                tower_try_shoot(ent, deltaTime)) {
+                uint8_t targetTeamID = tower_get_opponent_team_id(tower);
+                const enemy_def_t *enemyDef = enemy_def_get_by_index(g_game.enemyManager, tower->selectedEnemyDefIndex);
+                if (targetTeamID != TEAM_NONE && enemyDef) {
+                    int spawnCount = tower->def->productionAmount[tower->level];
+                    for (int i = 0; i < spawnCount; i++) {
+                        entity_t *enemyEnt;
+                        GFC_Vector2D spawnPos = gfc_vector2d(
+                            ent->position.x + rand_float(-24.0f, 24.0f),
+                            ent->position.y + rand_float(-24.0f, 24.0f)
+                        );
+                        s2c_enemy_snapshot_packet_t *enemyPkt;
+                        enemy_snapshot_data_t eventData;
+                        enemyEnt = enemy_spawn(g_game.entityManager, enemyDef, spawnPos);
+                        if (!enemyEnt || !enemyEnt->data) {
+                            continue;
+                        }
+                        ((enemy_state_t *)enemyEnt->data)->targetTeamID = targetTeamID;
+
+                        enemyPkt = gfc_allocate_array(sizeof(s2c_enemy_snapshot_packet_t), 1);
+                        eventData.spawnData.enemyDefIndex = enemyDef->index;
+                        eventData.spawnData.xPos = spawnPos.x;
+                        eventData.spawnData.yPos = spawnPos.y;
+                        eventData.spawnData.rotation = enemyEnt->rotation;
+                        create_s2c_enemy_snapshot(enemyPkt, enemyEnt->id, ENEMY_EVENT_SPAWN, &eventData);
+                        server_broadcast_packet_batch(&g_server, enemyPkt);
+                    }
+
+                    s2c_tower_snapshot_packet_t *towerPkt = gfc_allocate_array(sizeof(s2c_tower_snapshot_packet_t), 1);
+                    tower_snapshot_data_t towerData = {
+                        .shootData = {
+                            .xDir = tower->shootDirection.x,
+                            .yDir = tower->shootDirection.y
+                        }
+                    };
+                    create_s2c_tower_snapshot(towerPkt, tower->id, TOWER_EVENT_SHOOT, &towerData);
+                    server_broadcast_packet_batch(&g_server, towerPkt);
+                }
             }
         }
 
@@ -658,16 +754,17 @@ void tower_entity_update(const entity_manager_t *entityManager, entity_t *ent, f
             tower->dirtyFlags |= TOWER_DIRTY_HEALTH;
         }
 
-        if (tower->dirtyFlags & TOWER_DIRTY_HEALTH) {
+        if (tower->dirtyFlags & (TOWER_DIRTY_HEALTH | TOWER_DIRTY_SELECTION)) {
             s2c_tower_snapshot_packet_t *towerPkt = gfc_allocate_array(sizeof(s2c_tower_snapshot_packet_t), 1);
             tower_snapshot_data_t towerData = {
                 .updateData = {
-                    .health = tower->health
+                    .health = tower->health,
+                    .selectedEnemyDefIndex = tower->selectedEnemyDefIndex
                 }
             };
             create_s2c_tower_snapshot(towerPkt, tower->id, TOWER_SNAPSHOT_UPDATE, &towerData);
             server_broadcast_packet_batch(&g_server, towerPkt);
-            tower->dirtyFlags &= ~TOWER_DIRTY_HEALTH; // Clear dirty flag
+            tower->dirtyFlags &= ~(TOWER_DIRTY_HEALTH | TOWER_DIRTY_SELECTION); // Clear dirty flag
         }
 
         tower->productionCooldown -= deltaTime;
@@ -686,12 +783,35 @@ void tower_entity_destroy(const entity_manager_t *entityManager, entity_t *ent) 
 
     if (g_game.role == GAME_ROLE_SERVER) {
         if (tower->def->type == TOWER_TYPE_STASH) {
-            world_clear(g_game.world);
-
             game_state_t *state = &g_game.state;
-            state->phase = GAME_PHASE_EXPLORING;
-            state->stashPosition = gfc_vector2d(0, 0);
-            state->waveNumber = 1;
+            if (state->mode == GAME_MODE_VERSUS) {
+                uint8_t destroyedTeamID = tower->teamID;
+                uint8_t winnerTeamID = TEAM_NONE;
+                if (destroyedTeamID >= TEAM_ONE && destroyedTeamID <= TEAM_TWO) {
+                    uint8_t teamIndex = destroyedTeamID - TEAM_ONE;
+                    state->teamStashAlive[teamIndex] = 0;
+                    state->teamStashTowerIDs[teamIndex] = UINT32_MAX;
+                    state->teamStashPositions[teamIndex] = gfc_vector2d(0, 0);
+                }
+                if (destroyedTeamID == TEAM_ONE) {
+                    winnerTeamID = TEAM_TWO;
+                } else if (destroyedTeamID == TEAM_TWO) {
+                    winnerTeamID = TEAM_ONE;
+                }
+                state->winnerTeamID = winnerTeamID;
+                state->phase = GAME_PHASE_PAUSED;
+            } else {
+                world_clear(g_game.world);
+                state->phase = GAME_PHASE_EXPLORING;
+                state->stashPosition = gfc_vector2d(0, 0);
+                state->waveNumber = 1;
+                state->winnerTeamID = TEAM_NONE;
+                for (uint8_t teamIndex = 0; teamIndex < TEAM_COUNT; teamIndex++) {
+                    state->teamStashAlive[teamIndex] = 0;
+                    state->teamStashTowerIDs[teamIndex] = UINT32_MAX;
+                    state->teamStashPositions[teamIndex] = gfc_vector2d(0, 0);
+                }
+            }
 
             s2c_game_state_snapshot_packet_t statePkt;
             create_s2c_game_state_snapshot(&statePkt, state);
@@ -699,7 +819,7 @@ void tower_entity_destroy(const entity_manager_t *entityManager, entity_t *ent) 
         }
 
         s2c_tower_snapshot_packet_t *towerPkt = gfc_allocate_array(sizeof(s2c_tower_snapshot_packet_t), 1);
-        tower_snapshot_data_t towerData;
+        tower_snapshot_data_t towerData = {0};
         create_s2c_tower_snapshot(towerPkt, tower->id, TOWER_SNAPSHOT_DESTROY, &towerData);
         server_broadcast_packet_batch(&g_server, towerPkt);
 

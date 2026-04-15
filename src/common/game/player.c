@@ -101,6 +101,7 @@ player_t *player_create(uint32_t id, const char *name) {
     }
 
     player->id = id;
+    player->teamID = TEAM_NONE;
     memcpy(player->name, name, sizeof(name) + 1);
     player->position = gfc_vector2d(0.0f, 0.0f);
 
@@ -352,6 +353,21 @@ int player_try_build_tower(player_t *player, const struct tower_def_s *towerDef,
         return 0;
     }
 
+    if (towerDef->type != TOWER_TYPE_STASH && g_game.state.phase == GAME_PHASE_EXPLORING) {
+        return 0;
+    }
+    if (towerDef->type == TOWER_TYPE_STASH && g_game.state.phase != GAME_PHASE_EXPLORING) {
+        return 0;
+    }
+    if (towerDef->type == TOWER_TYPE_STASH && g_game.state.mode == GAME_MODE_VERSUS) {
+        if (player->teamID < TEAM_ONE || player->teamID > TEAM_TWO) {
+            return 0;
+        }
+        if (g_game.state.teamStashAlive[player->teamID - TEAM_ONE]) {
+            return 0;
+        }
+    }
+
     transaction = tower_get_cost_transaction(towerDef, 0);
     if (!player_inventory_transaction(player, transaction)) {
         log_info("Player ID %u cannot afford to build tower with definition index %u", player->id, towerDef->index);
@@ -359,38 +375,63 @@ int player_try_build_tower(player_t *player, const struct tower_def_s *towerDef,
     }
 
     entity = tower_create_by_def(g_game.entityManager, g_game.towerManager, towerDef, position);
+    if (!entity) {
+        return 0;
+    }
     tower = (tower_state_t *) entity->data;
+    tower->ownerPlayerID = player->id;
+    tower->teamID = player->teamID;
 
-    if (entity) {
-        s2c_tower_snapshot_packet_t *towerPkt = gfc_allocate_array(sizeof(s2c_tower_snapshot_packet_t), 1);
-        tower_snapshot_data_t towerData = {
-            .createData = {
-                .entityID = entity->id,
-                .towerDefIndex = towerDef->index,
-                .xPos = position.x,
-                .yPos = position.y
+    s2c_tower_snapshot_packet_t *towerPkt = gfc_allocate_array(sizeof(s2c_tower_snapshot_packet_t), 1);
+    tower_snapshot_data_t towerData = {
+        .createData = {
+            .entityID = entity->id,
+            .towerDefIndex = towerDef->index,
+            .ownerPlayerID = tower->ownerPlayerID,
+            .teamID = tower->teamID,
+            .selectedEnemyDefIndex = tower->selectedEnemyDefIndex,
+            .xPos = position.x,
+            .yPos = position.y
+        }
+    };
+    create_s2c_tower_snapshot(towerPkt, tower->id, TOWER_SNAPSHOT_CREATE, &towerData);
+    server_broadcast_packet_batch(&g_server, towerPkt);
+
+    if (towerDef->type == TOWER_TYPE_STASH) {
+        if (g_game.state.mode == GAME_MODE_VERSUS) {
+            uint8_t teamIndex;
+            if (player->teamID < TEAM_ONE || player->teamID > TEAM_TWO) {
+                return 0;
             }
-        };
-        create_s2c_tower_snapshot(towerPkt, tower->id, TOWER_SNAPSHOT_CREATE, &towerData);
-        server_broadcast_packet_batch(&g_server, towerPkt);
+            teamIndex = player->teamID - TEAM_ONE;
+            if (g_game.state.teamStashAlive[teamIndex]) {
+                return 0;
+            }
 
-        if (towerDef->type == TOWER_TYPE_STASH) {
+            g_game.state.teamStashPositions[teamIndex] = position;
+            g_game.state.teamStashTowerIDs[teamIndex] = tower->id;
+            g_game.state.teamStashAlive[teamIndex] = 1;
+            g_game.state.winnerTeamID = TEAM_NONE;
+            if (g_game.state.teamStashAlive[0] && g_game.state.teamStashAlive[1]) {
+                g_game.state.phase = GAME_PHASE_BUILDING;
+                g_game.state.cycleTime = HALF_CYCLE_TIME;
+            }
+        } else {
             if (g_game.state.phase == GAME_PHASE_EXPLORING) {
                 g_game.state.phase = GAME_PHASE_BUILDING;
                 g_game.state.stashPosition = position;
-                s2c_game_state_snapshot_packet_t snapshot;
-                create_s2c_game_state_snapshot(&snapshot, &g_game.state);
-                server_broadcast_packet(&g_server, &snapshot, NET_UDP_FLAG_RELIABLE);
             } else {
                 // Stash towers start the game & players can only have one
                 return 0;
             }
         }
 
-        return 1;
+        s2c_game_state_snapshot_packet_t snapshot;
+        create_s2c_game_state_snapshot(&snapshot, &g_game.state);
+        server_broadcast_packet(&g_server, &snapshot, NET_UDP_FLAG_RELIABLE);
     }
 
-    return 0;
+    return 1;
 }
 
 void player_think(const entity_manager_t *entityManager, entity_t *ent) {

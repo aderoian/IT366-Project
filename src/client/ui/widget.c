@@ -1,12 +1,8 @@
 #include "simple_logger.h"
 #include "gfc_types.h"
 
-#include "common/def.h"
-
 #include "client/ui/window.h"
 #include "client/ui/widget.h"
-
-#include "client/ui/types/elements.h"
 
 typedef struct widget_manager_s {
     widget_t *widgets;
@@ -79,9 +75,6 @@ void widget_destroy(widget_t *widget) {
 
     if (widget->destroy) {
         widget->destroy(widget);
-    }
-    if (widget->data) {
-        free(widget->data);
     }
     memset(widget, 0, sizeof(widget_t));
 }
@@ -162,57 +155,4 @@ int widget_handle_event(widget_t *widget, const window_event_t *event) {
         return 1; // Event handled by child
     }
     return 0; // Event not handled
-}
-
-widget_t *widget_load_from_json(def_data_t *json, widget_t *parent, window_t *parent_window) {
-    const char *id;
-    widget_t *widget;
-    def_data_t *child;
-    GFC_Vector2D position, size;
-    element_type_t type;
-    if (!json) {
-        return NULL;
-    }
-
-    id = def_data_get_string(json, "id");
-    if (!id) {
-        slog("Widget JSON missing 'id' field");
-        return NULL;
-    }
-
-    widget = widget_create(id);
-
-    if (def_data_get_vector2d(json, "position", &position)) {
-        widget_set_position(widget, position);
-    }
-
-    if (parent) {
-        widget_set_offset(widget, gfc_vector2d(parent->rect.x, parent->rect.y));
-    }
-    widget->parent = parent_window;
-
-    if (def_data_get_vector2d(json, "size", &size)) {
-        widget_set_size(widget, (int)size.x, (int)size.y);
-    }
-
-    type = element_type_from_string(def_data_get_string(json, "type"));
-    if (type != ELEMENT_TYPE_NONE && element_json_loaders[type]) {
-        if (element_json_loaders[type](json, widget) < 0) {
-            slog("Failed to load widget of type %s from JSON", element_type_strings[type]);
-            widget_destroy(widget);
-            return NULL;
-        }
-    }
-
-    child = def_data_get_obj(json, "child");
-    if (child) {
-        widget_t *childWidget = widget_load_from_json(child, widget, parent_window);
-        if (childWidget) {
-            widget_set_child(widget, childWidget);
-        } else {
-            slog("Failed to load child widget from JSON");
-        }
-    }
-
-    return widget;
 }

@@ -22,6 +22,7 @@ void handle_s2c_player_join_response(const s2c_player_join_response_packet_t *pk
         g_game.state = pkt->initialGameState;
         g_game.world = world_create_from_file(g_game.state.world);
         g_client.player = player_create(pkt->playerID, "Player"); // FIXME: Use actual player name (needs array serialization)
+        g_client.player->teamID = pkt->teamID;
         g_client.player->position = gfc_vector2d(pkt->spawnX, pkt->spawnY);
         inventory_init(&g_client.player->inventory, 32);
         ent = player_entity_spawn(g_game.entityManager, g_client.player, g_client.player->position, "images/pointer.png");
@@ -53,6 +54,10 @@ void handle_s2c_tower_snapshot(const s2c_tower_snapshot_packet_t *pkt, void *cli
             log_error("Failed to create tower from server packet");
             return;
         }
+        tower_state_t *towerState = (tower_state_t *)tower->data;
+        towerState->ownerPlayerID = pkt->snapshotData.createData.ownerPlayerID;
+        towerState->teamID = pkt->snapshotData.createData.teamID;
+        towerState->selectedEnemyDefIndex = pkt->snapshotData.createData.selectedEnemyDefIndex;
 
         entity_set_id(g_game.entityManager, tower, pkt->snapshotData.createData.entityID);
 
@@ -77,9 +82,12 @@ void handle_s2c_tower_snapshot(const s2c_tower_snapshot_packet_t *pkt, void *cli
         }
         tower_state_t *tower = (tower_state_t *)entity->data;
         tower->health = pkt->snapshotData.updateData.health;
+        tower->selectedEnemyDefIndex = pkt->snapshotData.updateData.selectedEnemyDefIndex;
     } else if (pkt->snapshotID == TOWER_SNAPSHOT_DESTROY) {
         entity_t *entity = tower_get_by_id(g_game.towerManager, pkt->towerID);
-        entity_free(g_game.entityManager, entity);
+        if (entity) {
+            entity_free(g_game.entityManager, entity);
+        }
     }
 }
 
@@ -98,6 +106,9 @@ void handle_s2c_game_state_snapshot(const s2c_game_state_snapshot_packet_t *pkt,
     }
 
     g_game.state = pkt->gameState;
+    if (g_game.state.mode == GAME_MODE_VERSUS && g_game.state.winnerTeamID != TEAM_NONE) {
+        log_info("Versus match ended. Winner: Team %u", g_game.state.winnerTeamID);
+    }
 }
 
 void handle_s2c_enemy_snapshot(const s2c_enemy_snapshot_packet_t *pkt, void *client) {

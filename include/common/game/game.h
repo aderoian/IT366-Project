@@ -11,6 +11,16 @@
 #define GAME_ROLE_CLIENT 2
 
 #define HALF_CYCLE_TIME 3.0f // Time in second for day and night cycle
+#define TEAM_NONE 0
+#define TEAM_ONE 1
+#define TEAM_TWO 2
+#define TEAM_COUNT 2
+
+typedef enum game_mode_e {
+    GAME_MODE_SINGLEPLAYER = 0,
+    GAME_MODE_VERSUS = 1,
+    GAME_MODE_ONLINE = 2
+} game_mode_t;
 
 typedef enum game_phase_e {
     GAME_PHASE_EXPLORING = 0,
@@ -20,11 +30,16 @@ typedef enum game_phase_e {
 } game_phase_t;
 
 typedef struct game_state_t {
+    game_mode_t mode;
     game_phase_t phase;
     uint64_t waveNumber;
     wave_t currentWave;
     float cycleTime;
     GFC_Vector2D stashPosition;
+    GFC_Vector2D teamStashPositions[TEAM_COUNT];
+    uint32_t teamStashTowerIDs[TEAM_COUNT];
+    uint8_t teamStashAlive[TEAM_COUNT];
+    uint8_t winnerTeamID;
 
     char world[64];
 } game_state_t;

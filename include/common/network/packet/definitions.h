@@ -43,6 +43,7 @@ typedef struct s2c_player_join_response_packet_s {
     int32_t worldW;
     float spawnX;
     float spawnY;
+    uint8_t teamID;
     game_state_t initialGameState;
 } s2c_player_join_response_packet_t;
 
@@ -79,7 +80,8 @@ typedef struct s2c_player_create_packet_s {
 typedef enum tower_request_id_e {
     TOWER_REQUEST_BUILD,
     TOWER_REQUEST_UPGRADE,
-    TOWER_REQUEST_SELL
+    TOWER_REQUEST_SELL,
+    TOWER_REQUEST_SET_PRODUCTION_ENEMY
 } tower_request_id_t;
 
 typedef union tower_request_data_u {
@@ -94,6 +96,10 @@ typedef union tower_request_data_u {
     struct {
         uint32_t towerID;
     } sellData;
+    struct {
+        uint32_t towerID;
+        uint32_t enemyDefIndex;
+    } setProductionData;
 } tower_request_data_t;
 
 typedef struct c2s_tower_request_packet_s {
@@ -117,6 +123,9 @@ typedef union tower_snapshot_data_u {
         uint32_t towerDefIndex;
         uint32_t towerID;
         int64_t entityID;
+        uint32_t ownerPlayerID;
+        uint8_t teamID;
+        int32_t selectedEnemyDefIndex;
     } createData;
     struct {
         float xDir;
@@ -127,6 +136,7 @@ typedef union tower_snapshot_data_u {
     } upgradeData;
     struct {
         float health;
+        int32_t selectedEnemyDefIndex;
     } updateData;
 } tower_snapshot_data_t;
 

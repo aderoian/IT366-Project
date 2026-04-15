@@ -109,12 +109,9 @@ int build_mode_handle_click(uint32_t mouseButton, int x, int y) {
         startTileY = (int)floorf((build_mode->position.y - halfFootprint) / TILE_SIZE);
         for (tx = startTileX; tx < startTileX + towerSize; tx++) {
             for (ty = startTileY; ty < startTileY + towerSize; ty++) {
-                log_info("Checking tile at (%d, %d) for build validity", tx, ty);
                 samplePos = gfc_vector2d((tx + 0.5f) * TILE_SIZE, (ty + 0.5f) * TILE_SIZE);
                 tile = world_get_tile_at_position(g_game.world, samplePos, NULL);
-                log_info("Tile at (%d, %d) has ID %d", tx, ty, tile ? tile->id : -1);
                 if (!tile || !tile->properties.buildable) {
-                    log_info("Tile at (%d, %d) is not buildable", tx, ty);
                     return 0; // Can't build here, one or more covered tiles are not buildable
                 }
             }

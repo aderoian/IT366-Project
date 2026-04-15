@@ -51,6 +51,7 @@ int client_connect(Client* client, const char *serverIP, const char *serverPort)
 void client_disconnect(Client* client);
 
 int client_begin_singleplayer(Client* client);
+int client_begin_versus(Client *client, const char *serverIP, const char *serverPort);
 
 int client_send_to_server(Client *client, void *pkt, uint32_t flags);
 

@@ -355,6 +355,40 @@
       "model": {
         "base": "images/tower/stash/gold_stash_t%d_base.svg"
       }
+    },
+    {
+      "name": "Unit Forge",
+      "description": "Produces enemy squads at night that march toward the opposing stash.",
+      "type": "unit_production",
+      "size": 2.0,
+      "maxHealth": [1000, 1200, 1500, 1800, 2200],
+      "cost": [
+        [60, 20, 0],
+        [100, 30, 0],
+        [150, 40, 0],
+        [220, 60, 0],
+        [300, 80, 0]
+      ],
+      "weapons": [
+        {
+          "damage": [0, 0, 0, 0, 0],
+          "range": [600, 600, 600, 600, 600],
+          "fireRate": [7.0, 6.0, 5.0, 4.0, 3.0],
+          "bulletSpeed": [0, 0, 0, 0, 0],
+          "projectileSprite": "images/tower/mine/gold_mine_t1_head.svg",
+          "directional": false,
+          "piercing": false,
+          "areaEffect": false,
+          "direction": [1, 0],
+          "enemyTypes": ["*"]
+        }
+      ],
+      "productionRate": [7.0, 6.0, 5.0, 4.0, 3.0],
+      "productionAmount": [1, 2, 2, 3, 4],
+      "model": {
+        "base": "images/tower/mine/gold_mine_t%d_base.svg",
+        "head": "images/tower/mine/gold_mine_t%d_head.svg"
+      }
     }
   ]
 }

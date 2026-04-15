@@ -49,6 +49,7 @@ void window_close(void);
  * @return A pointer to the newly created window, or NULL if creation failed.
  */
 window_t *window_create(int x, int y, int width, int height, const char *title);
+window_t *window_load(const char *title);
 
 /**
  * @brief Destroys a window and frees its resources.
@@ -114,15 +115,5 @@ void window_update_all(float deltaTime);
  */
 int window_handle_mouse(uint32_t mouseButton, int x, int y);
 void window_handle_keyboard(void);
-
-/**
- * @brief Loads a window from a JSON definition.
- *
- * @param defManager A pointer to the definition manager to use for loading resources.
- * @param filePath The file path to the JSON definition of the window.
- * @return A pointer to the newly created window, or NULL if loading failed.
- */
-window_t *window_load_from_json(const struct def_manager_s *defManager, const char *filePath);
-
 
 #endif /* WINDOW_H */

@@ -357,6 +357,16 @@ static float enemy_tile_speed_multiplier(const GFC_Vector2D worldPos) {
     return fmaxf(0.0f, tile->properties.speedModifier);
 }
 
+static GFC_Vector2D enemy_get_target_position(const enemy_state_t *state) {
+    if (g_game.state.mode == GAME_MODE_VERSUS && state && state->targetTeamID >= TEAM_ONE && state->targetTeamID <= TEAM_TWO) {
+        uint8_t teamIndex = state->targetTeamID - TEAM_ONE;
+        if (g_game.state.teamStashAlive[teamIndex]) {
+            return g_game.state.teamStashPositions[teamIndex];
+        }
+    }
+    return g_game.state.stashPosition;
+}
+
 static void enemy_apply_tile_effects(enemy_state_t *state, const GFC_Vector2D worldPos, const float deltaTime) {
     tile_t *tile;
     const float minDeltaTime = fmaxf(0.0f, deltaTime);
@@ -537,6 +547,7 @@ entity_t * enemy_spawn(const struct entity_manager_s *entityManager, const enemy
     state->health = def->maxHealth;
     state->pathRecalcTimer = 0.0f;
     state->hasPathGoal = 0;
+    state->targetTeamID = TEAM_NONE;
 
     if (g_game.role == GAME_ROLE_CLIENT) {
         state->bodySprite = gf2d_sprite_load_image(def->modelDef.bodySpritePath);
@@ -633,7 +644,7 @@ GFC_Vector2D enemy_move(entity_t *ent, float deltaTime) {
     state->pathRecalcTimer -= deltaTime;
 
     startTile = enemy_world_to_tile(ent->position);
-    desiredGoalTile = enemy_world_to_tile(g_game.state.stashPosition);
+    desiredGoalTile = enemy_world_to_tile(enemy_get_target_position(state));
 
     if (!enemy_tile_in_bounds(world, startTile)) {
         return ent->position;
@@ -742,7 +753,7 @@ void enemy_think(const entity_manager_t *entityManager, entity_t *ent) {
 
     state->attackTargetTimer -= g_game.deltaTime;
 
-    gfc_vector2d_sub(direction, g_game.state.stashPosition, ent->position);
+    gfc_vector2d_sub(direction, enemy_get_target_position(state), ent->position);
     gfc_vector2d_normalize(&direction);
     ent->rotation = atan2f(direction.y, direction.x) * 180.0f / M_PI + 90.0f;
 
@@ -759,6 +770,15 @@ void enemy_think(const entity_manager_t *entityManager, entity_t *ent) {
             if (!(target->layers & ENT_LAYER_TOWER)) {
                 gfc_list_delete_nth(state->targets, i);
                 i--; // Adjust index after removal
+                continue;
+            }
+            if (state->targetTeamID >= TEAM_ONE && state->targetTeamID <= TEAM_TWO) {
+                tower_state_t *towerState = (tower_state_t *)target->data;
+                if (!towerState || towerState->teamID != state->targetTeamID) {
+                    gfc_list_delete_nth(state->targets, i);
+                    i--;
+                    continue;
+                }
             }
         }
 

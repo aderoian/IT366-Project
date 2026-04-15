@@ -90,8 +90,7 @@ int client_main(int argc, char *argv[]) {
     g_client.state = CLIENT_RUNNING;
     mutex_unlock(&g_client.lock);
 
-    window_t *mainMenu = window_load_from_json(g_game.defManager, "def/window/main_menu.json");
-    mainMenu->on_button_click = window_main_on_button_click;
+    window_t *mainMenu = window_main_init();
     window_show(mainMenu);
 
     log_info("Client running");
@@ -154,9 +153,41 @@ int client_begin_singleplayer(Client *client) {
     client->state = CLIENT_JOINING;
     mutex_unlock(&client->lock);
 
+    g_server.startupMode = GAME_MODE_SINGLEPLAYER;
     g_server.onStart = client_on_local_server_start;
     _dedicatedServer = 0;
     server_main();
+
+    return 0;
+}
+
+int client_begin_versus(Client *client, const char *ip, const char *port) {
+    if (!client) {
+        return -1;
+    }
+
+    overlay_show(&client->overlay);
+
+    mutex_lock(&client->lock);
+    client->mode = CLIENT_MODE_MULTIPLAYER;
+    client->state = CLIENT_JOINING;
+    mutex_unlock(&client->lock);
+
+    if (!ip) {
+        g_server.startupMode = GAME_MODE_VERSUS;
+        g_server.onStart = client_on_local_server_start;
+        _dedicatedServer = 0;
+        server_main();
+    } else {
+        client_connect(&g_client, ip, port);
+
+        strncpy(g_client.playerName, "LocalPlayer", sizeof(g_client.playerName) - 1);
+        g_client.playerName[sizeof(g_client.playerName) - 1] = '\0';
+
+        c2s_player_join_request_packet_t pkt;
+        create_c2s_player_join_request(&pkt, g_client.playerName);
+        client_send_to_server(&g_client, &pkt, ENET_PACKET_FLAG_RELIABLE);
+    }
 
     return 0;
 }

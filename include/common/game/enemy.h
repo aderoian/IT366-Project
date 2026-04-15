@@ -86,6 +86,7 @@ typedef struct enemy_state_s {
     float pathRecalcTimer;
     GFC_Vector2I lastPathGoalTile;
     uint8_t hasPathGoal;
+    uint8_t targetTeamID;
     uint32_t dirtyFlags; // Bitfield for tracking what needs to be updated on clients (e.g., position, health, targets)
 } enemy_state_t;
 

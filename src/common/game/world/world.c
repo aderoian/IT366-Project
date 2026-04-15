@@ -288,6 +288,9 @@ void world_spawn_wave(world_t *world) {
     if (!world) {
         return;
     }
+    if (g_game.state.mode == GAME_MODE_VERSUS) {
+        return;
+    }
 
     pos = g_game.state.stashPosition;
 
@@ -308,6 +311,9 @@ void world_spawn_wave(world_t *world) {
         spawnPos = random_point_in_radius(pos, minSpawnRadius, maxSpawnRadius);
 
         entity = enemy_spawn(g_game.entityManager, wave->enemies[i], spawnPos);
+        if (entity && entity->data) {
+            ((enemy_state_t *)entity->data)->targetTeamID = TEAM_NONE;
+        }
 
         pkt = gfc_allocate_array(sizeof(s2c_enemy_snapshot_packet_t), 1);
         enemy_snapshot_data_t eventData = {
@@ -336,10 +342,14 @@ void world_update(world_t *world, float deltaTime) {
             if (state == GAME_PHASE_BUILDING) {
                 g_game.state.phase = GAME_PHASE_WAVE;
                 log_info("Transitioning to WAVE phase");
-                world_spawn_wave(world);
+                if (g_game.state.mode != GAME_MODE_VERSUS) {
+                    world_spawn_wave(world);
+                }
             } else if (state == GAME_PHASE_WAVE) {
                 g_game.state.phase = GAME_PHASE_BUILDING;
-                g_game.state.waveNumber++;
+                if (g_game.state.mode != GAME_MODE_VERSUS) {
+                    g_game.state.waveNumber++;
+                }
                 log_info("Transitioning to BUILDING phase, wave number: %lu", g_game.state.waveNumber);
             }
 
@@ -365,16 +375,54 @@ int world_on_click(world_t *world, uint32_t mouseButton, int x, int y) {
     if (world->selected_tower && (mouseButton & SDL_BUTTON(SDL_BUTTON_LEFT))) {
         // Check if click is outside the tower options overlay
         overlay_element_t *element = world->selected_tower->element;
-        GFC_Rect buttonRect = gfc_rect(element->position.x + 20, element->position.y + 148, 300, 30);
-        int pressed = gfc_point_in_rect(worldPos, buttonRect);
-        if (pressed) {
+        tower_state_t *selectedTower = (tower_state_t *)world->selected_tower->tower->data;
+        GFC_Rect buttonRect;
+        int pressed = 0;
+
+        if (selectedTower && selectedTower->def->type == TOWER_TYPE_UNIT_PRODUCTION) {
+            int enemyCount = 0;
+            const enemy_def_t *enemyDefs = enemy_def_get_all(g_game.enemyManager, &enemyCount);
+            const int cols = 6;
+            const float cellW = 46.0f;
+            const float cellH = 26.0f;
+            for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++) {
+                GFC_Rect gridRect = gfc_rect(
+                    element->position.x + 20 + (enemyIndex % cols) * cellW,
+                    element->position.y + 148 + (enemyIndex / cols) * cellH,
+                    cellW - 4.0f,
+                    cellH - 4.0f
+                );
+                if (!gfc_point_in_rect(worldPos, gridRect)) {
+                    continue;
+                }
+                tower_request_set_production_enemy(world->selected_tower->tower, enemyDefs[enemyIndex].index);
+                pressed = 1;
+                break;
+            }
+        }
+
+        buttonRect = gfc_rect(
+            element->position.x + 20,
+            element->position.y + (selectedTower && selectedTower->def->type == TOWER_TYPE_UNIT_PRODUCTION ? 208 : 148),
+            300,
+            30
+        );
+        if (!pressed && gfc_point_in_rect(worldPos, buttonRect)) {
             tower_request_upgrade(g_game.entityManager, g_game.towerManager, world->selected_tower->tower);
-        } else {
+            pressed = 1;
+        }
+        if (!pressed) {
             buttonRect.y += 34;
-            pressed = gfc_point_in_rect(worldPos, buttonRect);
-            if (pressed) {
-                // TODO: handle tower sell
-                log_info("Sell button pressed for tower at position (%.2f, %.2f)", world->selected_tower->tower->position.x, world->selected_tower->tower->position.y);
+            if (gfc_point_in_rect(worldPos, buttonRect)) {
+                c2s_tower_request_packet_t pkt;
+                tower_request_data_t data;
+                tower_state_t *towerState = (tower_state_t *)world->selected_tower->tower->data;
+                if (towerState) {
+                    data.sellData.towerID = towerState->id;
+                    create_c2s_tower_request(&pkt, TOWER_REQUEST_SELL, &data);
+                    client_send_to_server(&g_client, &pkt, NET_UDP_FLAG_RELIABLE);
+                }
+                pressed = 1;
             }
         }
 
@@ -423,11 +471,23 @@ int world_on_click(world_t *world, uint32_t mouseButton, int x, int y) {
 
             if (!world->selected_tower && (ent->layers & ENT_LAYER_TOWER) && gfc_point_in_rect(worldPos, rect)) {
                 // Handle tower click, e.g. show upgrade/sell options
-
+                tower_state_t *towerState = (tower_state_t *)ent->data;
+                if (!towerState) {
+                    continue;
+                }
+                if (g_game.state.mode == GAME_MODE_VERSUS && g_client.player && towerState->teamID != g_client.player->teamID) {
+                    continue;
+                }
                 selected_tower_t *selected = malloc(sizeof(selected_tower_t));
                 selected->tower = ent;
-                selected->upgradeLevel = ((tower_state_t *)ent->data)->level;
-                selected->element = overlay_create_simple_element(TYPE_TOWER_OPTIONS, gfc_vector2d(ent->position.x - 170, ent->position.y - 280), gfc_vector2d(340, 220), 0, "images/ui/overlay/tower_options.png");
+                selected->upgradeLevel = towerState->level;
+                selected->element = overlay_create_simple_element(
+                    TYPE_TOWER_OPTIONS,
+                    gfc_vector2d(ent->position.x - 170, ent->position.y - (towerState->def->type == TOWER_TYPE_UNIT_PRODUCTION ? 320 : 280)),
+                    gfc_vector2d(340, towerState->def->type == TOWER_TYPE_UNIT_PRODUCTION ? 260 : 220),
+                    0,
+                    "images/ui/overlay/tower_options.png"
+                );
                 selected->element->draw = world_tower_options_draw;
                 world->selected_tower = selected;
 
@@ -654,6 +714,30 @@ void world_tower_options_draw(overlay_element_t *element) {
         strcpy(buffer, "Max tier reached\0");
     }
 
-    gf2d_font_draw_text_centeredf(14, "Upgrade: %s", gfc_vector2d(pos.x + 170, pos.y + 154), buffer);
-    gf2d_font_draw_text_centered(14, "Sell", gfc_vector2d(pos.x + 170, pos.y + 188));
+    if (state->def->type == TOWER_TYPE_UNIT_PRODUCTION) {
+        int enemyCount = 0;
+        const enemy_def_t *enemyDefs = enemy_def_get_all(g_game.enemyManager, &enemyCount);
+        const int cols = 6;
+        const float cellW = 46.0f;
+        const float cellH = 26.0f;
+        gf2d_font_draw_text(14, "Unit:", gfc_vector2d(pos.x + 10, pos.y + 134));
+        for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++) {
+            GFC_Vector2D namePos = gfc_vector2d(
+                pos.x + 24 + (enemyIndex % cols) * cellW,
+                pos.y + 148 + (enemyIndex / cols) * cellH
+            );
+            if (enemyDefs[enemyIndex].index == (uint32_t)state->selectedEnemyDefIndex) {
+                gf2d_font_draw_text(14, "*", gfc_vector2d(namePos.x - 12, namePos.y));
+            }
+            gf2d_font_draw_text(14, enemyDefs[enemyIndex].name, namePos);
+        }
+    }
+
+    if (state->def->type == TOWER_TYPE_UNIT_PRODUCTION) {
+        gf2d_font_draw_text_centeredf(14, "Upgrade: %s", gfc_vector2d(pos.x + 170, pos.y + 214), buffer);
+        gf2d_font_draw_text_centered(14, "Sell", gfc_vector2d(pos.x + 170, pos.y + 248));
+    } else {
+        gf2d_font_draw_text_centeredf(14, "Upgrade: %s", gfc_vector2d(pos.x + 170, pos.y + 154), buffer);
+        gf2d_font_draw_text_centered(14, "Sell", gfc_vector2d(pos.x + 170, pos.y + 188));
+    }
 }

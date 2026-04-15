@@ -33,6 +33,10 @@ int server_main(void) {
     log_info("Initializing server...");
 
     g_server.state = SERVER_IDLE;
+    g_server.nextJoinTeamID = TEAM_ONE;
+    if (g_server.startupMode != GAME_MODE_VERSUS) {
+        g_server.startupMode = GAME_MODE_SINGLEPLAYER;
+    }
     mutex_init(&g_server.lock);
 
     if (thread_create(&g_server.thread, server_run, &g_server) < 0) {
@@ -90,6 +94,13 @@ int server_startup(Server *server) {
     g_game.tileManager = tile_manager_init("def/tiles.json");
 
     strncpy(g_game.state.world, "worlds/test.bin", sizeof(g_game.state.world) - 1);
+    g_game.state.mode = server->startupMode;
+    g_game.state.winnerTeamID = TEAM_NONE;
+    for (size_t i = 0; i < TEAM_COUNT; i++) {
+        g_game.state.teamStashPositions[i] = gfc_vector2d(0, 0);
+        g_game.state.teamStashTowerIDs[i] = UINT32_MAX;
+        g_game.state.teamStashAlive[i] = 0;
+    }
     g_game.world = world_create_from_file(g_game.state.world);
 
     log_info("Server started successfully.");
@@ -149,6 +160,7 @@ void *server_run(void *arg) {
     g_game.state.phase = GAME_PHASE_EXPLORING;
     g_game.state.waveNumber = 1;
     g_game.state.cycleTime = HALF_CYCLE_TIME;
+    g_game.state.stashPosition = gfc_vector2d(0, 0);
 
     server_tickProcessor(server);
     log_info("Server stopped!");
@@ -261,6 +273,10 @@ player_t *server_create_player(Server *server, network_session_t *session) {
     log_info("Created player with ID %u for session ID %u", player->id, session->sessionID);
 
     inventory_init(&player->inventory, 3);
+    player->teamID = g_game.state.mode == GAME_MODE_VERSUS ? server->nextJoinTeamID : TEAM_ONE;
+    if (g_game.state.mode == GAME_MODE_VERSUS) {
+        server->nextJoinTeamID = (server->nextJoinTeamID == TEAM_ONE) ? TEAM_TWO : TEAM_ONE;
+    }
 
     float half = g_game.world->size.x * CHUNK_TILE_SIZE * TILE_SIZE / 2.0f;
     player->position = gfc_vector2d(half, half); // FIXME: Use actual spawn position
@@ -317,6 +333,7 @@ void server_broadcast_packet(Server* server, void *context, const uint32_t flags
 
     players = player_manager_get_all(server->playerManager, &playerCount);
     for (i = 0; i < playerCount; ++i) {
+        log_info("Broadcasting packet to player ID %u", players[i]->id);
         server_send_packet(server, players[i], context, flags);
     }
 }

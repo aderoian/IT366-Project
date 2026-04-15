@@ -108,6 +108,20 @@ window_t *window_create(int x, int y, int width, int height, const char *title) 
     return NULL; // No available windows
 }
 
+window_t * window_load(const char *title) {
+    size_t i;
+    window_t *window;
+    for (i = 0; i < g_windowManager.maxWindows; i++) {
+        window = &g_windowManager.windows[i];
+        if (window->_refCount && strcmp(window->title, title) == 0) {
+            window->_refCount++;
+            return window;
+        }
+    }
+
+    return NULL;
+}
+
 void window_destroy(window_t *window) {
     if (window && window->_refCount > 0) {
         window->_refCount--;
@@ -222,37 +236,4 @@ void window_handle_keyboard(void) {
     }
 
     event_buffer_clear();
-}
-
-window_t * window_load_from_json(const struct def_manager_s *defManager, const char *filePath) {
-    def_data_t *json;
-    window_t *window;
-    const char *title;
-    GFC_Vector2D position, size;
-
-    json = def_load(defManager, filePath);
-    if (!json) {
-        slog("Failed to load window from JSON: null data");
-        return NULL;
-    }
-
-    title = def_data_get_string(json, "title");
-    if (!title) {
-        slog("Failed to load window from JSON: missing 'title' field");
-        return NULL;
-    }
-
-    def_data_get_vector2d(json, "position", &position);
-    def_data_get_vector2d(json, "size", &size);
-
-    window = window_create(position.x, position.y, size.x, size.y, title);
-    if (!window) {
-        slog("Failed to create window from JSON");
-        return NULL;
-    }
-
-    window->root = widget_load_from_json(json, NULL, window);
-    window->root->parent = window;
-    return window;
-
 }
