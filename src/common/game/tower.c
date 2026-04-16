@@ -624,22 +624,23 @@ void tower_entity_think(const entity_manager_t *entityManager, entity_t *ent) {
     }
 
     if (tower->def->type == TOWER_TYPE_DEFENSIVE || tower->def->type == TOWER_TYPE_GATHERING) {
+        tower->canShoot = 0;
         float range = tower->def->type == TOWER_TYPE_DEFENSIVE ? tower->def->weaponDefs[0].range[tower->level] : TILE_SIZE*3; // Defensive towers use weapon range, gathering towers have fixed range
         GFC_List *enemiesInRange = collision_get_entities_in_range(g_game.world, ent->position, range, ENT_LAYER_ENEMY | ENT_LAYER_RESOURCE);
         item_t *item = NULL;
         c = gfc_list_count(enemiesInRange);
         if (c == 0) {
-            tower->canShoot = 0;
             return; // No enemies in range
         }
 
         for (i = 0; i < c; i++) {
             entity_t *enemy = (entity_t *)gfc_list_get_nth(enemiesInRange, i);
-            if (enemy && enemy->layers & (tower->def->type == TOWER_TYPE_DEFENSIVE ? ENT_LAYER_ENEMY : ENT_LAYER_RESOURCE)) {
+            if (((enemy_state_t*)enemy->data)->currentTeamID != tower->teamID && enemy && enemy->layers & (tower->def->type == TOWER_TYPE_DEFENSIVE ? ENT_LAYER_ENEMY : ENT_LAYER_RESOURCE)) {
                 enmyDist = gfc_vector2d_magnitude_between_squared(ent->position, enemy->position);
                 if (enmyDist < dist) {
                     dist = enmyDist;
                     targetPos = enemy->position;
+                    tower->canShoot = 1;
                     if (tower->def->type == TOWER_TYPE_GATHERING) {
                         item = (item_t *)enemy->data;
                     }
@@ -647,11 +648,13 @@ void tower_entity_think(const entity_manager_t *entityManager, entity_t *ent) {
             }
         }
 
-        gfc_vector2d_sub(pos, targetPos, ent->position);
-        gfc_vector2d_normalize(&pos);
-        tower->shootDirection = pos;
-        if (item) tower->producingResource = item->def;
-        tower->canShoot = 1;
+
+        if (tower->canShoot) {
+            gfc_vector2d_sub(pos, targetPos, ent->position);
+            gfc_vector2d_normalize(&pos);
+            tower->shootDirection = pos;
+            if (item) tower->producingResource = item->def;
+        }
     } else if ((tower->def->type == TOWER_TYPE_GOLD_PRODUCTION || tower->def->type == TOWER_TYPE_STASH) && tower->productionCooldown <= 0) {
         tower->productionCooldown = tower->def->productionRate[tower->level];
         player_t *player = tower_get_owner_player(tower);
@@ -713,9 +716,10 @@ void tower_entity_update(const entity_manager_t *entityManager, entity_t *ent, f
                     for (int i = 0; i < spawnCount; i++) {
                         entity_t *enemyEnt;
                         GFC_Vector2D spawnPos = gfc_vector2d(
-                            ent->position.x + rand_float(-24.0f, 24.0f),
-                            ent->position.y + rand_float(-24.0f, 24.0f)
+                            ent->position.x + ((rand() % 2) ? 1 : -1) * 48.0f * 1.5,
+                            ent->position.y + ((rand() % 2) ? 1 : -1) * 48.0f * 1.5
                         );
+
                         s2c_enemy_snapshot_packet_t *enemyPkt;
                         enemy_snapshot_data_t eventData;
                         enemyEnt = enemy_spawn(g_game.entityManager, enemyDef, spawnPos);
@@ -723,6 +727,7 @@ void tower_entity_update(const entity_manager_t *entityManager, entity_t *ent, f
                             continue;
                         }
                         ((enemy_state_t *)enemyEnt->data)->targetTeamID = targetTeamID;
+                        ((enemy_state_t *)enemyEnt->data)->currentTeamID = tower->teamID;
 
                         enemyPkt = gfc_allocate_array(sizeof(s2c_enemy_snapshot_packet_t), 1);
                         eventData.spawnData.enemyDefIndex = enemyDef->index;

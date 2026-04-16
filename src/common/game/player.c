@@ -55,7 +55,7 @@ static float player_tile_speed_multiplier(const GFC_Vector2D worldPos) {
     }
 
     tile = world_get_tile_at_position(g_game.world, worldPos, NULL);
-    if (!tile || !tile->properties.speed_modifier) {
+    if (!tile || !tile->properties.modifySpeed) {
         return 1.0f;
     }
 

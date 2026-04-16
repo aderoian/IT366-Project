@@ -58,13 +58,13 @@ tile_manager_t * tile_manager_init(const char *file) {
         sj_object_get_bool(tileProperties, "flyable", &tile->properties.flyable);
         sj_object_get_bool(tileProperties, "buildable", &tile->properties.buildable);
         sj_object_get_bool(tileProperties, "harmful", &tile->properties.harmful);
-        sj_object_get_bool(tileProperties, "speed_modifier", &tile->properties.speed_modifier);
+        sj_object_get_bool(tileProperties, "modify_speed", &tile->properties.modifySpeed);
         def_data_get_float(tileProperties, "speed_modifier", &tile->properties.speedModifier);
 
-        if (!tile->properties.speed_modifier && tile->properties.speedModifier > 0.0f) {
-            tile->properties.speed_modifier = 1;
+        if (!tile->properties.modifySpeed && tile->properties.speedModifier > 0.0f) {
+            tile->properties.modifySpeed = 1;
         }
-        if (tile->properties.speed_modifier && tile->properties.speedModifier <= 0.0f) {
+        if (tile->properties.modifySpeed && tile->properties.speedModifier <= 0.0f) {
             tile->properties.speedModifier = 1.0f;
         }
 

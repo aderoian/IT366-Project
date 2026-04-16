@@ -10,9 +10,11 @@
       "id": 0,
       "name": "grass",
       "properties": {
-        "buildable": true,
         "walkable": true,
-        "flyable": true
+        "flyable": true,
+        "buildable": true,
+        "harmful": false,
+        "modify_speed": false
       }
     },
     {
@@ -21,7 +23,9 @@
       "properties": {
         "walkable": false,
         "flyable": true,
-        "buildable": true
+        "buildable": true,
+        "harmful": false,
+        "modify_speed": false
       }
     }
   ]

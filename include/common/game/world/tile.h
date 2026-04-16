@@ -10,7 +10,7 @@ typedef struct tile_properties_s {
     short flyable;
     short buildable;
     short harmful;
-    short speed_modifier;
+    short modifySpeed;
 
     float damageAmount;
     float speedModifier;

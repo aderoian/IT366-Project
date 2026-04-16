@@ -49,7 +49,7 @@
       "model": {
         "body": "images/enemy/crawler_base.svg",
         "hands": "images/enemy/crawler_weapon.svg",
-        "boundingBox": [-16, -16, 32, 32]
+        "boundingBox": [-8, -8, 16, 16]
       }
     },
     {
@@ -67,7 +67,7 @@
       "model": {
         "body": "images/enemy/shambler_base.svg",
         "hands": "images/enemy/shambler_weapon.svg",
-        "boundingBox": [-16, -16, 32, 32]
+        "boundingBox": [-8, -8, 16, 16]
       }
     },
 
@@ -86,7 +86,7 @@
       "model": {
         "body": "images/enemy/runner_base.svg",
         "hands": "images/enemy/runner_weapon.svg",
-        "boundingBox": [-16, -16, 32, 32]
+        "boundingBox": [-8, -8, 16, 16]
       }
     },
     {
@@ -104,7 +104,7 @@
       "model": {
         "body": "images/enemy/soldier_base.svg",
         "hands": "images/enemy/soldier_weapon.svg",
-        "boundingBox": [-16, -16, 32, 32]
+        "boundingBox": [-8, -8, 16, 16]
       }
     },
 
@@ -123,7 +123,7 @@
       "model": {
         "body": "images/enemy/brute_base.svg",
         "hands": "images/enemy/brute_weapon.svg",
-        "boundingBox": [-16, -16, 32, 32]
+        "boundingBox": [-8, -8, 16, 16]
       }
     },
     {
@@ -141,7 +141,7 @@
       "model": {
         "body": "images/enemy/crusher_base.svg",
         "hands": "images/enemy/crusher_weapon.svg",
-        "boundingBox": [-16, -16, 32, 32]
+        "boundingBox": [-8, -8, 16, 16]
       }
     },
 
@@ -160,7 +160,7 @@
       "model": {
         "body": "images/enemy/behemoth_base.svg",
         "hands": "images/enemy/behemoth_weapon.svg",
-        "boundingBox": [-16, -16, 32, 32]
+        "boundingBox": [-8, -8, 16, 16]
       }
     },
     {
@@ -178,7 +178,7 @@
       "model": {
         "body": "images/enemy/titan_base.svg",
         "hands": "images/enemy/titan_weapon.svg",
-        "boundingBox": [-16, -16, 32, 32]
+        "boundingBox": [-8, -8, 16, 16]
       }
     }
   ]
