@@ -107,6 +107,7 @@ player_t *player_create(uint32_t id, const char *name) {
 
     player->inputBuffer = (buf_spsc_ring_t *)malloc(sizeof(buf_spsc_ring_t));
     buf_spsc_ring_init(player->inputBuffer, 64, sizeof(player_snapshot_t));
+    player->lastInputAttack = 0;
     player->canFly = 0;
     player->onHarmfulTile = 0;
     player->harmfulTileFeedbackTimer = 0.0f;
@@ -140,8 +141,6 @@ entity_t * player_entity_spawn(const entity_manager_t *entityManager, player_t *
             entity_free(entityManager, ent);
             return NULL;
         }
-
-        camera_set_target(&g_camera, ent);
     }
 
     ent->layers = ENT_LAYER_PLAYER;
@@ -216,6 +215,7 @@ void player_input_process(player_t *player, const player_input_command_t *cmd, c
         player_attack(player, g_game.world);
     }
 
+    player->lastInputAttack = cmd->attack;
     player->lastProcessedInputTick = cmd->tickNumber;
     player->processedInput = 1;
 }
@@ -453,7 +453,7 @@ void player_update(const entity_manager_t *entityManager, entity_t *ent, float d
 
     player = (player_t *)ent->data;
 
-    if (g_game.role == GAME_ROLE_CLIENT) {
+    if (g_game.role == GAME_ROLE_CLIENT && is_local_player(player)) {
         actions.up = gfc_input_command_down("up");
         actions.down = gfc_input_command_down("down");
         actions.left = gfc_input_command_down("left");
@@ -471,11 +471,21 @@ void player_update(const entity_manager_t *entityManager, entity_t *ent, float d
             player->attackCooldown = PLAYER_ATTACK_COOLDOWN;
         }
     } else if (player->processedInput) {
+        player_state_update_data_t updateData;
+        s2c_player_state_update_packet_t pkt;
         player->processedInput = 0;
 
-        s2c_player_state_snapshot_packet_t pkt;
-        create_s2c_player_state_snapshot(&pkt, player->lastProcessedInputTick, player->position.x, player->position.y);
-        server_send_packet(&g_server, player, &pkt, 0);
+        updateData.syncData.tickNumber = player->lastProcessedInputTick;
+        updateData.syncData.xPos = player->position.x;
+        updateData.syncData.yPos = player->position.y;
+        updateData.syncData.rotation = player->entity->rotation;
+        updateData.syncData.attack = player->lastInputAttack;
+        create_s2c_player_state_update(&pkt, PLAYER_STATE_UPDATE_SYNC, player->id, player->entity->id, &updateData);
+        server_broadcast_packet(&g_server, &pkt, 0);
+
+        // s2c_player_state_snapshot_packet_t pkt;
+        // create_s2c_player_state_snapshot(&pkt, player->lastProcessedInputTick, player->position.x, player->position.y);
+        // server_send_packet(&g_server, player, &pkt, 0);
     }
 }
 

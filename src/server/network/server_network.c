@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "common/logger.h"
+#include "common/network/packet/io.h"
 #include "server/network/server_network.h"
 #include "server/network/network_session.h"
 #include "server/server.h"
@@ -128,6 +129,12 @@ void server_network_client_disconnect(struct network_s *network, const net_udp_e
         if (serverNetwork->sessions[i].peer == context->peer) {
             session = &serverNetwork->sessions[i];
             if (session->player) {
+                if (session->player->entity) {
+                    player_state_update_data_t updateData = {0};
+                    s2c_player_state_update_packet_t updatePacket;
+                    create_s2c_player_state_update(&updatePacket, PLAYER_STATE_UPDATE_DELETE, session->player->id, session->player->entity->id, &updateData);
+                    server_broadcast_packet(&g_server, &updatePacket, NET_UDP_FLAG_RELIABLE);
+                }
                 server_destroy_player(session->player);
             }
             log_info("Client disconnected. Session ID: %u", session->sessionID);

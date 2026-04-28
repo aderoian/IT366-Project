@@ -28,6 +28,7 @@ typedef struct player_s {
     buf_spsc_ring_t *inputBuffer;
     uint64_t lastProcessedInputTick;
     uint8_t processedInput;
+    uint8_t lastInputAttack;
     uint8_t canFly;
     uint8_t onHarmfulTile;
 

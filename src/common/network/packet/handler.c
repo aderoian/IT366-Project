@@ -30,6 +30,12 @@ void receive_s2c_player_create(buffer_t buf, buffer_offset_t *off, void *c) {
     handle_s2c_player_create(&pkt, c);
 }
 
+void receive_s2c_player_state_update(buffer_t buf, buffer_offset_t *off, void *c) {
+    s2c_player_state_update_packet_t pkt;
+    read_s2c_player_state_update(buf, off, &pkt);
+    handle_s2c_player_state_update(&pkt, c);
+}
+
 void receive_c2s_tower_request(buffer_t buf, buffer_offset_t *off, void *c) {
     c2s_tower_request_packet_t pkt;
     read_c2s_tower_request(buf, off, &pkt);
@@ -66,6 +72,7 @@ packet_receive_fn packet_dispatch_table[PACKET_COUNT] = {
     [PACKET_C2S_PLAYER_INPUT_SNAPSHOT] = receive_c2s_player_input_snapshot,
     [PACKET_S2C_PLAYER_STATE_SNAPSHOT] = receive_s2c_player_state_snapshot,
     [PACKET_S2C_PLAYER_CREATE] = receive_s2c_player_create,
+    [PACKET_S2C_PLAYER_STATE_UPDATE] = receive_s2c_player_state_update,
     [PACKET_C2S_TOWER_REQUEST] = receive_c2s_tower_request,
     [PACKET_S2C_TOWER_SNAPSHOT] = receive_s2c_tower_snapshot,
     [PACKET_S2C_INVENTORY_UPDATE] = receive_s2c_inventory_update,
@@ -91,6 +98,10 @@ void prepare_send_s2c_player_state_snapshot(buffer_t buf, buffer_offset_t *off, 
 
 void prepare_send_s2c_player_create(buffer_t buf, buffer_offset_t *off, void *c) {
     write_s2c_player_create(buf, off, (s2c_player_create_packet_t *) c);
+}
+
+void prepare_send_s2c_player_state_update(buffer_t buf, buffer_offset_t *off, void *c) {
+    write_s2c_player_state_update(buf, off, (s2c_player_state_update_packet_t *) c);
 }
 
 void prepare_send_c2s_tower_request(buffer_t buf, buffer_offset_t *off, void *c) {
@@ -119,6 +130,7 @@ packet_send_fn packet_send_table[PACKET_COUNT] = {
     [PACKET_C2S_PLAYER_INPUT_SNAPSHOT] = prepare_send_c2s_player_input_snapshot,
     [PACKET_S2C_PLAYER_STATE_SNAPSHOT] = prepare_send_s2c_player_state_snapshot,
     [PACKET_S2C_PLAYER_CREATE] = prepare_send_s2c_player_create,
+    [PACKET_S2C_PLAYER_STATE_UPDATE] = prepare_send_s2c_player_state_update,
     [PACKET_C2S_TOWER_REQUEST] = prepare_send_c2s_tower_request,
     [PACKET_S2C_TOWER_SNAPSHOT] = prepare_send_s2c_tower_snapshot,
     [PACKET_S2C_INVENTORY_UPDATE] = prepare_send_s2c_inventory_update,

@@ -13,6 +13,8 @@ void handle_s2c_player_state_snapshot(const s2c_player_state_snapshot_packet_t *
 
 void handle_s2c_player_create(const s2c_player_create_packet_t *, void *);
 
+void handle_s2c_player_state_update(const s2c_player_state_update_packet_t *, void *);
+
 void handle_c2s_tower_request(const c2s_tower_request_packet_t *, void *);
 
 void handle_s2c_tower_snapshot(const s2c_tower_snapshot_packet_t *, void *);
@@ -33,6 +35,8 @@ void receive_s2c_player_state_snapshot(buffer_t buf, buffer_offset_t *off, void 
 
 void receive_s2c_player_create(buffer_t buf, buffer_offset_t *off, void *c);
 
+void receive_s2c_player_state_update(buffer_t buf, buffer_offset_t *off, void *c);
+
 void receive_c2s_tower_request(buffer_t buf, buffer_offset_t *off, void *c);
 
 void receive_s2c_tower_snapshot(buffer_t buf, buffer_offset_t *off, void *c);
@@ -52,6 +56,8 @@ void prepare_send_c2s_player_input_snapshot(buffer_t buf, buffer_offset_t *off, 
 void prepare_send_s2c_player_state_snapshot(buffer_t buf, buffer_offset_t *off, void *c);
 
 void prepare_send_s2c_player_create(buffer_t buf, buffer_offset_t *off, void *c);
+
+void prepare_send_s2c_player_state_update(buffer_t buf, buffer_offset_t *off, void *c);
 
 void prepare_send_c2s_tower_request(buffer_t buf, buffer_offset_t *off, void *c);
 

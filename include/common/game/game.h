@@ -59,7 +59,10 @@ typedef struct game_s {
     struct world_s *world; // Pointer to the game world (server and client will have their own instances)
 
     game_state_t state;
+    struct player_s *player;
 } game_t;
+
+#define is_local_player(player) (player == g_game.player)
 
 extern __thread game_t g_game;
 

@@ -1,9 +1,54 @@
+#include "client/camera.h"
 #include "common/logger.h"
 #include "common/network/packet/handler.h"
 
 #include "client/client.h"
 #include "common/game/enemy.h"
 #include "common/game/tower.h"
+
+typedef struct remote_player_state_s {
+    uint8_t inUse;
+    uint32_t playerID;
+    player_t *player;
+} remote_player_state_t;
+
+#define MAX_REMOTE_PLAYERS 256
+
+static remote_player_state_t g_remotePlayers[MAX_REMOTE_PLAYERS] = {0};
+
+static remote_player_state_t *remote_player_get(uint32_t playerID) {
+    size_t i;
+    for (i = 0; i < MAX_REMOTE_PLAYERS; ++i) {
+        if (g_remotePlayers[i].inUse && g_remotePlayers[i].playerID == playerID) {
+            return &g_remotePlayers[i];
+        }
+    }
+    return NULL;
+}
+
+static remote_player_state_t *remote_player_add(uint32_t playerID, player_t *player) {
+    size_t i;
+    for (i = 0; i < MAX_REMOTE_PLAYERS; ++i) {
+        if (!g_remotePlayers[i].inUse) {
+            g_remotePlayers[i].inUse = 1;
+            g_remotePlayers[i].playerID = playerID;
+            g_remotePlayers[i].player = player;
+            return &g_remotePlayers[i];
+        }
+    }
+    return NULL;
+}
+
+static void remote_player_remove(uint32_t playerID) {
+    remote_player_state_t *state = remote_player_get(playerID);
+    if (!state) {
+        return;
+    }
+
+    state->inUse = 0;
+    state->playerID = 0;
+    state->player = NULL;
+}
 
 void handle_s2c_player_join_response(const s2c_player_join_response_packet_t *pkt, void *client) {
     entity_t *ent;
@@ -22,12 +67,14 @@ void handle_s2c_player_join_response(const s2c_player_join_response_packet_t *pk
         g_game.state = pkt->initialGameState;
         g_game.world = world_create_from_file(g_game.state.world);
         g_client.player = player_create(pkt->playerID, "Player"); // FIXME: Use actual player name (needs array serialization)
+        g_game.player = g_client.player;
         g_client.player->teamID = pkt->teamID;
         g_client.player->position = gfc_vector2d(pkt->spawnX, pkt->spawnY);
         inventory_init(&g_client.player->inventory, 32);
         ent = player_entity_spawn(g_game.entityManager, g_client.player, g_client.player->position, "images/pointer.png");
         entity_set_id(g_game.entityManager, ent, pkt->entityID);
         g_client.state = CLIENT_PLAYING;
+        camera_set_target(&g_camera, ent);
     } else {
         log_info("Failed to join server.");
     }
@@ -39,6 +86,76 @@ void handle_s2c_player_create(const s2c_player_create_packet_t *pkt, void *clien
 
 void handle_s2c_player_state_snapshot(const s2c_player_state_snapshot_packet_t *pkt, void *client) {
     player_input_process_server(g_client.player, pkt->tickNumber, pkt->xPos, pkt->yPos);
+}
+
+void handle_s2c_player_state_update(const s2c_player_state_update_packet_t *pkt, void *client) {
+    remote_player_state_t *state;
+    entity_t *ent;
+
+    if (!pkt) {
+        return;
+    }
+
+    if (g_client.player && pkt->playerID == g_client.player->id) {
+        // if (pkt->eventType == PLAYER_STATE_UPDATE_SYNC) {
+        //     player_input_process_server(g_client.player, pkt->eventData.syncData.tickNumber, pkt->eventData.syncData.xPos, pkt->eventData.syncData.yPos);
+        //     if (g_client.player->entity) {
+        //         g_client.player->entity->rotation = pkt->eventData.syncData.rotation;
+        //         if (pkt->eventData.syncData.attack) {
+        //             g_client.player->attackCooldown = 0.5f;
+        //         }
+        //     }
+        // }
+        return;
+    }
+
+    if (pkt->eventType == PLAYER_STATE_UPDATE_CREATE) {
+        log_info("Creating remote player with ID: %u at position (%f, %f)", pkt->playerID, pkt->eventData.createData.xPos, pkt->eventData.createData.yPos);
+        if (!g_game.entityManager) {
+            return;
+        }
+        if (remote_player_get(pkt->playerID)) {
+            return;
+        }
+
+        player_t *player = player_create(pkt->playerID, "RemotePlayer");
+        if (!player) {
+            return;
+        }
+        player->teamID = pkt->eventData.createData.teamID;
+        player->position = gfc_vector2d(pkt->eventData.createData.xPos, pkt->eventData.createData.yPos);
+        ent = player_entity_spawn(g_game.entityManager, player, player->position, "images/pointer.png");
+        if (!ent) {
+            player_destroy(player);
+            return;
+        }
+        entity_set_id(g_game.entityManager, ent, pkt->entityID);
+        if (!remote_player_add(pkt->playerID, player)) {
+            entity_free(g_game.entityManager, ent);
+            return;
+        }
+        log_info("Remote player created with ID: %u at position (%f, %f)", pkt->playerID, pkt->eventData.createData.xPos, pkt->eventData.createData.yPos);
+    } else if (pkt->eventType == PLAYER_STATE_UPDATE_SYNC) {
+        state = remote_player_get(pkt->playerID);
+        if (!state || !state->player || !state->player->entity) {
+            return;
+        }
+
+        state->player->position = gfc_vector2d(pkt->eventData.syncData.xPos, pkt->eventData.syncData.yPos);
+        state->player->entity->rotation = pkt->eventData.syncData.rotation;
+        if (pkt->eventData.syncData.attack) {
+            state->player->attackCooldown = 0.5f;
+        }
+    } else if (pkt->eventType == PLAYER_STATE_UPDATE_DELETE) {
+        state = remote_player_get(pkt->playerID);
+        if (!state || !state->player || !state->player->entity) {
+            remote_player_remove(pkt->playerID);
+            return;
+        }
+
+        entity_free(g_game.entityManager, state->player->entity);
+        remote_player_remove(pkt->playerID);
+    }
 }
 
 void handle_s2c_tower_snapshot(const s2c_tower_snapshot_packet_t *pkt, void *client) {

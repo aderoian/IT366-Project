@@ -326,6 +326,26 @@ void write_s2c_player_create(buffer_t buf, buffer_offset_t *off, const s2c_playe
     write_float(buf, off, pkt->spawnY);
 }
 
+void write_s2c_player_state_update(buffer_t buf, buffer_offset_t *off, const s2c_player_state_update_packet_t *pkt) {
+    write_uint8(buf, off, pkt->packetID);
+    write_uint64(buf, off, pkt->length);
+    write_uint8(buf, off, pkt->eventType);
+    write_uint32(buf, off, pkt->playerID);
+    write_int64(buf, off, pkt->entityID);
+
+    if (pkt->eventType == PLAYER_STATE_UPDATE_CREATE) {
+        write_float(buf, off, pkt->eventData.createData.xPos);
+        write_float(buf, off, pkt->eventData.createData.yPos);
+        write_uint8(buf, off, pkt->eventData.createData.teamID);
+    } else if (pkt->eventType == PLAYER_STATE_UPDATE_SYNC) {
+        write_uint64(buf, off, pkt->eventData.syncData.tickNumber);
+        write_float(buf, off, pkt->eventData.syncData.xPos);
+        write_float(buf, off, pkt->eventData.syncData.yPos);
+        write_float(buf, off, pkt->eventData.syncData.rotation);
+        write_uint8(buf, off, pkt->eventData.syncData.attack);
+    }
+}
+
 void write_c2s_tower_request(buffer_t buf, buffer_offset_t *off,
                                        const c2s_tower_request_packet_t *pkt) {
     write_uint8(buf, off, pkt->packetID);
@@ -449,6 +469,26 @@ void read_s2c_player_create(buffer_t buf, buffer_offset_t *off, s2c_player_creat
     pkt->playerID = read_uint32(buf, off);
     pkt->spawnX = read_float(buf, off);
     pkt->spawnY = read_float(buf, off);
+}
+
+void read_s2c_player_state_update(buffer_t buf, buffer_offset_t *off, s2c_player_state_update_packet_t *pkt) {
+    pkt->packetID = read_uint8(buf, off);
+    pkt->length = read_uint64(buf, off);
+    pkt->eventType = read_uint8(buf, off);
+    pkt->playerID = read_uint32(buf, off);
+    pkt->entityID = read_int64(buf, off);
+
+    if (pkt->eventType == PLAYER_STATE_UPDATE_CREATE) {
+        pkt->eventData.createData.xPos = read_float(buf, off);
+        pkt->eventData.createData.yPos = read_float(buf, off);
+        pkt->eventData.createData.teamID = read_uint8(buf, off);
+    } else if (pkt->eventType == PLAYER_STATE_UPDATE_SYNC) {
+        pkt->eventData.syncData.tickNumber = read_uint64(buf, off);
+        pkt->eventData.syncData.xPos = read_float(buf, off);
+        pkt->eventData.syncData.yPos = read_float(buf, off);
+        pkt->eventData.syncData.rotation = read_float(buf, off);
+        pkt->eventData.syncData.attack = read_uint8(buf, off);
+    }
 }
 
 void read_c2s_tower_request(buffer_t buf, buffer_offset_t *off, c2s_tower_request_packet_t *pkt) {
@@ -581,6 +621,27 @@ void create_s2c_player_create(s2c_player_create_packet_t *pkt, uint32_t playerID
     pkt->playerID = playerID;
     pkt->spawnX = spawnX;
     pkt->spawnY = spawnY;
+}
+
+void create_s2c_player_state_update(s2c_player_state_update_packet_t *pkt, player_state_update_event_t eventType,
+                                    uint32_t playerID, int64_t entityID, player_state_update_data_t *eventData) {
+    pkt->packetID = PACKET_S2C_PLAYER_STATE_UPDATE;
+    pkt->length = sizeof(uint8_t) + sizeof(playerID) + sizeof(entityID);
+
+    if (eventType == PLAYER_STATE_UPDATE_CREATE) {
+        pkt->length += sizeof(float) + sizeof(float) + sizeof(uint8_t);
+    } else if (eventType == PLAYER_STATE_UPDATE_SYNC) {
+        pkt->length += sizeof(uint64_t) + sizeof(float) + sizeof(float) + sizeof(float) + sizeof(uint8_t);
+    }
+
+    pkt->eventType = eventType;
+    pkt->playerID = playerID;
+    pkt->entityID = entityID;
+    if (eventData) {
+        pkt->eventData = *eventData;
+    } else {
+        memset(&pkt->eventData, 0, sizeof(pkt->eventData));
+    }
 }
 
 void create_c2s_tower_request(c2s_tower_request_packet_t *pkt, tower_request_id_t id, tower_request_data_t *data) {

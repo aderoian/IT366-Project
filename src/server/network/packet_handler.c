@@ -46,6 +46,8 @@ void handle_c2s_player_input_snapshot(const c2s_player_input_snapshot_packet_t *
 }
 
 void handle_c2s_player_join_request(const c2s_player_join_request_packet_t *pkt, void *peer) {
+    size_t playerCount, i;
+    const player_t **players;
     player_t *player = server_create_player(&g_server, ((net_udp_peer_t *) peer)->data);
 
     s2c_player_join_response_packet_t packet;
@@ -62,6 +64,34 @@ void handle_c2s_player_join_request(const c2s_player_join_request_packet_t *pkt,
         &g_game.state
     );
     server_send_packet(&g_server, player, &packet, NET_UDP_FLAG_RELIABLE);
+
+    log_info("Created player with ID: %u", player->id);
+
+    players = player_manager_get_all(g_server.playerManager, &playerCount);
+    for (i = 0; i < playerCount; ++i) {
+        player_state_update_data_t updateData;
+        s2c_player_state_update_packet_t updatePacket;
+        if (!players[i] || !players[i]->entity || players[i]->id == player->id) {
+            continue;
+        }
+
+        log_info("Sending existing player ID %u state to new player ID %u", players[i]->id, player->id);
+        updateData.createData.xPos = players[i]->position.x;
+        updateData.createData.yPos = players[i]->position.y;
+        updateData.createData.teamID = players[i]->teamID;
+        create_s2c_player_state_update(&updatePacket, PLAYER_STATE_UPDATE_CREATE, players[i]->id, players[i]->entity->id, &updateData);
+        server_send_packet(&g_server, player, &updatePacket, NET_UDP_FLAG_RELIABLE);
+    }
+
+    if (player->entity) {
+        player_state_update_data_t updateData;
+        s2c_player_state_update_packet_t updatePacket;
+        updateData.createData.xPos = player->position.x;
+        updateData.createData.yPos = player->position.y;
+        updateData.createData.teamID = player->teamID;
+        create_s2c_player_state_update(&updatePacket, PLAYER_STATE_UPDATE_CREATE, player->id, player->entity->id, &updateData);
+        server_broadcast_packet(&g_server, &updatePacket, NET_UDP_FLAG_RELIABLE);
+    }
 }
 
 void handle_c2s_tower_request(const c2s_tower_request_packet_t *pkt, void *peer) {

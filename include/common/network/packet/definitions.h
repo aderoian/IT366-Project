@@ -21,6 +21,7 @@ typedef enum {
     PACKET_C2S_PLAYER_INPUT_SNAPSHOT,
     PACKET_S2C_PLAYER_STATE_SNAPSHOT,
     PACKET_S2C_PLAYER_CREATE,
+    PACKET_S2C_PLAYER_STATE_UPDATE,
     PACKET_C2S_TOWER_REQUEST,
     PACKET_S2C_TOWER_SNAPSHOT,
     PACKET_S2C_INVENTORY_UPDATE,
@@ -76,6 +77,35 @@ typedef struct s2c_player_create_packet_s {
     float spawnX;
     float spawnY;
 } s2c_player_create_packet_t;
+
+typedef enum player_state_update_event_e {
+    PLAYER_STATE_UPDATE_CREATE,
+    PLAYER_STATE_UPDATE_SYNC,
+    PLAYER_STATE_UPDATE_DELETE
+} player_state_update_event_t;
+
+typedef union player_state_update_data_u {
+    struct {
+        float xPos;
+        float yPos;
+        uint8_t teamID;
+    } createData;
+    struct {
+        uint64_t tickNumber;
+        float xPos;
+        float yPos;
+        float rotation;
+        uint8_t attack;
+    } syncData;
+} player_state_update_data_t;
+
+typedef struct s2c_player_state_update_packet_s {
+    PACKET_HEADER
+    player_state_update_event_t eventType;
+    uint32_t playerID;
+    int64_t entityID;
+    player_state_update_data_t eventData;
+} s2c_player_state_update_packet_t;
 
 typedef enum tower_request_id_e {
     TOWER_REQUEST_BUILD,
