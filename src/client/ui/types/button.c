@@ -3,6 +3,7 @@
 #include "client/ui/event.h"
 #include "client/ui/window.h"
 #include "common/logger.h"
+#include "common/render/gf2d_font.h"
 
 typedef struct button_data_s {
     void (*onClick)(overlay_element_t *element);
@@ -95,6 +96,11 @@ void button_draw(widget_t *widget) {
     if (data->background) {
         gf2d_sprite_draw(data->background, gfc_vector2d(widget->rect.x, widget->rect.y), NULL, NULL, NULL, NULL, NULL, 0);
     }
+
+    if (data->text[0] != '\0') {
+        // Draw the button text (you can customize the font and color as needed)
+        gf2d_font_draw_text(14, data->text, gfc_vector2d(widget->rect.x + 10, widget->rect.y + 10));
+    }
 }
 
 widget_t *button_create(const char *id, GFC_Vector2D position, GFC_Vector2D size, const char *text, const char *image, void(*onClick)(widget_t *widget)) {
@@ -121,12 +127,14 @@ widget_t *button_create(const char *id, GFC_Vector2D position, GFC_Vector2D size
     }
 
     data->onClick = onClick;
-    data->background = gf2d_sprite_load_image(image);
-    if (!data->background) {
-        log_info("Failed to load button background sprite");
-        free(data);
-        widget_destroy(widget);
-        return NULL;
+    if (image) {
+        data->background = gf2d_sprite_load_image(image);
+        if (!data->background) {
+            log_info("Failed to load button background sprite");
+            free(data);
+            widget_destroy(widget);
+            return NULL;
+        }
     }
 
     widget->data = data;

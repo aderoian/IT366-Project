@@ -8,7 +8,8 @@
 void single_player_button_click(widget_t *widget) {
     window_hide(widget->parent);
     log_info("Single Player button clicked");
-    client_begin_singleplayer(&g_client);
+    window_show(window_level_init());
+    //client_begin_singleplayer(&g_client);
 }
 
 void coop_button_click(widget_t *widget) {
@@ -46,7 +47,8 @@ void window_main_on_button_click(window_t *window, const char *elementId) {
     if (strcmp(elementId, "single_player_button") == 0) {
         window_hide(window);
         log_info("Single Player button clicked");
-        client_begin_singleplayer(&g_client);
+        window_show(window_level_init());
+        //client_begin_singleplayer(&g_client);
     } else if (strcmp(elementId, "coop_button") == 0) {
         window_hide(window);
         log_info("Versus button clicked");

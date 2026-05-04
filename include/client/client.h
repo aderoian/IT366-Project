@@ -20,7 +20,8 @@ typedef enum client_state_e {
 typedef enum client_mode_e {
     CLIENT_MODE_NONE = 0,
     CLIENT_MODE_SINGLEPLAYER = 1,
-    CLIENT_MODE_MULTIPLAYER = 2,
+    CLIENT_MODE_VERSUS = 2,
+    CLIENT_MODE_MULTIPLAYER = 3,
 } client_mode_t;
 
 typedef struct client_render_state_s {
@@ -50,8 +51,9 @@ void client_close(void);
 int client_connect(Client* client, const char *serverIP, const char *serverPort);
 void client_disconnect(Client* client);
 
-int client_begin_singleplayer(Client* client);
-int client_begin_versus(Client *client, const char *serverIP, const char *serverPort);
+int client_begin_singleplayer(Client* client, const char* level);
+int client_end_singleplayer(Client *client);
+int client_begin_versus(Client *client, const char *level, const char *serverIP, const char *serverPort);
 
 int client_send_to_server(Client *client, void *pkt, uint32_t flags);
 

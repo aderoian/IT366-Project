@@ -141,7 +141,7 @@ void client_on_local_server_start(Server *server) {
     client_send_to_server(&g_client, &pkt, ENET_PACKET_FLAG_RELIABLE);
 }
 
-int client_begin_singleplayer(Client *client) {
+int client_begin_singleplayer(Client *client, const char* level) {
     if (!client) {
         return -1;
     }
@@ -156,12 +156,41 @@ int client_begin_singleplayer(Client *client) {
     g_server.startupMode = GAME_MODE_SINGLEPLAYER;
     g_server.onStart = client_on_local_server_start;
     _dedicatedServer = 0;
-    server_main();
+    server_main(level);
 
     return 0;
 }
 
-int client_begin_versus(Client *client, const char *ip, const char *port) {
+int client_end_singleplayer(Client *client) {
+    client_disconnect(client);
+    server_close();
+
+    player_destroy(client->player);
+    client->player = NULL;
+    world_destroy(g_game.world);
+    g_game.world = NULL;
+    entity_close(g_game.entityManager);
+    g_game.entityManager = entity_init(1024*5);
+
+    client_network_destroy(client->network);
+    client->network = NULL;
+    client->network = client_network_create(&(network_settings_t){
+        .channelLimit = 4,
+        .inBandwidth = 0,
+        .outBandwidth = 0,
+        .connectionTimeout = 5000,
+    });
+
+    g_game.tickNumber = 0;
+    g_game.deltaTime = 0.0f;
+    g_game.role = GAME_ROLE_CLIENT;
+    g_game.isLocal = 1;
+
+    overlay_hide(&client->overlay);
+    window_show(window_main_init());
+}
+
+int client_begin_versus(Client *client, const char *level, const char *ip, const char *port) {
     if (!client) {
         return -1;
     }
@@ -177,7 +206,7 @@ int client_begin_versus(Client *client, const char *ip, const char *port) {
         g_server.startupMode = GAME_MODE_VERSUS;
         g_server.onStart = client_on_local_server_start;
         _dedicatedServer = 0;
-        server_main();
+        server_main(level);
     } else {
         client_connect(&g_client, ip, port);
 
@@ -289,6 +318,8 @@ void client_tickLoop(Client* client) {
 
             if (gfc_input_command_down("exit")) {
                 client_close();
+            } else if (gfc_input_command_down("cancel")) {
+                window_show(window_pause_init());
             }
         }
 

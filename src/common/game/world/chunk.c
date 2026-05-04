@@ -26,8 +26,6 @@ void chunk_destroy(chunk_t *chunk) {
         gfc_list_clear(chunk->entities);
         free(chunk->entities);
     }
-
-    free(chunk);
 }
 
 void chunk_initialize(chunk_t *chunk, const int x, const int y, void *data) {

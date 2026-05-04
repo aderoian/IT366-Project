@@ -60,7 +60,9 @@ FetchContent_MakeAvailable(enet)
 # ------------------------------------------------------------------------------
 # Static library
 # ------------------------------------------------------------------------------
-add_executable(gf2d ${GF2D_SOURCES})
+add_executable(gf2d ${GF2D_SOURCES}
+        src/client/ui/types/window_level.c
+        src/client/ui/types/window_pause.c)
 
 target_include_directories(gf2d PRIVATE ${GF2D_INCLUDE_DIRS})
 

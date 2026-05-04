@@ -1,0 +1,7 @@
+{
+  "levels": [
+    "worlds/load.bin",
+    "worlds/test.bin",
+    "worlds/temp.bin"
+  ]
+}

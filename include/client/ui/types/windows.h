@@ -9,4 +9,8 @@ void window_main_on_button_click(window_t *window, const char *elementId);
 
 window_t *window_coop_init(void);
 
+window_t *window_level_init(void);
+
+window_t *window_pause_init(void);
+
 #endif /* CLIENT_WINDOWS_H */

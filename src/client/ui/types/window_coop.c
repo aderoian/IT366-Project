@@ -15,7 +15,7 @@ void on_host_clicked(widget_t *widget) {
     log_info("Port: %s", inputData->text->buffer);
 
     window_hide(widget->parent);
-    client_begin_versus(&g_client, NULL, NULL);
+    client_begin_versus(&g_client, NULL, NULL, NULL);
 }
 
 void on_join_clicked(widget_t *widget) {
@@ -28,7 +28,7 @@ void on_join_clicked(widget_t *widget) {
     port = inputData->text->buffer;
 
     window_hide(widget->parent);
-    client_begin_versus(&g_client, ip, port);
+    client_begin_versus(&g_client, NULL, ip, port);
 }
 
 window_t *window_coop_init(void) {

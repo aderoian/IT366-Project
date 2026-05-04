@@ -21,6 +21,12 @@
 #include "common/game/enemy.h"
 #include "common/game/world/tile.h"
 #include "server/network/network_session.h"
+
+typedef struct server_start_params_s {
+    Server *server;
+    char level[64];
+} server_start_params_t;
+
 Server g_server = {0};
 
 void *server_run(void *arg);
@@ -29,7 +35,7 @@ void server_runCommandLoop(void);
 void server_tick(Server *server, float deltaTime);
 void server_tickProcessor(Server *server);
 
-int server_main(void) {
+int server_main(const char *level) {
     log_info("Initializing server...");
 
     g_server.state = SERVER_IDLE;
@@ -39,7 +45,11 @@ int server_main(void) {
     }
     mutex_init(&g_server.lock);
 
-    if (thread_create(&g_server.thread, server_run, &g_server) < 0) {
+    server_start_params_t *params = gfc_allocate_array(sizeof(server_start_params_t), 1);
+    params->server = &g_server;
+    snprintf(params->level, 64, "%s", level ? level : "world/test.bin");
+
+    if (thread_create(&g_server.thread, server_run, params) < 0) {
         log_fatal("Failed to create server thread");
         mutex_destroy(&g_server.lock);
         return -1;
@@ -93,7 +103,6 @@ int server_startup(Server *server) {
     g_game.enemyManager = enemy_load_defs(g_game.defManager, "def/enemies.json");
     g_game.tileManager = tile_manager_init("def/tiles.json");
 
-    strncpy(g_game.state.world, "worlds/test.bin", sizeof(g_game.state.world) - 1);
     g_game.state.mode = server->startupMode;
     g_game.state.winnerTeamID = TEAM_NONE;
     for (size_t i = 0; i < TEAM_COUNT; i++) {
@@ -137,9 +146,10 @@ void server_close(void) {
 }
 
 void *server_run(void *arg) {
-    Server *server = (Server *) arg;
+    server_start_params_t *params = (server_start_params_t *) arg;
 
-    if (!server_startup(server)) {
+    snprintf(g_game.state.world, 64, "%s", params->level);
+    if (!server_startup(params->server)) {
         log_fatal("Server startup failed! Aborting...");
         abort();
     }
@@ -149,8 +159,8 @@ void *server_run(void *arg) {
     g_server.state = SERVER_RUNNING;
     mutex_unlock(&g_server.lock);
 
-    if (server->onStart) {
-        server->onStart(server);
+    if (params->server->onStart) {
+        params->server->onStart(params->server);
     }
     // Main server loop
     g_game.tickNumber = 0;
@@ -162,9 +172,10 @@ void *server_run(void *arg) {
     g_game.state.cycleTime = HALF_CYCLE_TIME;
     g_game.state.stashPosition = gfc_vector2d(0, 0);
 
-    server_tickProcessor(server);
+    server_tickProcessor(params->server);
     log_info("Server stopped!");
 
+    free(params);
     return NULL;
 }
 

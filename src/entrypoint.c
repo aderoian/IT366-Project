@@ -20,7 +20,7 @@ int main(int argc, char * argv[]) {
 
     if (_dedicatedServer) {
         log_info("Starting in SERVER mode");
-        server_main();
+        server_main(NULL);
     } else {
         log_info("Starting in CLIENT mode");
         client_main(argc, argv);

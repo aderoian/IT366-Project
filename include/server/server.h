@@ -48,7 +48,7 @@ typedef struct Server_S {
 
 extern Server g_server;
 
-int server_main(void);
+int server_main(const char *level);
 void server_close(void);
 
 struct player_s *server_create_player(Server *server, struct network_session_s *session);

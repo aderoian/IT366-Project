@@ -83,12 +83,14 @@ widget_t *container_create(const char *id, GFC_Vector2D position, GFC_Vector2D s
         return NULL;
     }
 
-    data->background = gf2d_sprite_load_image(spritePath);
-    if (!data->background) {
-        log_info("Failed to load container background sprite");
-        free(data);
-        widget_destroy(widget);
-        return NULL;
+    if (spritePath) {
+        data->background = gf2d_sprite_load_image(spritePath);
+        if (!data->background) {
+            log_info("Failed to load container background sprite");
+            free(data);
+            widget_destroy(widget);
+            return NULL;
+        }
     }
 
     data->elements = gfc_allocate_array(sizeof(widget_t*), maxElements);
