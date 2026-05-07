@@ -1,5 +1,6 @@
 #include "gfc_config_def.h"
 #include "gfc_input.h"
+#include "gfc_audio.h"
 
 #include "common/logger.h"
 #include "common/thread/mutex.h"
@@ -22,6 +23,7 @@
 #include "common/game/enemy.h"
 #include "common/game/item.h"
 #include "common/game/world/tile.h"
+#include "common/game/world/world.h"
 #include "common/network/packet/definitions.h"
 #include "common/network/packet/io.h"
 #include "server/server.h"
@@ -60,6 +62,11 @@ int client_main(int argc, char *argv[]) {
     g_game.enemyManager = enemy_load_defs(g_game.defManager, "def/enemies.json");
     g_game.tileManager = tile_manager_init("def/tiles.json");
     gf2d_font_init("fonts/SourceSansPro-Regular.otf", GFC_COLOR_WHITE);
+
+    gfc_sound_init_config("config/audio.json");
+    g_client.sounds.build = gfc_sound_load("sounds/build.wav", 1.0f, 2);
+    g_client.sounds.destroy = gfc_sound_load("sounds/destroy.wav", 1.0f, 2);
+
     animation_manager_init(256);
     camera_init(&g_camera);
     window_init(32, 256, 256);

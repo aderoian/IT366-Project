@@ -1,11 +1,10 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
-#include "common/game/game.h"
+#include "gfc_audio.h"
 #include "common/game/player.h"
 #include "client/client_network.h"
 #include "client/ui/overlay.h"
-#include "../common/game/world/world.h"
 
 typedef enum client_state_e {
     CLIENT_IDLE = 0,
@@ -28,6 +27,11 @@ typedef struct client_render_state_s {
     struct Sprite_S* background;
 } client_render_state_t;
 
+typedef struct client_sounds_s {
+    GFC_Sound *build;
+    GFC_Sound *destroy;
+} client_sounds_t;
+
 typedef struct Client_S {
     client_mode_t mode;
     client_state_t state;
@@ -41,6 +45,8 @@ typedef struct Client_S {
     float clickDelay;
 
     overlay_t overlay;
+
+    client_sounds_t sounds;
 } Client;
 
 extern Client g_client;

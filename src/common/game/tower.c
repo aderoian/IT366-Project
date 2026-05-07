@@ -4,6 +4,7 @@
 
 #include "common/game/tower.h"
 
+#include "gfc_audio.h"
 #include "client/camera.h"
 #include "client/client.h"
 #include "../../../include/common/render/gf2d_sprite.h"
@@ -340,6 +341,10 @@ entity_t *tower_place(const entity_manager_t *entityManager, tower_manager_t *to
         tower->baseSprite = gf2d_sprite_load_image(spritePath);
         snprintf(spritePath, sizeof(spritePath), def->modelDef.weaponSpritePath, tower->level + 1);
         tower->weaponSprite = gf2d_sprite_load_image(spritePath);
+
+        if (g_client.sounds.build) {
+            gfc_sound_play(g_client.sounds.build, 0, 1.0f, 2);
+        }
     }
 
     tower->worldPos = tower_snap_to_grid(tower->def, position);
@@ -438,6 +443,10 @@ void tower_upgrade(const struct entity_manager_s *entityManager, tower_manager_t
             gf2d_sprite_free(tower->weaponSprite);
             snprintf(spritePath, sizeof(spritePath), tower->def->modelDef.weaponSpritePath, tower->level + 1);
             tower->weaponSprite = gf2d_sprite_load_image(spritePath);
+        }
+
+        if (g_client.sounds.build) {
+            gfc_sound_play(g_client.sounds.build, 0, 1.0f, 2);
         }
     } else {
         s2c_tower_snapshot_packet_t packet;
@@ -837,6 +846,10 @@ void tower_entity_destroy(const entity_manager_t *entityManager, entity_t *ent) 
         if (tower->weaponSprite) {
             gf2d_sprite_free(tower->weaponSprite);
             tower->weaponSprite = NULL;
+        }
+
+        if (g_client.sounds.destroy) {
+            gfc_sound_play(g_client.sounds.destroy, 0, .5f, 2);
         }
 
         tower_destroy(g_game.towerManager, ent);

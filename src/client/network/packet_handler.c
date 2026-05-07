@@ -5,6 +5,7 @@
 #include "client/client.h"
 #include "common/game/enemy.h"
 #include "common/game/tower.h"
+#include "common/game/world/world.h"
 
 typedef struct remote_player_state_s {
     uint8_t inUse;
