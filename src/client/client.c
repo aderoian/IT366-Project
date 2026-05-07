@@ -64,8 +64,10 @@ int client_main(int argc, char *argv[]) {
     gf2d_font_init("fonts/SourceSansPro-Regular.otf", GFC_COLOR_WHITE);
 
     gfc_sound_init_config("config/audio.json");
-    g_client.sounds.build = gfc_sound_load("sounds/build.wav", 1.0f, 2);
+    g_client.sounds.build = gfc_sound_load("sounds/build.wav", 1.5f, 2);
     g_client.sounds.destroy = gfc_sound_load("sounds/destroy.wav", 1.0f, 2);
+    g_client.sounds.backgroundMusic = gfc_sound_load("sounds/background.wav", 0.5f, 2);
+    g_client.sounds.punch = gfc_sound_load("sounds/punch.wav", 1.0f, 2);
 
     animation_manager_init(256);
     camera_init(&g_camera);
@@ -160,6 +162,10 @@ int client_begin_singleplayer(Client *client, const char* level) {
     client->state = CLIENT_JOINING;
     mutex_unlock(&client->lock);
 
+    if (g_client.sounds.backgroundMusic) {
+        gfc_sound_play(g_client.sounds.backgroundMusic, -1, .5f, 1);
+    }
+
     g_server.startupMode = GAME_MODE_SINGLEPLAYER;
     g_server.onStart = client_on_local_server_start;
     _dedicatedServer = 0;
@@ -187,6 +193,8 @@ int client_end_singleplayer(Client *client) {
         .outBandwidth = 0,
         .connectionTimeout = 5000,
     });
+
+    Mix_HaltChannel(2);
 
     g_game.tickNumber = 0;
     g_game.deltaTime = 0.0f;
@@ -223,6 +231,10 @@ int client_begin_versus(Client *client, const char *level, const char *ip, const
         c2s_player_join_request_packet_t pkt;
         create_c2s_player_join_request(&pkt, g_client.playerName);
         client_send_to_server(&g_client, &pkt, ENET_PACKET_FLAG_RELIABLE);
+    }
+
+    if (g_client.sounds.backgroundMusic) {
+        gfc_sound_play(g_client.sounds.backgroundMusic, -1, 0.5f, 2);
     }
 
     return 0;

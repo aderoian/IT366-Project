@@ -30,6 +30,8 @@ typedef struct client_render_state_s {
 typedef struct client_sounds_s {
     GFC_Sound *build;
     GFC_Sound *destroy;
+    GFC_Sound *backgroundMusic;
+    GFC_Sound *punch;
 } client_sounds_t;
 
 typedef struct Client_S {

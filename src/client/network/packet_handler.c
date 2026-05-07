@@ -252,6 +252,9 @@ void handle_s2c_enemy_snapshot(const s2c_enemy_snapshot_packet_t *pkt, void *cli
         state->health = pkt->eventData.updateData.health;
 
         if (pkt->eventData.updateData.attack) {
+            if (g_client.sounds.punch) {
+                gfc_sound_play(g_client.sounds.punch, 0, 0.5f, 3);
+            }
             state->attackCooldownTimer = state->def->attackCooldown; // Reset attack cooldown on attack event
         }
     } else if (pkt->eventID == ENEMY_EVENT_DESPAWN) {

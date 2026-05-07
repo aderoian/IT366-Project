@@ -343,7 +343,7 @@ entity_t *tower_place(const entity_manager_t *entityManager, tower_manager_t *to
         tower->weaponSprite = gf2d_sprite_load_image(spritePath);
 
         if (g_client.sounds.build) {
-            gfc_sound_play(g_client.sounds.build, 0, 1.0f, 2);
+            gfc_sound_play(g_client.sounds.build, 0, 1.5f, 2);
         }
     }
 
