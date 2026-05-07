@@ -186,6 +186,8 @@ void tower_upgrade(const struct entity_manager_s *entityManager, tower_manager_t
  */
 entity_t *tower_get_by_id(tower_manager_t *towerManager, uint32_t id);
 
+void tower_get_all(tower_manager_t *tower_manager, GFC_List *outList);
+
 /**
  * @brief Destroys a tower state, freeing any associated resources and marking its slot as free.
  * This function should be called when a tower is removed from the game to ensure proper cleanup.

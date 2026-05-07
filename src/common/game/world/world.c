@@ -1,5 +1,6 @@
 #include "common/game/world/world.h"
 
+#include "gfc_input.h"
 #include "client/camera.h"
 #include "client/client.h"
 #include "common/render/gf2d_draw.h"
@@ -408,7 +409,21 @@ int world_on_click(world_t *world, uint32_t mouseButton, int x, int y) {
             30
         );
         if (!pressed && gfc_point_in_rect(worldPos, buttonRect)) {
-            tower_request_upgrade(g_game.entityManager, g_game.towerManager, world->selected_tower->tower);
+            if (gfc_input_key_held("LSHIFT")) {
+                GFC_List *upgradeList = gfc_list_new();
+                tower_get_all(g_game.towerManager, upgradeList);
+                for (uint32_t i = 0; i < gfc_list_count(upgradeList); i++) {
+                    entity_t *ent = gfc_list_get_nth(upgradeList, i);
+                    if (ent && ent->data) {
+                        tower_state_t *t = (tower_state_t *)ent->data;
+                        if (t->def == ((tower_state_t *)world->selected_tower->tower->data)->def && t->level < TOWER_MAX_LEVEL - 1) {
+                            tower_request_upgrade(g_game.entityManager, g_game.towerManager, ent);
+                        }
+                    }
+                }
+            } else {
+                tower_request_upgrade(g_game.entityManager, g_game.towerManager, world->selected_tower->tower);
+            }
             pressed = 1;
         }
         if (!pressed) {

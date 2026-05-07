@@ -5,6 +5,7 @@
 #include "common/game/tower.h"
 
 #include "gfc_audio.h"
+#include "gfc_input.h"
 #include "client/camera.h"
 #include "client/client.h"
 #include "../../../include/common/render/gf2d_sprite.h"
@@ -470,6 +471,18 @@ entity_t * tower_get_by_id(tower_manager_t *towerManager, const uint32_t id) {
         return NULL; // ID not in use or index out of bounds
     }
     return towerManager->towers[index].entity;
+}
+
+void tower_get_all(tower_manager_t *tower_manager, GFC_List *outList) {
+    uint32_t i;
+    for (i = 0; i < tower_manager->maxTowers; i++) {
+        if (tower_manager->towerIDs[i] != UINT32_MAX) {
+            entity_t *ent = tower_manager->towers[tower_manager->towerIDs[i]].entity;
+            if (ent) {
+                gfc_list_append(outList, ent);
+            }
+        }
+    }
 }
 
 void tower_destroy(tower_manager_t *towerManager, entity_t *entity) {
