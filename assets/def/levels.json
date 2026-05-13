@@ -2,6 +2,7 @@
   "levels": [
     "worlds/load.bin",
     "worlds/test.bin",
-    "worlds/temp.bin"
+    "worlds/temp.bin",
+    "worlds/testalltiles.bin"
   ]
 }

@@ -3,7 +3,7 @@
     "path": "images/map/tilesheet.png",
     "tile_width": 48,
     "tile_height": 48,
-    "columns": 2
+    "columns": 6
   },
   "tiles": [
     {
@@ -19,11 +19,57 @@
     },
     {
       "id": 1,
-      "name": "test",
+      "name": "mountain",
       "properties": {
         "walkable": false,
         "flyable": true,
+        "buildable": false,
+        "harmful": false,
+        "modify_speed": false
+      }
+    },
+    {
+      "id": 2,
+      "name": "lava",
+      "properties": {
+        "walkable": true,
+        "flyable": true,
+        "buildable": false,
+        "harmful": true,
+        "modify_speed": false,
+        "damage_amount": 5.0
+      }
+    },
+    {
+      "id": 3,
+      "name": "water",
+      "properties": {
+        "walkable": true,
+        "flyable": true,
+        "buildable": false,
+        "harmful": false,
+        "modify_speed": true,
+        "speed_modifier": 0.5
+      }
+    },{
+      "id": 4,
+      "name": "rock",
+      "properties": {
+        "walkable": true,
+        "flyable": true,
         "buildable": true,
+        "harmful": false,
+        "modify_speed": true,
+        "speed_modifier": 0.65
+      }
+    },
+    {
+      "id": 5,
+      "name": "rock1",
+      "properties": {
+        "walkable": false,
+        "flyable": true,
+        "buildable": false,
         "harmful": false,
         "modify_speed": false
       }

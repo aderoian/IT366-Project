@@ -47,7 +47,7 @@ int server_main(const char *level) {
 
     server_start_params_t *params = gfc_allocate_array(sizeof(server_start_params_t), 1);
     params->server = &g_server;
-    snprintf(params->level, 64, "%s", level ? level : "world/test.bin");
+    snprintf(params->level, 64, "%s", level ? level : "worlds/test.bin");
 
     if (thread_create(&g_server.thread, server_run, params) < 0) {
         log_fatal("Failed to create server thread");
@@ -344,7 +344,6 @@ void server_broadcast_packet(Server* server, void *context, const uint32_t flags
 
     players = player_manager_get_all(server->playerManager, &playerCount);
     for (i = 0; i < playerCount; ++i) {
-        log_info("Broadcasting packet to player ID %u", players[i]->id);
         server_send_packet(server, players[i], context, flags);
     }
 }
